@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+</head>
+<body>
+    <h1>Clear localStorage</h1>
+    <button onclick="clearStorage()">Clear All Storage</button>
+    <button onclick="checkStorage()">Check Storage</button>
+    <div id="output"></div>
+
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('registeredUsers');
+            localStorage.removeItem('pendingRegistration');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('healthLogs');
+            document.getElementById('output').innerHTML = '<p style="color: green;">✅ localStorage cleared!</p>';
+        }
+
+        function checkStorage() {
+            const output = document.getElementById('output');
+            output.innerHTML = `
+                <h3>localStorage Contents:</h3>
+                <p><strong>registeredUsers:</strong> ${localStorage.getItem('registeredUsers') || 'null'}</p>
+                <p><strong>pendingRegistration:</strong> ${localStorage.getItem('pendingRegistration') || 'null'}</p>
+                <p><strong>token:</strong> ${localStorage.getItem('token') || 'null'}</p>
+                <p><strong>user:</strong> ${localStorage.getItem('user') || 'null'}</p>
+                <p><strong>healthLogs:</strong> ${localStorage.getItem('healthLogs') || 'null'}</p>
+            `;
+        }
+    </script>
+</body>
+</html>
