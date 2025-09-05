@@ -1,0 +1,484 @@
+/* Smart Insights Component Styles */
+.smart-insights {
+  margin-bottom: 24px;
+}
+
+.insights-section {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.insights-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* AI Health Score Card */
+.ai-health-score-card {
+  background: linear-gradient(135deg, rgba(103, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(103, 126, 234, 0.2);
+}
+
+.score-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.score-circle {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(103, 126, 234, 0.3);
+}
+
+.score-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+
+.score-max {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.score-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.score-info p {
+  margin: 0;
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+/* Health Alerts */
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.alert-card {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.alert-card:hover {
+  transform: translateY(-2px);
+}
+
+.alert-card.info {
+  background: rgba(23, 162, 184, 0.1);
+  border-color: rgba(23, 162, 184, 0.2);
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+}
+
+.alert-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+}
+
+.severity-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.alert-description {
+  margin: 0 0 12px 0;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.alert-action, .alert-reason {
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+}
+
+.alert-action strong, .alert-reason strong {
+  color: #ffffff;
+}
+
+/* Preventive Care */
+.care-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.care-card {
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.care-card:hover {
+  transform: translateY(-2px);
+}
+
+.care-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.care-icon {
+  font-size: 1.2rem;
+}
+
+.care-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+}
+
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.care-description {
+  margin: 0 0 12px 0;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.care-details {
+  margin: 12px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.care-frequency, .care-due {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+}
+
+.care-frequency strong, .care-due strong {
+  color: #ffffff;
+}
+
+.care-reason {
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+}
+
+.care-reason strong {
+  color: #ffffff;
+}
+
+/* Medication Reminders */
+.medication-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.medication-card {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.medication-card:hover {
+  transform: translateY(-2px);
+}
+
+.medication-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.medication-icon {
+  font-size: 1.2rem;
+}
+
+.medication-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.medication-description {
+  margin: 0 0 12px 0;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.medication-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.medication-frequency, .medication-action {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+}
+
+.medication-frequency strong, .medication-action strong {
+  color: #ffffff;
+}
+
+/* AI Pattern Insights */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.pattern-card {
+  background: rgba(103, 126, 234, 0.1);
+  border: 1px solid rgba(103, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.pattern-card:hover {
+  transform: translateY(-2px);
+}
+
+.pattern-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.pattern-icon {
+  font-size: 1.2rem;
+}
+
+.pattern-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+}
+
+.pattern-description {
+  margin: 0 0 12px 0;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.pattern-reasoning {
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.pattern-reasoning strong {
+  color: #ffffff;
+}
+
+/* Insights Footer */
+.insights-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.refresh-insights-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.refresh-insights-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(103, 126, 234, 0.3);
+}
+
+.insights-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  font-style: italic;
+}
+
+/* Loading States */
+.smart-insights.loading {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.smart-insights.loading p {
+  color: #a0a0a0;
+  margin: 0;
+}
+
+/* Error States */
+.smart-insights.error {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.smart-insights.error p {
+  color: #dc3545;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.retry-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #c82333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .insights-section {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .score-display {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .score-circle {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .score-number {
+    font-size: 1.3rem;
+  }
+  
+  .alerts-grid, .care-grid, .medication-grid, .pattern-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .insights-section {
+    padding: 16px;
+  }
+  
+  .insights-section h2 {
+    font-size: 1.1rem;
+  }
+  
+  .score-circle {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .score-number {
+    font-size: 1.1rem;
+  }
+  
+  .score-max {
+    font-size: 0.7rem;
+  }
+}
+
+

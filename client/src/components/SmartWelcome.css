@@ -1,0 +1,248 @@
+/* Smart Welcome Component Styles */
+.smart-welcome {
+  margin-bottom: 24px;
+}
+
+/* Welcome Header */
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.welcome-greeting h1 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-subtitle {
+  margin: 0;
+  color: #a0a0a0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.notification-btn, .logout-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.notification-btn:hover, .logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Health Summary Section */
+.health-summary-section {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.health-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.health-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+}
+
+.health-tag.anatomy {
+  background: rgba(103, 126, 234, 0.2);
+  color: #667eea;
+  border-color: rgba(103, 126, 234, 0.3);
+}
+
+.health-tag.condition {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border-color: rgba(220, 53, 69, 0.3);
+}
+
+.health-tag.lifestyle {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border-color: rgba(255, 193, 7, 0.3);
+}
+
+.health-tag.diet {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border-color: rgba(40, 167, 69, 0.3);
+}
+
+.health-tag.activity {
+  background: rgba(23, 162, 184, 0.2);
+  color: #17a2b8;
+  border-color: rgba(23, 162, 184, 0.3);
+}
+
+.health-tag.general {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border-color: rgba(108, 117, 125, 0.3);
+}
+
+.health-summary-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-icon {
+  font-size: 1rem;
+}
+
+.summary-text {
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+/* Health Metrics */
+.health-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+}
+
+.metric-icon {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.metric-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a0a0a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.metric-category {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #667eea;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .welcome-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .welcome-greeting h1 {
+    font-size: 1.5rem;
+  }
+  
+  .health-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+  }
+  
+  .metric-card {
+    padding: 12px;
+  }
+  
+  .metric-value {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-greeting h1 {
+    font-size: 1.3rem;
+  }
+  
+  .health-summary-section {
+    padding: 16px;
+  }
+  
+  .health-tags {
+    gap: 6px;
+  }
+  
+  .health-tag {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+  
+  .health-metrics {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+
