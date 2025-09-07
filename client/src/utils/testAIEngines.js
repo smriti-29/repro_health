@@ -1,7 +1,7 @@
 // Test file to verify AI engines are working
-import AIReasoningEngine from '../ai/aiReasoning.js';
-import PersonalContextEngine from './personalContextEngine.js';
-import MedicalRulesEngine from './medicalRulesEngine.js';
+import AIReasoningEngine from '../ai/aiReasoning';
+import PersonalContextEngine from './personalContextEngine';
+import MedicalRulesEngine from './medicalRulesEngine';
 
 export const testAIEngines = () => {
   console.log('🧪 Testing AI Engines...');

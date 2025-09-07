@@ -1,0 +1,733 @@
+/* PREGNANCY TRACKING STYLES */
+/* Beautiful and intuitive pregnancy tracking interface */
+
+.pregnancy-tracking {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  min-height: 100vh;
+}
+
+/* Header */
+.pregnancy-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 30px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.pregnancy-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pregnancy-header p {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+/* Content Sections */
+.pregnancy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.pregnancy-progress-section,
+.due-date-section,
+.pregnancy-type-section,
+.symptoms-section,
+.prenatal-care-section,
+.complications-section,
+.save-section,
+.ai-insights-section {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.pregnancy-progress-section h2,
+.due-date-section h2,
+.pregnancy-type-section h2,
+.symptoms-section h2,
+.prenatal-care-section h2,
+.complications-section h2,
+.ai-insights-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.pregnancy-progress-section h2::before {
+  content: '🤰';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.due-date-section h2::before {
+  content: '📅';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.pregnancy-type-section h2::before {
+  content: '👶';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.symptoms-section h2::before {
+  content: '🤒';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.prenatal-care-section h2::before {
+  content: '🏥';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.complications-section h2::before {
+  content: '⚠️';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.ai-insights-section h2::before {
+  content: '🤖';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+/* Pregnancy Progress Display */
+.progress-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.progress-item {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  border-left: 4px solid #6366f1;
+}
+
+.progress-item h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.week-number,
+.trimester-number,
+.days-remaining {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.milestone-display {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #8b5cf6;
+}
+
+.milestone-display h3 {
+  color: #4338ca;
+  margin-bottom: 10px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.milestone-display p {
+  color: #1f2937;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Due Date Input */
+.due-date-input {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.due-date-input label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 1.125rem;
+}
+
+.due-date-field {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1f2937;
+  transition: border-color 0.3s ease;
+}
+
+.due-date-field:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Pregnancy Type Options */
+.pregnancy-type-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.pregnancy-type-option {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.pregnancy-type-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.pregnancy-type-option.selected {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-color: #6366f1;
+  color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Symptoms Section */
+.symptom-item {
+  margin-bottom: 25px;
+}
+
+.symptom-item h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 15px;
+}
+
+.symptom-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.symptom-option {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.symptom-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.symptom-option.selected {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Prenatal Care */
+.care-item {
+  margin-bottom: 25px;
+}
+
+.care-item h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 15px;
+}
+
+.weight-input,
+.bp-input,
+.bs-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.weight-input-field,
+.bp-systolic,
+.bp-diastolic,
+.bs-input-field {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+  transition: border-color 0.3s ease;
+}
+
+.weight-input-field,
+.bs-input-field {
+  width: 100px;
+}
+
+.bp-systolic,
+.bp-diastolic {
+  width: 80px;
+}
+
+.weight-input-field:focus,
+.bp-systolic:focus,
+.bp-diastolic:focus,
+.bs-input-field:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.weight-unit,
+.bp-unit,
+.bs-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.bp-separator {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Complications */
+.complications-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.complication-option {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.complication-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.complication-option.selected {
+  background: linear-gradient(135deg, #fef2f2, #fecaca);
+  border-color: #ef4444;
+  color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Save Button */
+.save-section {
+  text-align: center;
+}
+
+.save-pregnancy-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 25px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.save-pregnancy-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.save-pregnancy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.error-message p {
+  color: #dc2626;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* AI Insights */
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pregnancy-assessment,
+.weekly-progress,
+.ai-insights,
+.medical-alerts,
+.recommendations,
+.preparation-tips {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #6366f1;
+}
+
+.pregnancy-assessment h3,
+.weekly-progress h3,
+.ai-insights h3,
+.medical-alerts h3,
+.recommendations h3,
+.preparation-tips h3 {
+  color: #4338ca;
+  margin-bottom: 15px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.alert-warning {
+  background: #fef3c7;
+  border-left-color: #f59e0b;
+}
+
+.alert-info {
+  background: #dbeafe;
+  border-left-color: #3b82f6;
+}
+
+.alert-error {
+  background: #fecaca;
+  border-left-color: #ef4444;
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+  margin-right: 15px;
+  margin-top: 2px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-message {
+  color: #1f2937;
+  font-weight: 500;
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+
+.alert-priority {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.recommendations-list,
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-item,
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 3px solid #6366f1;
+}
+
+.recommendation-icon,
+.tip-icon {
+  font-size: 1.125rem;
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.recommendation-text,
+.tip-text {
+  color: #374151;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pregnancy-tracking {
+    padding: 15px;
+  }
+  
+  .pregnancy-header {
+    padding: 20px;
+  }
+  
+  .pregnancy-header h1 {
+    font-size: 2rem;
+  }
+  
+  .pregnancy-header p {
+    font-size: 1rem;
+  }
+  
+  .progress-display {
+    grid-template-columns: 1fr;
+  }
+  
+  .pregnancy-type-options,
+  .complications-options {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .symptom-options {
+    flex-direction: column;
+  }
+  
+  .weight-input,
+  .bp-input,
+  .bs-input {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .pregnancy-progress-section,
+  .due-date-section,
+  .pregnancy-type-section,
+  .symptoms-section,
+  .prenatal-care-section,
+  .complications-section,
+  .save-section,
+  .ai-insights-section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pregnancy-tracking {
+    padding: 10px;
+  }
+  
+  .pregnancy-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .pregnancy-header p {
+    font-size: 0.9rem;
+  }
+  
+  .pregnancy-type-options,
+  .complications-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .pregnancy-type-option,
+  .complication-option {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  
+  .save-pregnancy-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .pregnancy-type-option,
+  .symptom-option,
+  .complication-option,
+  .save-pregnancy-btn {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .pregnancy-type-option,
+  .symptom-option,
+  .complication-option {
+    border-width: 3px;
+  }
+  
+  .alert {
+    border-left-width: 6px;
+  }
+  
+  .recommendation-item,
+  .tip-item {
+    border-left-width: 5px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pregnancy-tracking {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #f9fafb;
+  }
+  
+  .pregnancy-header,
+  .pregnancy-progress-section,
+  .due-date-section,
+  .pregnancy-type-section,
+  .symptoms-section,
+  .prenatal-care-section,
+  .complications-section,
+  .save-section,
+  .ai-insights-section {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .pregnancy-header h1 {
+    color: #f9fafb;
+  }
+  
+  .pregnancy-header p {
+    color: #d1d5db;
+  }
+  
+  .due-date-field,
+  .weight-input-field,
+  .bp-systolic,
+  .bp-diastolic,
+  .bs-input-field {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .due-date-field:focus,
+  .weight-input-field:focus,
+  .bp-systolic:focus,
+  .bp-diastolic:focus,
+  .bs-input-field:focus {
+    border-color: #6366f1;
+  }
+  
+  .pregnancy-type-option,
+  .symptom-option,
+  .complication-option {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .pregnancy-type-option:hover,
+  .symptom-option:hover,
+  .complication-option:hover {
+    border-color: #9ca3af;
+  }
+  
+  .pregnancy-type-option.selected,
+  .symptom-option.selected {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-color: #6366f1;
+  }
+  
+  .complication-option.selected {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border-color: #dc2626;
+  }
+  
+  .progress-item {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .pregnancy-assessment,
+  .weekly-progress,
+  .ai-insights,
+  .medical-alerts,
+  .recommendations,
+  .preparation-tips {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .recommendation-item,
+  .tip-item {
+    background: #374151;
+    color: #f9fafb;
+  }
+}

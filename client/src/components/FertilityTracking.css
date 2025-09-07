@@ -1,0 +1,775 @@
+/* FERTILITY TRACKING STYLES */
+/* Beautiful and intuitive fertility tracking interface */
+
+.fertility-tracking {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  min-height: 100vh;
+}
+
+/* Header */
+.fertility-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 30px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.fertility-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.fertility-header p {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+/* Content Sections */
+.fertility-content {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.ttc-section,
+.contraception-section,
+.ovulation-tracking-section,
+.fertility-window-section,
+.fertility-goals-section,
+.save-section,
+.ai-insights-section {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.ttc-section h2,
+.contraception-section h2,
+.ovulation-tracking-section h2,
+.fertility-window-section h2,
+.fertility-goals-section h2,
+.ai-insights-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.ttc-section h2::before {
+  content: '👶';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.contraception-section h2::before {
+  content: '💊';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.ovulation-tracking-section h2::before {
+  content: '📊';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.fertility-window-section h2::before {
+  content: '🗓️';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.fertility-goals-section h2::before {
+  content: '🎯';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.ai-insights-section h2::before {
+  content: '🤖';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+/* TTC Options */
+.ttc-options {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.ttc-option {
+  padding: 15px 25px;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.ttc-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.ttc-option.selected {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Contraception Options */
+.contraception-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.contraception-option {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.contraception-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.contraception-option.selected {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-color: #6366f1;
+  color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Ovulation Tracking Subsections */
+.ovulation-tracking-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 15px;
+  margin-top: 25px;
+}
+
+.ovulation-tracking-section h3:first-child {
+  margin-top: 0;
+}
+
+/* BBT Input */
+.bbt-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bbt-input-field {
+  width: 100px;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1.125rem;
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+  transition: border-color 0.3s ease;
+}
+
+.bbt-input-field:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.bbt-unit {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Cervical Mucus Options */
+.cervical-mucus-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.cervical-mucus-option {
+  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.cervical-mucus-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.cervical-mucus-option.selected {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-color: #6366f1;
+  color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* LH Strips Options */
+.lh-strips-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lh-strips-option {
+  padding: 12px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.lh-strips-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.lh-strips-option.selected {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Ovulation Pain Options */
+.ovulation-pain-options {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.ovulation-pain-option {
+  padding: 12px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.ovulation-pain-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.ovulation-pain-option.selected {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Libido Options */
+.libido-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.libido-option {
+  padding: 12px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.libido-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.libido-option.selected {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Fertility Window Display */
+.fertility-window-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.window-item {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  border-left: 4px solid #6366f1;
+}
+
+.window-item h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.window-item p {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* Fertility Goals */
+.fertility-goals-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.fertility-goal-option {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.fertility-goal-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.fertility-goal-option.selected {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-color: #6366f1;
+  color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Save Button */
+.save-section {
+  text-align: center;
+}
+
+.save-fertility-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 25px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.save-fertility-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.save-fertility-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.error-message p {
+  color: #dc2626;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* AI Insights */
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fertility-assessment,
+.ovulation-prediction,
+.conception-timeline,
+.ai-insights,
+.medical-alerts,
+.recommendations {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #6366f1;
+}
+
+.fertility-assessment h3,
+.ovulation-prediction h3,
+.conception-timeline h3,
+.ai-insights h3,
+.medical-alerts h3,
+.recommendations h3 {
+  color: #4338ca;
+  margin-bottom: 15px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.alert-warning {
+  background: #fef3c7;
+  border-left-color: #f59e0b;
+}
+
+.alert-info {
+  background: #dbeafe;
+  border-left-color: #3b82f6;
+}
+
+.alert-error {
+  background: #fecaca;
+  border-left-color: #ef4444;
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+  margin-right: 15px;
+  margin-top: 2px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-message {
+  color: #1f2937;
+  font-weight: 500;
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+
+.alert-priority {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 3px solid #6366f1;
+}
+
+.recommendation-icon {
+  font-size: 1.125rem;
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.recommendation-text {
+  color: #374151;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .fertility-tracking {
+    padding: 15px;
+  }
+  
+  .fertility-header {
+    padding: 20px;
+  }
+  
+  .fertility-header h1 {
+    font-size: 2rem;
+  }
+  
+  .fertility-header p {
+    font-size: 1rem;
+  }
+  
+  .ttc-options {
+    flex-direction: column;
+  }
+  
+  .contraception-options,
+  .cervical-mucus-options,
+  .fertility-goals-options {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+  
+  .lh-strips-options,
+  .ovulation-pain-options,
+  .libido-options {
+    flex-direction: column;
+  }
+  
+  .fertility-window-display {
+    grid-template-columns: 1fr;
+  }
+  
+  .ttc-section,
+  .contraception-section,
+  .ovulation-tracking-section,
+  .fertility-window-section,
+  .fertility-goals-section,
+  .save-section,
+  .ai-insights-section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fertility-tracking {
+    padding: 10px;
+  }
+  
+  .fertility-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .fertility-header p {
+    font-size: 0.9rem;
+  }
+  
+  .contraception-options,
+  .cervical-mucus-options,
+  .fertility-goals-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .contraception-option,
+  .cervical-mucus-option,
+  .fertility-goal-option {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  
+  .save-fertility-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .ttc-option,
+  .contraception-option,
+  .cervical-mucus-option,
+  .lh-strips-option,
+  .ovulation-pain-option,
+  .libido-option,
+  .fertility-goal-option,
+  .save-fertility-btn {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .ttc-option,
+  .contraception-option,
+  .cervical-mucus-option,
+  .lh-strips-option,
+  .ovulation-pain-option,
+  .libido-option,
+  .fertility-goal-option {
+    border-width: 3px;
+  }
+  
+  .alert {
+    border-left-width: 6px;
+  }
+  
+  .recommendation-item {
+    border-left-width: 5px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .fertility-tracking {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #f9fafb;
+  }
+  
+  .fertility-header,
+  .ttc-section,
+  .contraception-section,
+  .ovulation-tracking-section,
+  .fertility-window-section,
+  .fertility-goals-section,
+  .save-section,
+  .ai-insights-section {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .fertility-header h1 {
+    color: #f9fafb;
+  }
+  
+  .fertility-header p {
+    color: #d1d5db;
+  }
+  
+  .bbt-input-field {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .bbt-input-field:focus {
+    border-color: #6366f1;
+  }
+  
+  .ttc-option,
+  .contraception-option,
+  .cervical-mucus-option,
+  .lh-strips-option,
+  .ovulation-pain-option,
+  .libido-option,
+  .fertility-goal-option {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .ttc-option:hover,
+  .contraception-option:hover,
+  .cervical-mucus-option:hover,
+  .lh-strips-option:hover,
+  .ovulation-pain-option:hover,
+  .libido-option:hover,
+  .fertility-goal-option:hover {
+    border-color: #9ca3af;
+  }
+  
+  .ttc-option.selected,
+  .contraception-option.selected,
+  .cervical-mucus-option.selected,
+  .lh-strips-option.selected,
+  .ovulation-pain-option.selected,
+  .libido-option.selected,
+  .fertility-goal-option.selected {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-color: #6366f1;
+  }
+  
+  .window-item {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .fertility-assessment,
+  .ovulation-prediction,
+  .conception-timeline,
+  .ai-insights,
+  .medical-alerts,
+  .recommendations {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .recommendation-item {
+    background: #374151;
+    color: #f9fafb;
+  }
+}

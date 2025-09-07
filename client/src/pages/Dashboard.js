@@ -3,20 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useHealthData } from '../context/HealthDataContext';
 import { useProfile } from '../context/ProfileContext';
+// AFAB features will be integrated directly into this dashboard
 import './Dashboard.css';
 
 // Import AI Engines
-import AIReasoningEngine from '../ai/aiReasoning.js';
-import PersonalContextEngine from '../utils/personalContextEngine.js';
-import MedicalRulesEngine from '../utils/medicalRulesEngine.js';
-import AIServiceManager from '../ai/aiServiceManager.js';
-import { testAIEngines, testWithRealData } from '../utils/testAIEngines.js';
+import AIReasoningEngine from '../ai/aiReasoning';
+import PersonalContextEngine from '../utils/personalContextEngine';
+import MedicalRulesEngine from '../utils/medicalRulesEngine';
+import AIServiceManager from '../ai/aiServiceManager';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { healthData: localHealthData, addHealthLog } = useHealthData();
-  const { profileData: profileDataFromContext, updateProfile } = useProfile();
+  const { updateProfile } = useProfile();
   
   // Initialize AI Service Manager
   const [aiService] = useState(() => new AIServiceManager());
@@ -46,7 +46,6 @@ const Dashboard = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const [comingSoonFeature, setComingSoonFeature] = useState('');
-  const [showProfileSection, setShowProfileSection] = useState(false);
   
   // Daily log form state
   const [dailyLogForm, setDailyLogForm] = useState({
@@ -200,7 +199,68 @@ const Dashboard = () => {
     setComingSoonFeature(featureName);
     setShowComingSoonModal(true);
   };
+
+  // Handle AFAB-specific modules
+  const handleAFABModule = async (moduleType) => {
+    try {
+      console.log(`🎯 Navigating to AFAB module: ${moduleType}`);
+      
+      // Navigate to dedicated pages for implemented modules
+      switch (moduleType) {
+        case 'cycle':
+          navigate('/cycle-tracking');
+          break;
+        case 'fertility':
+          navigate('/fertility-tracking');
+          break;
+        case 'pregnancy':
+          navigate('/pregnancy-tracking');
+          break;
+        case 'menopause':
+          navigate('/menopause-support');
+          break;
+        case 'pcos':
+          navigate('/pcos-management');
+          break;
+        case 'endometriosis':
+          navigate('/endometriosis-care');
+          break;
+        case 'breast-health':
+          navigate('/breast-health');
+          break;
+        case 'mental-health':
+          navigate('/mental-health');
+          break;
+      case 'sexual-health':
+        navigate('/sexual-health');
+        break;
+      case 'pregnancy-tracker':
+        navigate('/pregnancy-tracking');
+        break;
+      case 'menopause-support':
+        navigate('/menopause-support');
+        break;
+      case 'pcos':
+        navigate('/condition-specific');
+        break;
+      case 'endometriosis':
+        navigate('/condition-specific');
+        break;
+      case 'breast-health':
+        navigate('/breast-health');
+        break;
+        default:
+          // For modules not yet implemented, show coming soon modal
+          setShowComingSoonModal(true);
+          break;
+      }
+      
+    } catch (error) {
+      console.error(`Error navigating to ${moduleType} module:`, error);
+    }
+  };
   
+
   const handleDailyLog = (e) => {
     e.preventDefault();
     const logEntry = {
@@ -546,7 +606,60 @@ Format as: "🔍 [Analysis]: [Specific recommendations]"`;
     setAiError(null);
     
     try {
-      // Simple analysis without external engines
+      // Generate AFAB-specific insights if user is AFAB
+      if (isFemale) {
+        console.log('🌸 Generating AFAB-specific insights...');
+        const afabPrompt = `As an expert in AFAB reproductive health, analyze this user's data and provide personalized insights:
+
+User Profile: ${JSON.stringify(onboardingData)}
+Health Logs: ${JSON.stringify(getRecentHealthLogs())}
+
+Provide 3-5 actionable insights focusing on:
+- Menstrual cycle health
+- Fertility awareness
+- Reproductive health conditions
+- Hormonal balance
+- Mental health during cycle phases
+- Preventive care recommendations
+
+Be medically accurate, inclusive, and supportive.`;
+
+        const afabInsights = await aiService.generateHealthInsights(afabPrompt);
+        setAiInsights([afabInsights]);
+        
+        // Generate AFAB-specific alerts
+        const alertPrompt = `Based on this AFAB user's data, identify any urgent health alerts or concerns:
+${JSON.stringify(onboardingData)}
+
+Focus on:
+- Irregular cycle patterns
+- Concerning symptoms
+- Overdue screenings
+- Medication interactions
+- Lifestyle factors affecting reproductive health`;
+
+        const afabAlerts = await aiService.generateHealthAlerts(alertPrompt);
+        setAiAlerts([afabAlerts]);
+        
+        // Generate AFAB-specific reminders
+        const reminderPrompt = `Generate personalized reminders for this AFAB user:
+${JSON.stringify(onboardingData)}
+
+Include:
+- Cycle tracking reminders
+- Screening appointments
+- Medication schedules
+- Lifestyle recommendations
+- Self-care practices`;
+
+        const afabReminders = await aiService.generateHealthReminders(reminderPrompt);
+        setAiReminders([afabReminders]);
+        
+        console.log('✅ AFAB-specific analysis complete');
+        return;
+      }
+      
+      // Original analysis for non-AFAB users
       const combinedAnalysis = {
         timestamp: new Date().toISOString(),
         userData: onboardingData,
@@ -978,6 +1091,7 @@ Return exactly 5 tips, one per line:`;
     ));
   };
 
+
   const renderPersonalProfile = () => (
     <section className="personal-profile">
       <h2>Personal Profile</h2>
@@ -1077,6 +1191,9 @@ Return exactly 5 tips, one per line:`;
     </section>
   );
 
+  // Check if user is AFAB for personalized content
+  const isAFABUser = user?.sexAssignedAtBirth === 'AFAB';
+  
   // Main dashboard content
   const renderDashboardContent = () => {
     return (
@@ -1334,11 +1451,11 @@ Return exactly 5 tips, one per line:`;
                   <p>Track your menstrual cycle and fertility</p>
                   <div className="module-status">
                     <span className="status-dot active"></span>
-                    <span>Last logged: 2 days ago</span>
+                    <span>Click to track your cycle</span>
                   </div>
                 </div>
-                                  <button className="module-action" onClick={() => handleComingSoon('Cycle Tracker')}>
-                   Coming Soon
+                                  <button className="module-action" onClick={() => handleAFABModule('cycle')}>
+                   Track Cycle
                  </button>
               </div>
 
@@ -1351,12 +1468,120 @@ Return exactly 5 tips, one per line:`;
                   <p>Monitor your fertility window and ovulation</p>
                   <div className="module-status">
                     <span className="status-dot warning"></span>
-                    <span>Fertile window: Days 12-16</span>
+                    <span>Click to track fertility signs</span>
                   </div>
                 </div>
-                                  <button className="module-action" onClick={() => handleComingSoon('Fertility Tracker')}>
-                   Coming Soon
+                                  <button className="module-action" onClick={() => handleAFABModule('fertility')}>
+                   Track Fertility
                  </button>
+              </div>
+
+              {/* Pregnancy Tracking */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🤰</span>
+                  <h3>Pregnancy Tracker</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track your pregnancy journey and prenatal care</p>
+                  <div className="module-status">
+                    <span className="status-dot inactive"></span>
+                    <span>Not currently pregnant</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('pregnancy')}>
+                  Track Pregnancy
+                </button>
+              </div>
+
+              {/* Menopause Support */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🍂</span>
+                  <h3>Menopause Support</h3>
+                </div>
+                <div className="module-content">
+                  <p>Manage perimenopause and menopause symptoms</p>
+                  <div className="module-status">
+                    <span className="status-dot inactive"></span>
+                    <span>Pre-menopause</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('menopause')}>
+                  Get Support
+                </button>
+              </div>
+
+              {/* PCOS Management */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🦋</span>
+                  <h3>PCOS Management</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track PCOS symptoms and manage treatment</p>
+                  <div className="module-status">
+                    <span className="status-dot warning"></span>
+                    <span>Monitor symptoms</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('pcos')}>
+                  Manage PCOS
+                </button>
+              </div>
+
+              {/* Endometriosis Care */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🌺</span>
+                  <h3>Endometriosis Care</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track endometriosis symptoms and pain levels</p>
+                  <div className="module-status">
+                    <span className="status-dot inactive"></span>
+                    <span>No diagnosis</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('endometriosis')}>
+                  Track Symptoms
+                </button>
+              </div>
+
+              {/* Breast Health */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🌸</span>
+                  <h3>Breast Health</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track breast health and screening reminders</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Next screening: Due</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('breast-health')}>
+                  Track Health
+                </button>
+              </div>
+
+              {/* Mental Health */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🧠</span>
+                  <h3>Mental Health</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track mood, anxiety, and mental wellness</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Last check: Today</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAFABModule('mental-health')}>
+                  Track Mood
+                </button>
               </div>
             </>
           )}
@@ -1457,18 +1682,18 @@ Return exactly 5 tips, one per line:`;
 
           <div className="module-card">
             <div className="module-header">
-              <span className="module-icon">🧠</span>
-              <h3>Mental Health</h3>
+              <span className="module-icon">💕</span>
+              <h3>Sexual Health</h3>
             </div>
             <div className="module-content">
-              <p>Track your mood and mental well-being</p>
+              <p>Track sexual health, STI screenings, and intimate wellness</p>
               <div className="module-status">
                 <span className="status-dot active"></span>
-                <span>Last check: Today</span>
+                <span>Next screening: Due</span>
               </div>
             </div>
-                              <button className="module-action" onClick={() => handleComingSoon('Mental Health Tracker')}>
-                   Coming Soon
+                              <button className="module-action" onClick={() => handleAFABModule('sexual-health')}>
+                   Track Health
                  </button>
           </div>
         </div>
@@ -1757,6 +1982,7 @@ Return exactly 5 tips, one per line:`;
 
   return (
     <div className="dashboard-container">
+      
       {/* Main Content */}
       <main className="dashboard-main">
         {activeTab === 'dashboard' && renderDashboardContent()}

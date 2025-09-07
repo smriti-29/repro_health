@@ -1,8 +1,8 @@
 // Test AI Insights Integration
 // This file tests the AI insights functionality
 
-import AIServiceManager from '../ai/aiServiceManager.js';
-import { AIReasoningEngine } from '../ai/aiReasoning.js';
+import AIServiceManager from '../ai/aiServiceManager';
+import { AIReasoningEngine } from '../ai/aiReasoning';
 
 export const testAIInsights = async () => {
   console.log('🧪 Testing AI Insights Integration...');

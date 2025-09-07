@@ -1,8 +1,8 @@
 // AI SERVICE MANAGER
 // Manages Gemini Pro as primary with Ollama as fallback
 
-import GeminiService from './geminiService.js';
-import OllamaService from './ollamaService.js';
+import GeminiService from './geminiService';
+import OllamaService from './ollamaService';
 
 class AIServiceManager {
   constructor() {
@@ -12,6 +12,7 @@ class AIServiceManager {
     
     // Determine which service to use
     this.service = this.primaryService.isConfigured() ? this.primaryService : this.fallbackService;
+    this.quotaExceeded = false;
     
     console.log('🤖 AI Service Manager initialized');
     console.log('🔧 Primary provider: Gemini Pro (Google)');
@@ -20,166 +21,113 @@ class AIServiceManager {
     console.log('🔧 Service configured:', this.service.isConfigured());
   }
 
+  // ===== HELPER METHOD FOR FALLBACK LOGIC =====
+  
+  async executeWithFallback(methodName, prompt) {
+    try {
+      return await this.service[methodName](prompt);
+    } catch (error) {
+      console.warn(`⚠️ Primary service failed for ${methodName}, trying fallback:`, error.message);
+      
+      // Check if it's a quota/rate limit error - switch to fallback permanently for this session
+      if (error.message.includes('QUOTA_EXCEEDED') || 
+          error.message.includes('429') || 
+          error.message.includes('quota') || 
+          error.message.includes('exceeded') ||
+          error.message.includes('rate limit') ||
+          error.message.includes('RESOURCE_EXHAUSTED')) {
+        
+        console.warn('🚫 Quota/rate limit exceeded, switching to Ollama fallback for this session');
+        this.service = this.fallbackService;
+        this.quotaExceeded = true;
+        
+        try {
+          return await this.fallbackService[methodName](prompt);
+        } catch (fallbackError) {
+          console.error('❌ Both services failed:', fallbackError.message);
+          throw new Error(`AI services unavailable. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
+        }
+      }
+      
+      // For other errors, try fallback if we're using primary service
+      if (this.service === this.primaryService) {
+        console.warn('🔄 Trying fallback service due to primary service error');
+        try {
+          return await this.fallbackService[methodName](prompt);
+        } catch (fallbackError) {
+          console.error('❌ Both services failed:', fallbackError.message);
+          throw new Error(`AI services unavailable. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
+        }
+      }
+      
+      throw error;
+    }
+  }
+
   // ===== PROXY METHODS WITH FALLBACK =====
   
   async generateHealthInsights(prompt) {
-    try {
-      return await this.service.generateHealthInsights(prompt);
-    } catch (error) {
-      console.warn('⚠️ Primary service failed, trying fallback:', error.message);
-      
-      // Check if it's a quota error (429) - don't retry with same service
-      if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exceeded')) {
-        console.warn('🚫 Quota exceeded, switching to fallback service immediately');
-        if (this.service === this.primaryService) {
-          this.service = this.fallbackService;
-          return await this.fallbackService.generateHealthInsights(prompt);
-        }
-      }
-      
-      if (this.service === this.primaryService) {
-        return await this.fallbackService.generateHealthInsights(prompt);
-      }
-      throw error;
-    }
+    return this.executeWithFallback('generateHealthInsights', prompt);
   }
 
   async generateHealthAlerts(prompt) {
-    try {
-      return await this.service.generateHealthAlerts(prompt);
-    } catch (error) {
-      console.warn('⚠️ Primary service failed, trying fallback:', error.message);
-      
-      // Check if it's a quota error (429) - don't retry with same service
-      if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exceeded')) {
-        console.warn('🚫 Quota exceeded, switching to fallback service immediately');
-        if (this.service === this.primaryService) {
-          this.service = this.fallbackService;
-          return await this.fallbackService.generateHealthAlerts(prompt);
-        }
-      }
-      
-      if (this.service === this.primaryService) {
-        return await this.fallbackService.generateHealthAlerts(prompt);
-      }
-      throw error;
-    }
+    return this.executeWithFallback('generateHealthAlerts', prompt);
   }
 
   async generateHealthReminders(prompt) {
-    try {
-      return await this.service.generateHealthReminders(prompt);
-    } catch (error) {
-      console.warn('⚠️ Primary service failed, trying fallback:', error.message);
-      
-      // Check if it's a quota error (429) - don't retry with same service
-      if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exceeded')) {
-        console.warn('🚫 Quota exceeded, switching to fallback service immediately');
-        if (this.service === this.primaryService) {
-          this.service = this.fallbackService;
-          return await this.fallbackService.generateHealthReminders(prompt);
-        }
-      }
-      
-      if (this.service === this.primaryService) {
-        return await this.fallbackService.generateHealthReminders(prompt);
-      }
-      throw error;
-    }
+    return this.executeWithFallback('generateHealthReminders', prompt);
   }
 
   async generateHealthTips(prompt) {
-    try {
-      return await this.service.generateHealthTips(prompt);
-    } catch (error) {
-      console.warn('⚠️ Primary service failed, trying fallback:', error.message);
-      
-      // Check if it's a quota error (429) - don't retry with same service
-      if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exceeded')) {
-        console.warn('🚫 Quota exceeded, switching to fallback service immediately');
-        if (this.service === this.primaryService) {
-          this.service = this.fallbackService;
-          return await this.fallbackService.generateHealthTips(prompt);
-        }
-      }
-      
-      if (this.service === this.primaryService) {
-        return await this.fallbackService.generateHealthTips(prompt);
-      }
-      throw error;
-    }
+    return this.executeWithFallback('generateHealthTips', prompt);
   }
 
-  async generateSymptomAnalysis(prompt) {
-    try {
-      return await this.service.generateSymptomAnalysis(prompt);
-    } catch (error) {
-      console.warn('⚠️ Primary service failed, trying fallback:', error.message);
-      if (this.service === this.primaryService) {
-        return await this.fallbackService.generateSymptomAnalysis(prompt);
-      }
-      throw error;
-    }
-  }
-
-  // ===== NEW AFAB-SPECIFIC METHODS =====
+  // ===== HEALTH CHECK =====
   
-  async generateCycleAnalysis(cycleData) {
-    return await this.service.generateCycleAnalysis(cycleData);
-  }
-
-  async generateFertilityInsights(fertilityData) {
-    return await this.service.generateFertilityInsights(fertilityData);
-  }
-
-  // ===== UTILITY METHODS =====
-  
-  getModelInfo() {
-    return this.service.getModelInfo();
-  }
-
-  isConfigured() {
-    return this.service.isConfigured();
-  }
-
-  getCurrentProvider() {
-    return this.service === this.primaryService ? 'gemini' : 'ollama';
-  }
-
   async healthCheck() {
     try {
-      // Test primary service first
-      if (this.service === this.primaryService) {
-        return { 
-          status: 'healthy', 
-          provider: 'Gemini Pro', 
-          message: 'Gemini Pro API is configured and ready',
-          fallback: 'Ollama available as backup'
-        };
-      } else {
-        // Test fallback service
-        const response = await fetch('http://localhost:11434/api/tags');
-        if (response.ok) {
-          return { 
-            status: 'healthy', 
-            provider: 'Ollama', 
-            message: 'Local LLM is running (Gemini not configured)',
-            fallback: 'Gemini Pro not configured'
-          };
-        } else {
-          return { 
-            status: 'unhealthy', 
-            provider: 'Ollama', 
-            message: 'Ollama service not responding' 
-          };
-        }
-      }
-    } catch (error) {
-      return { 
-        status: 'unhealthy', 
-        provider: this.getCurrentProvider(), 
-        message: 'AI service not accessible' 
+      const primaryHealth = await this.primaryService.healthCheck();
+      const fallbackHealth = await this.fallbackService.healthCheck();
+      
+      return {
+        primary: primaryHealth,
+        fallback: fallbackHealth,
+        activeService: this.service.constructor.name,
+        quotaExceeded: this.quotaExceeded,
+        configured: primaryHealth.configured || fallbackHealth.configured
       };
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return {
+        primary: { configured: false, error: error.message },
+        fallback: { configured: false, error: error.message },
+        activeService: 'Unknown',
+        quotaExceeded: this.quotaExceeded,
+        configured: false
+      };
+    }
+  }
+
+  // ===== SERVICE STATUS =====
+  
+  getServiceStatus() {
+    return {
+      activeService: this.service.constructor.name,
+      primaryConfigured: this.primaryService.isConfigured(),
+      fallbackConfigured: this.fallbackService.isConfigured(),
+      quotaExceeded: this.quotaExceeded
+    };
+  }
+
+  // ===== RESET SERVICE (for testing) =====
+  
+  resetToPrimary() {
+    if (this.primaryService.isConfigured()) {
+      this.service = this.primaryService;
+      this.quotaExceeded = false;
+      console.log('🔄 Reset to primary service (Gemini Pro)');
+    } else {
+      console.warn('⚠️ Cannot reset to primary service - not configured');
     }
   }
 }

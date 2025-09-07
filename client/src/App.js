@@ -13,6 +13,13 @@ import LogSymptoms from './pages/LogSymptoms';
 import Insights from './pages/Insights';
 import Medications from './pages/Medications';
 import TestLogin from './pages/TestLogin';
+import CycleTracking from './pages/CycleTracking';
+import FertilityTracking from './pages/FertilityTracking';
+import SexualHealth from './pages/SexualHealth';
+import PregnancyTracking from './pages/PregnancyTracking';
+import MenopauseSupport from './pages/MenopauseSupport';
+import ConditionSpecific from './pages/ConditionSpecific';
+import BreastHealth from './pages/BreastHealth';
 
 import './App.css';
 
@@ -56,6 +63,15 @@ const AppRoutes = () => {
               <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
               <Route path="/medications" element={<ProtectedRoute><Medications /></ProtectedRoute>} />
               <Route path="/test-login" element={<TestLogin />} />
+              
+              {/* AFAB Module Routes */}
+              <Route path="/cycle-tracking" element={<ProtectedRoute><CycleTracking /></ProtectedRoute>} />
+              <Route path="/fertility-tracking" element={<ProtectedRoute><FertilityTracking /></ProtectedRoute>} />
+              <Route path="/sexual-health" element={<ProtectedRoute><SexualHealth /></ProtectedRoute>} />
+              <Route path="/pregnancy-tracking" element={<ProtectedRoute><PregnancyTracking /></ProtectedRoute>} />
+              <Route path="/menopause-support" element={<ProtectedRoute><MenopauseSupport /></ProtectedRoute>} />
+              <Route path="/condition-specific" element={<ProtectedRoute><ConditionSpecific /></ProtectedRoute>} />
+              <Route path="/breast-health" element={<ProtectedRoute><BreastHealth /></ProtectedRoute>} />
             </Routes>
           </div>
         </Router>

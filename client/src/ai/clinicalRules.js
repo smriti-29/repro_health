@@ -438,4 +438,315 @@ export const TREATMENT_RECOMMENDATIONS = {
   }
 };
 
+// ===== AFAB-SPECIFIC CLINICAL RULES =====
+export const AFAB_CLINICAL_RULES = {
+  // Cycle-related rules
+  cycleRules: {
+    irregularCycles: {
+      condition: 'Irregular cycles',
+      criteria: 'Cycle length varies by more than 7 days',
+      riskFactors: ['PCOS', 'thyroid_disorders', 'stress', 'weight_changes'],
+      recommendations: ['hormone_testing', 'thyroid_function', 'stress_management'],
+      urgency: 'medium'
+    },
+    
+    heavyBleeding: {
+      condition: 'Heavy menstrual bleeding',
+      criteria: 'Soaking through pad/tampon every 2 hours or less',
+      riskFactors: ['fibroids', 'adenomyosis', 'hormonal_imbalance', 'bleeding_disorders'],
+      recommendations: ['iron_levels', 'ultrasound', 'hormone_testing'],
+      urgency: 'high'
+    },
+    
+    severeCramps: {
+      condition: 'Severe menstrual cramps',
+      criteria: 'Pain that interferes with daily activities',
+      riskFactors: ['endometriosis', 'adenomyosis', 'fibroids', 'pelvic_inflammatory_disease'],
+      recommendations: ['pain_assessment', 'ultrasound', 'laparoscopy_consideration'],
+      urgency: 'medium'
+    },
+    
+    missedPeriods: {
+      condition: 'Missed periods',
+      criteria: 'No period for 3+ months (not pregnant)',
+      riskFactors: ['PCOS', 'thyroid_disorders', 'stress', 'eating_disorders'],
+      recommendations: ['pregnancy_test', 'hormone_testing', 'thyroid_function'],
+      urgency: 'high'
+    }
+  },
+  
+  // Fertility-related rules
+  fertilityRules: {
+    ttcOver35: {
+      condition: 'Trying to conceive over 35',
+      criteria: 'Age 35+ and actively trying to conceive',
+      riskFactors: ['advanced_maternal_age', 'decreased_fertility', 'chromosomal_abnormalities'],
+      recommendations: ['fertility_evaluation', 'genetic_counseling', 'enhanced_monitoring'],
+      urgency: 'medium'
+    },
+    
+    ttcOver40: {
+      condition: 'Trying to conceive over 40',
+      criteria: 'Age 40+ and actively trying to conceive',
+      riskFactors: ['very_advanced_maternal_age', 'significantly_decreased_fertility'],
+      recommendations: ['immediate_fertility_evaluation', 'genetic_counseling', 'fertility_treatment_consideration'],
+      urgency: 'high'
+    },
+    
+    irregularOvulation: {
+      condition: 'Irregular ovulation',
+      criteria: 'Inconsistent ovulation patterns',
+      riskFactors: ['PCOS', 'thyroid_disorders', 'stress', 'weight_issues'],
+      recommendations: ['ovulation_tracking', 'hormone_testing', 'lifestyle_modifications'],
+      urgency: 'medium'
+    }
+  },
+  
+  // Pregnancy-related rules
+  pregnancyRules: {
+    highRiskPregnancy: {
+      condition: 'High-risk pregnancy',
+      criteria: 'Age 35+, medical conditions, or pregnancy complications',
+      riskFactors: ['advanced_maternal_age', 'PCOS', 'endometriosis', 'diabetes', 'hypertension'],
+      recommendations: ['high_risk_obstetrician', 'enhanced_monitoring', 'genetic_counseling'],
+      urgency: 'high'
+    },
+    
+    gestationalDiabetes: {
+      condition: 'Gestational diabetes risk',
+      criteria: 'PCOS, family history, or previous gestational diabetes',
+      riskFactors: ['PCOS', 'family_history_diabetes', 'previous_gestational_diabetes', 'obesity'],
+      recommendations: ['early_glucose_screening', 'diet_counseling', 'blood_sugar_monitoring'],
+      urgency: 'medium'
+    },
+    
+    preeclampsia: {
+      condition: 'Preeclampsia risk',
+      criteria: 'Previous preeclampsia, chronic hypertension, or other risk factors',
+      riskFactors: ['previous_preeclampsia', 'chronic_hypertension', 'diabetes', 'kidney_disease'],
+      recommendations: ['blood_pressure_monitoring', 'protein_screening', 'enhanced_monitoring'],
+      urgency: 'high'
+    }
+  },
+  
+  // Menopause-related rules
+  menopauseRules: {
+    earlyMenopause: {
+      condition: 'Early menopause',
+      criteria: 'Menopause before age 40',
+      riskFactors: ['genetic_factors', 'autoimmune_conditions', 'surgical_menopause'],
+      recommendations: ['hormone_replacement_therapy', 'bone_density_testing', 'cardiovascular_monitoring'],
+      urgency: 'high'
+    },
+    
+    severeMenopauseSymptoms: {
+      condition: 'Severe menopause symptoms',
+      criteria: 'Severe hot flashes, night sweats, or mood changes',
+      riskFactors: ['rapid_hormone_decline', 'stress', 'lifestyle_factors'],
+      recommendations: ['hormone_replacement_therapy', 'symptom_management', 'lifestyle_modifications'],
+      urgency: 'medium'
+    },
+    
+    osteoporosisRisk: {
+      condition: 'Osteoporosis risk',
+      criteria: 'Post-menopause, family history, or other risk factors',
+      riskFactors: ['post_menopause', 'family_history', 'low_calcium_intake', 'sedentary_lifestyle'],
+      recommendations: ['bone_density_testing', 'calcium_supplementation', 'weight_bearing_exercise'],
+      urgency: 'medium'
+    }
+  },
+  
+  // Condition-specific rules
+  conditionRules: {
+    PCOS: {
+      condition: 'PCOS management',
+      criteria: 'Diagnosed PCOS or suspected based on symptoms',
+      riskFactors: ['insulin_resistance', 'weight_gain', 'irregular_cycles', 'infertility'],
+      recommendations: ['glucose_testing', 'insulin_testing', 'weight_management', 'metformin_consideration'],
+      urgency: 'medium'
+    },
+    
+    endometriosis: {
+      condition: 'Endometriosis management',
+      criteria: 'Diagnosed endometriosis or suspected based on symptoms',
+      riskFactors: ['severe_pain', 'infertility', 'adhesions', 'ovarian_cysts'],
+      recommendations: ['pain_management', 'hormone_therapy', 'surgical_consideration', 'fertility_preservation'],
+      urgency: 'medium'
+    },
+    
+    fibroids: {
+      condition: 'Fibroid management',
+      criteria: 'Diagnosed fibroids or suspected based on symptoms',
+      riskFactors: ['heavy_bleeding', 'pelvic_pressure', 'infertility', 'pregnancy_complications'],
+      recommendations: ['ultrasound_monitoring', 'symptom_management', 'surgical_consideration'],
+      urgency: 'medium'
+    }
+  }
+};
+
+// ===== AFAB SCREENING PROTOCOLS =====
+export const AFAB_SCREENING_PROTOCOLS = {
+  // Age-based screening schedules
+  ageBased: {
+    '13-17': {
+      screenings: ['annual_physical', 'puberty_assessment', 'nutrition_evaluation'],
+      frequency: 'annual',
+      notes: 'Focus on puberty development and cycle establishment'
+    },
+    
+    '18-20': {
+      screenings: ['annual_physical', 'STI_testing', 'contraception_counseling'],
+      frequency: 'annual',
+      notes: 'Focus on sexual health and contraception'
+    },
+    
+    '21-29': {
+      screenings: ['pap_smear_every_3_years', 'annual_physical', 'STI_testing'],
+      frequency: 'pap_smear_every_3_years',
+      notes: 'Begin cervical cancer screening'
+    },
+    
+    '30-65': {
+      screenings: ['pap_smear_every_3_years', 'HPV_testing_every_5_years', 'annual_physical'],
+      frequency: 'pap_smear_every_3_years',
+      notes: 'Continue cervical cancer screening with HPV testing'
+    },
+    
+    '40+': {
+      screenings: ['mammogram_every_1_2_years', 'annual_physical', 'blood_pressure'],
+      frequency: 'mammogram_every_1_2_years',
+      notes: 'Begin breast cancer screening'
+    },
+    
+    '50+': {
+      screenings: ['colonoscopy_every_10_years', 'bone_density_test', 'annual_physical'],
+      frequency: 'colonoscopy_every_10_years',
+      notes: 'Begin colorectal cancer screening and bone health monitoring'
+    },
+    
+    '65+': {
+      screenings: ['annual_health_assessment', 'fall_risk_assessment', 'cognitive_screening'],
+      frequency: 'annual',
+      notes: 'Comprehensive geriatric assessment'
+    }
+  },
+  
+  // Condition-specific screening
+  conditionSpecific: {
+    PCOS: {
+      screenings: ['glucose_test', 'insulin_test', 'lipid_panel', 'ultrasound'],
+      frequency: 'annual',
+      notes: 'Monitor for diabetes and cardiovascular risk'
+    },
+    
+    endometriosis: {
+      screenings: ['ultrasound', 'MRI', 'CA125_test'],
+      frequency: 'as_needed',
+      notes: 'Monitor for progression and complications'
+    },
+    
+    fibroids: {
+      screenings: ['ultrasound', 'MRI'],
+      frequency: 'annual',
+      notes: 'Monitor size and symptoms'
+    },
+    
+    pregnancy: {
+      screenings: ['prenatal_vitamins', 'ultrasound', 'blood_tests', 'glucose_screening'],
+      frequency: 'monthly',
+      notes: 'Comprehensive prenatal care'
+    }
+  }
+};
+
+// ===== AFAB MEDICATION RULES =====
+export const AFAB_MEDICATION_RULES = {
+  // Birth control rules
+  birthControl: {
+    contraindications: {
+      smoking_over_35: {
+        condition: 'Smoking and age 35+',
+        risk: 'Increased risk of blood clots and stroke',
+        recommendation: 'Consider non-hormonal methods or smoking cessation'
+      },
+      
+      hypertension: {
+        condition: 'High blood pressure',
+        risk: 'Increased cardiovascular risk',
+        recommendation: 'Consider non-hormonal methods or blood pressure control'
+      },
+      
+      migraines_with_aura: {
+        condition: 'Migraines with aura',
+        risk: 'Increased stroke risk',
+        recommendation: 'Avoid estrogen-containing methods'
+      }
+    },
+    
+    sideEffects: {
+      breakthrough_bleeding: {
+        symptom: 'Breakthrough bleeding',
+        duration: '3-6 months',
+        action: 'Continue method, bleeding should improve',
+        concern: 'If persistent beyond 6 months, consider method change'
+      },
+      
+      mood_changes: {
+        symptom: 'Mood changes or depression',
+        duration: '1-3 months',
+        action: 'Monitor mood, consider method change if severe',
+        concern: 'If severe or persistent, discontinue method'
+      }
+    }
+  },
+  
+  // Hormone therapy rules
+  hormoneTherapy: {
+    indications: {
+      severe_hot_flashes: {
+        condition: 'Severe hot flashes',
+        recommendation: 'Consider hormone therapy if symptoms are severe',
+        duration: 'Short-term use preferred'
+      },
+      
+      early_menopause: {
+        condition: 'Early menopause',
+        recommendation: 'Hormone therapy until natural menopause age',
+        duration: 'Until age 51-52'
+      }
+    },
+    
+    contraindications: {
+      breast_cancer: {
+        condition: 'History of breast cancer',
+        risk: 'Increased recurrence risk',
+        recommendation: 'Avoid hormone therapy'
+      },
+      
+      blood_clots: {
+        condition: 'History of blood clots',
+        risk: 'Increased clotting risk',
+        recommendation: 'Avoid oral hormone therapy'
+      }
+    }
+  },
+  
+  // Fertility medication rules
+  fertilityMedications: {
+    clomiphene: {
+      indication: 'Ovulation induction',
+      monitoring: ['ovulation', 'ovarian_size', 'pregnancy_tests'],
+      risks: ['multiple_pregnancies', 'ovarian_hyperstimulation'],
+      duration: 'Maximum 6 cycles'
+    },
+    
+    metformin: {
+      indication: 'PCOS and insulin resistance',
+      monitoring: ['blood_sugar', 'kidney_function', 'vitamin_b12'],
+      risks: ['gastrointestinal_side_effects', 'lactic_acidosis'],
+      duration: 'Long-term if effective'
+    }
+  }
+};
+
 export default MEDICAL_KNOWLEDGE_BASE;

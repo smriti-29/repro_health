@@ -1,0 +1,615 @@
+/* CONDITION-SPECIFIC CARE STYLES */
+/* Beautiful and intuitive condition-specific care interface */
+
+.condition-specific-care {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  min-height: 100vh;
+}
+
+/* Header */
+.condition-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 30px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.condition-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.condition-header p {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+/* Content Sections */
+.condition-content {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.condition-selection-section,
+.condition-tracking-section,
+.ai-insights-section {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.condition-selection-section h2,
+.condition-tracking-section h2,
+.ai-insights-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.condition-selection-section h2::before {
+  content: '🏥';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.condition-tracking-section h2::before {
+  content: '📊';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+.ai-insights-section h2::before {
+  content: '🤖';
+  margin-right: 10px;
+  font-size: 1.25rem;
+}
+
+/* Condition Grid */
+.condition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.condition-card {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 25px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.condition-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.condition-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border-color: #c7d2fe;
+}
+
+.condition-card:hover::before {
+  transform: scaleX(1);
+}
+
+.condition-card.selected {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -5px rgba(99, 102, 241, 0.3);
+}
+
+.condition-card.selected::before {
+  transform: scaleX(1);
+}
+
+.condition-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.condition-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 5px;
+}
+
+.condition-full-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4338ca;
+  margin-bottom: 10px;
+}
+
+.condition-description {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Condition Tracking Sections */
+.symptoms-section,
+.medications-section,
+.lifestyle-section,
+.monitoring-section,
+.concerns-section,
+.save-section {
+  margin-bottom: 25px;
+}
+
+.symptoms-section h3,
+.medications-section h3,
+.lifestyle-section h3,
+.monitoring-section h3,
+.concerns-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.symptoms-section h3::before {
+  content: '🤒';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.medications-section h3::before {
+  content: '💊';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.lifestyle-section h3::before {
+  content: '🏃‍♀️';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.monitoring-section h3::before {
+  content: '📊';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.concerns-section h3::before {
+  content: '❓';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+/* Symptoms, Medications, and Lifestyle Grids */
+.symptoms-grid,
+.medications-grid,
+.lifestyle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.symptom-option,
+.medication-option,
+.lifestyle-option {
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.symptom-option:hover,
+.medication-option:hover,
+.lifestyle-option:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+.symptom-option.selected,
+.medication-option.selected,
+.lifestyle-option.selected {
+  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  border-color: #6366f1;
+  color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Monitoring List */
+.monitoring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.monitoring-item {
+  display: flex;
+  align-items: flex-start;
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 3px solid #6366f1;
+}
+
+.monitoring-icon {
+  font-size: 1.125rem;
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.monitoring-text {
+  color: #374151;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Concerns Textarea */
+.concerns-textarea {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #374151;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.concerns-textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.concerns-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Save Button */
+.save-section {
+  text-align: center;
+}
+
+.save-condition-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 25px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.save-condition-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.save-condition-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.error-message p {
+  color: #dc2626;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* AI Insights */
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.condition-insights,
+.condition-recommendations {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #6366f1;
+}
+
+.condition-insights h3,
+.condition-recommendations h3 {
+  color: #4338ca;
+  margin-bottom: 15px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 3px solid #6366f1;
+}
+
+.recommendation-icon {
+  font-size: 1.125rem;
+  margin-right: 12px;
+  margin-top: 2px;
+}
+
+.recommendation-text {
+  color: #374151;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .condition-specific-care {
+    padding: 15px;
+  }
+  
+  .condition-header {
+    padding: 20px;
+  }
+  
+  .condition-header h1 {
+    font-size: 2rem;
+  }
+  
+  .condition-header p {
+    font-size: 1rem;
+  }
+  
+  .condition-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .symptoms-grid,
+  .medications-grid,
+  .lifestyle-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .condition-selection-section,
+  .condition-tracking-section,
+  .ai-insights-section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .condition-specific-care {
+    padding: 10px;
+  }
+  
+  .condition-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .condition-header p {
+    font-size: 0.9rem;
+  }
+  
+  .condition-card {
+    padding: 20px;
+  }
+  
+  .condition-icon {
+    font-size: 2.5rem;
+  }
+  
+  .condition-name {
+    font-size: 1.125rem;
+  }
+  
+  .condition-full-name {
+    font-size: 0.9rem;
+  }
+  
+  .condition-description {
+    font-size: 0.85rem;
+  }
+  
+  .symptoms-grid,
+  .medications-grid,
+  .lifestyle-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .symptom-option,
+  .medication-option,
+  .lifestyle-option {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  
+  .save-condition-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .condition-card,
+  .symptom-option,
+  .medication-option,
+  .lifestyle-option,
+  .save-condition-btn {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .condition-card {
+    border-width: 3px;
+  }
+  
+  .symptom-option,
+  .medication-option,
+  .lifestyle-option {
+    border-width: 3px;
+  }
+  
+  .monitoring-item,
+  .recommendation-item {
+    border-left-width: 5px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .condition-specific-care {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #f9fafb;
+  }
+  
+  .condition-header,
+  .condition-selection-section,
+  .condition-tracking-section,
+  .ai-insights-section {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .condition-header h1 {
+    color: #f9fafb;
+  }
+  
+  .condition-header p {
+    color: #d1d5db;
+  }
+  
+  .condition-card {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .condition-card:hover {
+    border-color: #9ca3af;
+  }
+  
+  .condition-card.selected {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-color: #6366f1;
+  }
+  
+  .condition-name {
+    color: #f9fafb;
+  }
+  
+  .condition-full-name {
+    color: #c7d2fe;
+  }
+  
+  .condition-description {
+    color: #d1d5db;
+  }
+  
+  .concerns-textarea {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .concerns-textarea:focus {
+    border-color: #6366f1;
+  }
+  
+  .symptom-option,
+  .medication-option,
+  .lifestyle-option {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+  
+  .symptom-option:hover,
+  .medication-option:hover,
+  .lifestyle-option:hover {
+    border-color: #9ca3af;
+  }
+  
+  .symptom-option.selected,
+  .medication-option.selected,
+  .lifestyle-option.selected {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-color: #6366f1;
+  }
+  
+  .monitoring-item {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .condition-insights,
+  .condition-recommendations {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .recommendation-item {
+    background: #374151;
+    color: #f9fafb;
+  }
+}
