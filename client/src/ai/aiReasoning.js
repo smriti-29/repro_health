@@ -534,6 +534,201 @@ export class AIReasoningEngine {
     
     return 'Due soon';
   }
+
+  // ===== DASHBOARD INSIGHTS GENERATION =====
+  
+  async generateDashboardInsights(userData) {
+    console.log('🔍 generateDashboardInsights called with:', userData);
+    
+    try {
+      // Extract user context from onboarding and health data
+      const userContext = this.extractUserContext(userData);
+      
+      // Generate comprehensive health analysis
+      const healthAnalysis = this.analyzeUserHealth(userContext);
+      
+      // Calculate personalized health score
+      const healthScore = this.calculatePersonalizedHealthScore(userContext);
+      
+      // Generate insights based on available data
+      const insights = this.generateContextualInsights(userContext, healthAnalysis);
+      
+      return {
+        healthScore: healthScore.score,
+        healthLevel: healthScore.level,
+        insights: insights,
+        analysis: healthAnalysis,
+        userContext: userContext,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('❌ Error generating dashboard insights:', error);
+      return {
+        healthScore: 75,
+        healthLevel: 'Good',
+        insights: [{
+          title: 'AI Analysis Error',
+          description: 'Unable to generate insights at this time. Please try again.',
+          priority: 'low',
+          clinicalReasoning: 'Technical error in AI analysis system'
+        }],
+        analysis: null,
+        userContext: null,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  // ===== USER CONTEXT EXTRACTION =====
+  
+  extractUserContext(userData) {
+    const context = {
+      // Basic profile
+      age: this.calculateAge(userData.dateOfBirth),
+      genderIdentity: userData.genderIdentity || 'Not specified',
+      weight: userData.weight || null,
+      
+      // Health conditions
+      chronicConditions: userData.chronicConditions || [],
+      mentalHealthConditions: userData.mentalHealthConditions || [],
+      currentMedications: userData.currentMedications || [],
+      
+      // Lifestyle factors
+      lifestyle: {
+        exerciseFrequency: userData.lifestyle?.exerciseFrequency || 'Not specified',
+        diet: userData.lifestyle?.diet || 'Not specified',
+        sleepQuality: userData.lifestyle?.sleepQuality || 'Not specified',
+        stressLevel: userData.lifestyle?.stressLevel || 'Not specified',
+        tobaccoUse: userData.lifestyle?.tobaccoUse || 'No',
+        alcoholUse: userData.lifestyle?.alcoholUse || 'Not specified'
+      },
+      
+      // Reproductive health
+      reproductiveHealth: userData.reproductiveHealth || {},
+      reproductiveAnatomy: userData.reproductiveAnatomy || [],
+      
+      // Health goals
+      healthGoals: userData.healthGoals || [],
+      
+      // Recent health logs
+      recentHealthLogs: userData.healthLogs || [],
+      
+      // Current concerns
+      currentConcerns: userData.currentConcerns || []
+    };
+    
+    return context;
+  }
+
+  // ===== CONTEXTUAL INSIGHTS GENERATION =====
+  
+  generateContextualInsights(userContext, healthAnalysis) {
+    const insights = [];
+    
+    // Age-based insights
+    if (userContext.age) {
+      if (userContext.age < 25) {
+        insights.push({
+          title: 'Young Adult Health Focus',
+          description: 'Focus on establishing healthy habits and preventive care for long-term health.',
+          priority: 'medium',
+          clinicalReasoning: 'Early adulthood is crucial for establishing lifelong health patterns'
+        });
+      } else if (userContext.age >= 25 && userContext.age < 40) {
+        insights.push({
+          title: 'Prime Health Years',
+          description: 'Maintain active lifestyle and regular health screenings to prevent future issues.',
+          priority: 'medium',
+          clinicalReasoning: 'Prime years for preventive care and lifestyle optimization'
+        });
+      } else if (userContext.age >= 40) {
+        insights.push({
+          title: 'Enhanced Health Monitoring',
+          description: 'Regular health screenings and monitoring become increasingly important.',
+          priority: 'high',
+          clinicalReasoning: 'Age-related health risks increase, requiring more frequent monitoring'
+        });
+      }
+    }
+    
+    // Condition-based insights
+    if (userContext.chronicConditions.length > 0) {
+      insights.push({
+        title: 'Chronic Condition Management',
+        description: `Active management of ${userContext.chronicConditions.length} chronic condition(s) is essential for optimal health.`,
+        priority: 'high',
+        clinicalReasoning: 'Chronic conditions require ongoing monitoring and management'
+      });
+    }
+    
+    // Lifestyle insights
+    if (userContext.lifestyle.exerciseFrequency === 'sedentary') {
+      insights.push({
+        title: 'Physical Activity Recommendation',
+        description: 'Gradual increase in physical activity can significantly improve health outcomes.',
+        priority: 'high',
+        clinicalReasoning: 'Sedentary lifestyle increases risk of multiple health conditions'
+      });
+    }
+    
+    if (userContext.lifestyle.stressLevel === 'high') {
+      insights.push({
+        title: 'Stress Management Priority',
+        description: 'High stress levels require immediate attention through stress reduction techniques.',
+        priority: 'high',
+        clinicalReasoning: 'Chronic stress negatively impacts both physical and mental health'
+      });
+    }
+    
+    // Mental health insights
+    if (userContext.mentalHealthConditions.length > 0) {
+      insights.push({
+        title: 'Mental Health Support',
+        description: 'Regular mental health monitoring and support are important for overall wellbeing.',
+        priority: 'high',
+        clinicalReasoning: 'Mental health conditions require ongoing care and monitoring'
+      });
+    }
+    
+    // Reproductive health insights
+    if (userContext.reproductiveAnatomy.length > 0) {
+      insights.push({
+        title: 'Reproductive Health Monitoring',
+        description: 'Regular reproductive health screenings and monitoring are recommended.',
+        priority: 'medium',
+        clinicalReasoning: 'Reproductive health is an important aspect of overall health'
+      });
+    }
+    
+    // Health logging insights
+    if (userContext.recentHealthLogs.length === 0) {
+      insights.push({
+        title: 'Start Health Logging',
+        description: 'Begin tracking daily health metrics to get personalized insights.',
+        priority: 'medium',
+        clinicalReasoning: 'Health logging provides data for personalized recommendations'
+      });
+    } else if (userContext.recentHealthLogs.length > 0) {
+      insights.push({
+        title: 'Health Pattern Analysis',
+        description: 'Continue logging health data to identify patterns and trends.',
+        priority: 'low',
+        clinicalReasoning: 'Consistent health logging enables pattern recognition and personalized insights'
+      });
+    }
+    
+    // Ensure we have at least 5 insights
+    while (insights.length < 5) {
+      insights.push({
+        title: 'General Health Optimization',
+        description: 'Focus on balanced nutrition, regular exercise, and adequate sleep for optimal health.',
+        priority: 'low',
+        clinicalReasoning: 'Basic health principles apply to all individuals'
+      });
+    }
+    
+    return insights.slice(0, 5); // Return exactly 5 insights
+  }
 }
 
 export default AIReasoningEngine;

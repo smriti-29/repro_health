@@ -38,7 +38,7 @@ const Register = () => {
   // Clear auth error when component mounts
   useEffect(() => {
     clearError();
-  }, []);
+  }, [clearError]);
 
   const validateStep1 = () => {
     const newErrors = {};

@@ -25,13 +25,13 @@ const TestLogin = () => {
     setTestResult('Running tests...\n');
     
     // Test 1: Valid credentials
-    const test1 = await testLogin('puja.smriti@gmail.com', 'password123');
+    await testLogin('puja.smriti@gmail.com', 'password123');
     
     // Test 2: Invalid credentials
-    const test2 = await testLogin('invalid@email.com', 'wrongpassword');
+    await testLogin('invalid@email.com', 'wrongpassword');
     
     // Test 3: Valid email, wrong password
-    const test3 = await testLogin('puja.smriti@gmail.com', 'wrongpassword');
+    await testLogin('puja.smriti@gmail.com', 'wrongpassword');
     
     setTestResult(prev => prev + '\nAll tests completed. Check console for details.');
   };

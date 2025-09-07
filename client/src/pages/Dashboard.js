@@ -172,7 +172,7 @@ const Dashboard = () => {
   };
   
   const getDaysActive = () => {
-      const healthLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
+    const healthLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
     const uniqueDays = new Set(healthLogs.map(log => log.timestamp.split('T')[0])).size;
     return uniqueDays || 0;
   };
@@ -613,9 +613,9 @@ Format as: "🔍 [Analysis]: [Specific recommendations]"`;
     
     console.log('📊 User data for insights:', { age, gender, conditions, lifestyle, mentalHealth, reproductive, medications, recentLogs });
     
-    // Using Ollama (Local, Free LLM) for real AI insights
+    // Using Gemini Pro for real AI insights
     try {
-      console.log('🤖 Using Ollama for real AI insights...');
+      console.log('🤖 Using Gemini Pro for real AI insights...');
       const prompt = `Generate 5 personalized health insights for this user profile. Be medically accurate, inclusive, and actionable.
         
 User Profile:
@@ -644,15 +644,15 @@ Return exactly 5 insights, one per line:`;
 
       const response = await aiService.generateHealthInsights(prompt);
       if (response && response.length > 0) {
-        console.log('✅ Ollama insights received:', response);
+        console.log('✅ Gemini insights received:', response);
         return response.slice(0, 5);
       } else {
-        throw new Error('Ollama returned empty response');
+        throw new Error('Gemini returned empty response');
       }
     } catch (error) {
-      console.error('❌ Ollama API failed:', error);
+      console.error('❌ Gemini API failed:', error);
       // Return error message instead of hardcoded fallbacks
-      return [`AI Analysis Error: Unable to generate insights. Please check if Ollama is running and try again. Error: ${error.message}`];
+      return [`AI Analysis Error: Unable to generate insights. Please check your Gemini API key and try again. Error: ${error.message}`];
     }
 
   };
@@ -660,13 +660,13 @@ Return exactly 5 insights, one per line:`;
   const extractAIAlerts = async (analysis) => {
     console.log('🚨 extractAIAlerts called with:', analysis);
     
-    // Using Ollama (Local, Free LLM) for real AI alerts
+    // Using Gemini Pro for real AI alerts
     try {
       if (!onboardingData || Object.keys(onboardingData).length === 0) {
         return ['Complete your health profile to receive personalized AI alerts.'];
       }
       
-      console.log('🤖 Using Ollama for real AI alerts...');
+      console.log('🤖 Using Gemini Pro for real AI alerts...');
       const age = calculateAge(onboardingData?.dateOfBirth);
       const gender = onboardingData?.genderIdentity;
       const conditions = onboardingData?.chronicConditions || [];
@@ -698,27 +698,27 @@ Return 3-5 alerts, one per line:`;
 
       const response = await aiService.generateHealthAlerts(prompt);
       if (response && response.length > 0) {
-        console.log('✅ Ollama alerts received:', response);
+        console.log('✅ Gemini alerts received:', response);
         return response.slice(0, 5);
       } else {
-        throw new Error('Ollama returned empty response');
+        throw new Error('Gemini returned empty response');
       }
     } catch (error) {
-      console.error('❌ Ollama API failed for alerts:', error);
-      return [`AI Analysis Error: Unable to generate alerts. Please check if Ollama is running and try again. Error: ${error.message}`];
+      console.error('❌ Gemini API failed for alerts:', error);
+      return [`AI Analysis Error: Unable to generate alerts. Please check your Gemini API key and try again. Error: ${error.message}`];
     }
   };
 
   const extractAIReminders = async (analysis) => {
     console.log('⏰ extractAIReminders called with:', analysis);
     
-    // Using Ollama (Local, Free LLM) for real AI reminders
+    // Using Gemini Pro for real AI reminders
     try {
       if (!onboardingData || Object.keys(onboardingData).length === 0) {
         return ['Complete your health profile to receive personalized reminders and screening recommendations.'];
       }
       
-      console.log('🤖 Using Ollama for real AI reminders...');
+      console.log('🤖 Using Gemini Pro for real AI reminders...');
       const age = calculateAge(onboardingData?.dateOfBirth);
       const gender = onboardingData?.genderIdentity;
       const conditions = onboardingData?.chronicConditions || [];
@@ -754,27 +754,27 @@ Return exactly 5 reminders, one per line:`;
 
       const response = await aiService.generateHealthReminders(prompt);
       if (response && response.length > 0) {
-        console.log('✅ Ollama reminders received:', response);
+        console.log('✅ Gemini reminders received:', response);
         return response.slice(0, 5);
       } else {
-        throw new Error('Ollama returned empty response');
+        throw new Error('Gemini returned empty response');
       }
     } catch (error) {
-      console.error('❌ Ollama API failed for reminders:', error);
-      return [`AI Analysis Error: Unable to generate reminders. Please check if Ollama is running and try again. Error: ${error.message}`];
+      console.error('❌ Gemini API failed for reminders:', error);
+      return [`AI Analysis Error: Unable to generate reminders. Please check your Gemini API key and try again. Error: ${error.message}`];
     }
   };
 
   const extractAITips = async (analysis) => {
     console.log('💡 extractAITips called with:', analysis);
     
-    // Using Ollama (Local, Free LLM) for real AI tips
+    // Using Gemini Pro for real AI tips
     try {
       if (!onboardingData || Object.keys(onboardingData).length === 0) {
         return ['Complete your health profile to receive personalized health tips and recommendations.'];
       }
       
-      console.log('🤖 Using Ollama for real AI tips...');
+      console.log('🤖 Using Gemini Pro for real AI tips...');
       const age = calculateAge(onboardingData?.dateOfBirth);
       const gender = onboardingData?.genderIdentity;
       const conditions = onboardingData?.chronicConditions || [];
@@ -810,14 +810,14 @@ Return exactly 5 tips, one per line:`;
 
       const response = await aiService.generateHealthTips(prompt);
       if (response && response.length > 0) {
-        console.log('✅ Ollama tips received:', response);
+        console.log('✅ Gemini tips received:', response);
         return response.slice(0, 5);
       } else {
-        throw new Error('Ollama returned empty response');
+        throw new Error('Gemini returned empty response');
       }
     } catch (error) {
-      console.error('❌ Ollama API failed for tips:', error);
-      return [`AI Analysis Error: Unable to generate tips. Please check if Ollama is running and try again. Error: ${error.message}`];
+      console.error('❌ Gemini API failed for tips:', error);
+      return [`AI Analysis Error: Unable to generate tips. Please check your Gemini API key and try again. Error: ${error.message}`];
     }
   };
 
@@ -890,14 +890,13 @@ Return exactly 5 tips, one per line:`;
     
     if (user && onboardingData && Object.keys(onboardingData).length > 0) {
       // Only run AI analysis once when component mounts or data changes
-      // Increased delay to prevent rapid re-renders and shaking
       const timer = setTimeout(() => {
         performAIAnalysis();
-      }, 2000); // Increased from 1000ms to 2000ms for stability
+      }, 1000); // Restored to 1000ms for stability
       
       return () => clearTimeout(timer);
     }
-  }, [user, onboardingData, checkAIService]); // Remove performAIAnalysis dependency to prevent infinite loops
+  }, [user, onboardingData, checkAIService]);
 
   // Render functions
   const renderAIInsights = () => {
@@ -906,10 +905,10 @@ Return exactly 5 tips, one per line:`;
       // Only trigger AI analysis once when needed
       if (onboardingData && Object.keys(onboardingData).length > 0 && !window.aiAnalysisTriggered) {
         window.aiAnalysisTriggered = true;
-        // Increased delay to prevent rapid re-renders and shaking
+        // Restored delay for stability
         setTimeout(() => {
           performAIAnalysis();
-        }, 1500); // Increased from 500ms to 1500ms for stability
+        }, 1000); // Restored to 1000ms for stability
       }
       
       return (
