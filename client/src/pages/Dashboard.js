@@ -272,6 +272,50 @@ const Dashboard = () => {
       console.error(`Error navigating to ${moduleType} module:`, error);
     }
   };
+
+  // Handle AMAB-specific modules
+  const handleAMABModule = async (moduleType) => {
+    try {
+      console.log(`🎯 Navigating to AMAB module: ${moduleType}`);
+      console.log(`🔍 Current user:`, user);
+      console.log(`🔍 Navigate function:`, navigate);
+      
+      // Navigate to dedicated pages for AMAB modules
+      switch (moduleType) {
+        case 'general-health':
+          navigate('/general-health-tracker');
+          break;
+        case 'hormonal-health':
+          navigate('/hormonal-health');
+          break;
+        case 'fertility-preconception':
+          navigate('/fertility-preconception');
+          break;
+        case 'urology-prostate':
+          navigate('/urology-prostate');
+          break;
+        case 'mental-health-stress':
+          navigate('/mental-health-stress');
+          break;
+        case 'bone-muscle-health':
+          navigate('/bone-muscle-health');
+          break;
+        case 'preventive-care':
+          navigate('/preventive-care');
+          break;
+        case 'medication-supplements':
+          navigate('/medication-supplements');
+          break;
+        default:
+          // For modules not yet implemented, show coming soon modal
+          setShowComingSoonModal(true);
+          break;
+      }
+      
+    } catch (error) {
+      console.error(`Error navigating to ${moduleType} module:`, error);
+    }
+  };
   
 
   const handleDailyLog = (e) => {
@@ -594,10 +638,11 @@ Format as: "🔍 [Analysis]: [Specific recommendations]"`;
   const aiHealthScore = getAIHealthScore();
   const healthTags = generateHealthTags();
 
-  // Gender identity checks
-  const isFemale = onboardingData?.genderIdentity === 'AFAB' || onboardingData?.genderIdentity === 'Female';
-  const isMale = onboardingData?.genderIdentity === 'AMAB' || onboardingData?.genderIdentity === 'Male';
-  const isTrans = onboardingData?.genderIdentity === 'Trans' || onboardingData?.genderIdentity === 'Non-binary' || onboardingData?.genderIdentity === 'Intersex';
+  // Use ProfileContext for gender identity checks
+  const { isFemale, isMale, isTrans, userType } = useProfile();
+  
+  // Debug logging
+  console.log('🔍 Dashboard Gender Check:', { isFemale, isMale, isTrans, userType });
 
 
 
@@ -1885,36 +1930,138 @@ Be medically accurate, evidence-based, and actionable.`;
             <>
               <div className="module-card">
                 <div className="module-header">
-                  <span className="module-icon">🔬</span>
-                  <h3>Prostate Health</h3>
+                  <span className="module-icon">📊</span>
+                  <h3>General Health Tracker</h3>
                 </div>
                 <div className="module-content">
-                  <p>Monitor your prostate health and screenings</p>
+                  <p>Track your overall health metrics and wellness</p>
                   <div className="module-status">
-                    <span className="status-dot inactive"></span>
-                    <span>Next check: Due</span>
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
                   </div>
                 </div>
-                                  <button className="module-action" onClick={() => handleComingSoon('Prostate Health')}>
-                   Coming Soon
-                 </button>
+                <button className="module-action" onClick={() => handleAMABModule('general-health')}>
+                  Track Health
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">⚖️</span>
+                  <h3>Hormonal Health</h3>
+                </div>
+                <div className="module-content">
+                  <p>Monitor testosterone and hormonal balance</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('hormonal-health')}>
+                  Track Hormones
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">👶</span>
+                  <h3>Fertility & Preconception</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track fertility health and preconception planning</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('fertility-preconception')}>
+                  Track Fertility
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🔬</span>
+                  <h3>Urology & Prostate</h3>
+                </div>
+                <div className="module-content">
+                  <p>Monitor prostate health and urological wellness</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('urology-prostate')}>
+                  Track Urology
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🧠</span>
+                  <h3>Mental Health & Stress</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track mental wellness and stress management</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('mental-health-stress')}>
+                  Track Mental Health
+                </button>
               </div>
 
               <div className="module-card">
                 <div className="module-header">
                   <span className="module-icon">💪</span>
-                  <h3>Testosterone Tracking</h3>
+                  <h3>Bone & Muscle Health</h3>
                 </div>
                 <div className="module-content">
-                  <p>Monitor your testosterone levels and symptoms</p>
+                  <p>Monitor bone density and muscle strength</p>
                   <div className="module-status">
                     <span className="status-dot active"></span>
-                    <span>Last check: 1 month ago</span>
+                    <span>Ready to use</span>
                   </div>
                 </div>
-                                  <button className="module-action" onClick={() => handleComingSoon('Testosterone Tracker')}>
-                   Coming Soon
-                 </button>
+                <button className="module-action" onClick={() => handleAMABModule('bone-muscle-health')}>
+                  Track Fitness
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🛡️</span>
+                  <h3>Preventive Care</h3>
+                </div>
+                <div className="module-content">
+                  <p>Track preventive screenings and health maintenance</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('preventive-care')}>
+                  Track Prevention
+                </button>
+              </div>
+
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">💊</span>
+                  <h3>Medication & Supplements</h3>
+                </div>
+                <div className="module-content">
+                  <p>Manage medications and supplement tracking</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Ready to use</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleAMABModule('medication-supplements')}>
+                  Track Medications
+                </button>
               </div>
             </>
           )}
