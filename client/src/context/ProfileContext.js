@@ -233,7 +233,19 @@ export const ProfileProvider = ({ children }) => {
     return baseConfig;
   };
 
-  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
+  // Load profile data when user changes
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔄 ProfileContext: Loading profile for user:', user);
+      const analyzedProfile = analyzeProfile(user);
+      console.log('📊 ProfileContext: Analyzed profile:', analyzedProfile);
+      setProfile(analyzedProfile);
+      setLoading(false);
+    } else {
+      setProfile(null);
+      setLoading(false);
+    }
+  }, [user, analyzeProfile]);
 
   const value = {
     profile,
