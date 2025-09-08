@@ -1541,6 +1541,13 @@ Be medically accurate, evidence-based, and actionable.`;
                     </div>
                   )}
                 </div>
+                
+                <div className="logout-section">
+                  <button className="logout-btn" onClick={logout}>
+                    <span className="logout-icon">🚪</span>
+                    <span className="logout-text">Logout</span>
+                  </button>
+                </div>
 
               </div>
           </div>

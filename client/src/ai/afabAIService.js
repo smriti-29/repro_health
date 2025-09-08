@@ -473,50 +473,215 @@ Formatting:
     const conditions = userProfile.conditions?.reproductive || [];
     const familyHistory = userProfile.familyHistory?.womensConditions || [];
     
+    // Get the latest fertility entry to determine tracking mode and available data
+    const latestEntry = fertilityData[fertilityData.length - 1];
+    const trackingMode = latestEntry?.trackingMode || 'beginner';
+    
+    // Get cycle data to understand the current cycle context
+    const cycleData = localStorage.getItem('afabCycleData');
+    let currentCycleInfo = '';
+    if (cycleData) {
+      const cycles = JSON.parse(cycleData);
+      if (cycles.length > 0) {
+        // Sort cycles by cycleStartDate (chronologically) to find the most recent cycle
+        const sortedCycles = cycles.sort((a, b) => {
+          const dateA = new Date(a.cycleStartDate || a.lastPeriod);
+          const dateB = new Date(b.cycleStartDate || b.lastPeriod);
+          return dateB - dateA; // Most recent first
+        });
+        const latestCycle = sortedCycles[0];
+        currentCycleInfo = `Current cycle: ${latestCycle.cycleLength || 28}-day cycle starting ${new Date(latestCycle.cycleStartDate || latestCycle.lastPeriod).toLocaleDateString()}`;
+      }
+    }
+    
+    // Analyze fertility patterns from recent data
+    const recentEntries = fertilityData.slice(-7); // Last 7 entries
+    const bbtData = recentEntries.filter(e => e.bbt && parseFloat(e.bbt) > 0);
+    const mucusData = recentEntries.filter(e => e.cervicalMucus && e.cervicalMucus !== 'none');
+    const testData = recentEntries.filter(e => e.ovulationTest && e.ovulationTest !== 'not-tested');
+    
+    // Calculate BBT trends
+    let bbtTrend = 'No BBT data';
+    if (bbtData.length >= 2) {
+      const latestBbt = parseFloat(bbtData[bbtData.length - 1].bbt);
+      const previousBbt = parseFloat(bbtData[bbtData.length - 2].bbt);
+      const change = latestBbt - previousBbt;
+      if (change > 0.2) bbtTrend = `BBT rising (+${change.toFixed(1)}°F) - possible ovulation`;
+      else if (change < -0.2) bbtTrend = `BBT declining (${change.toFixed(1)}°F) - post-ovulation`;
+      else bbtTrend = `BBT stable (${change.toFixed(1)}°F change)`;
+    }
+    
+    // Analyze mucus patterns
+    let mucusPattern = 'No mucus data';
+    if (mucusData.length > 0) {
+      const latestMucus = mucusData[mucusData.length - 1];
+      if (latestMucus.cervicalMucus === 'egg-white') mucusPattern = 'Egg-white mucus detected - peak fertility';
+      else if (latestMucus.cervicalMucus === 'watery') mucusPattern = 'Watery mucus - approaching fertile window';
+      else if (latestMucus.cervicalMucus === 'creamy') mucusPattern = 'Creamy mucus - early fertile phase';
+      else mucusPattern = `${latestMucus.cervicalMucus} mucus - non-fertile phase`;
+    }
+    
+    // Analyze test results
+    let testResults = 'No test data';
+    if (testData.length > 0) {
+      const latestTest = testData[testData.length - 1];
+      if (latestTest.ovulationTest === 'positive' || latestTest.ovulationTest === 'peak') {
+        testResults = 'LH surge detected - ovulation imminent';
+      } else if (latestTest.ovulationTest === 'negative') {
+        testResults = 'LH test negative - not in fertile window';
+      }
+    }
+    
+    // Calculate confidence level
+    let confidenceFactors = [];
+    if (bbtData.length >= 3) confidenceFactors.push('BBT tracking');
+    if (mucusData.length >= 2) confidenceFactors.push('Mucus patterns');
+    if (testData.length >= 1) confidenceFactors.push('LH testing');
+    if (trackingMode === 'advanced') confidenceFactors.push('Advanced tracking');
+    
+    const confidenceLevel = confidenceFactors.length >= 3 ? 'High' : 
+                           confidenceFactors.length >= 2 ? 'Medium' : 'Low';
+    const confidencePercent = Math.min(95, 40 + (confidenceFactors.length * 15));
+    
+    // Build data summary based on tracking mode
+    let dataSummary = '';
+    if (trackingMode === 'beginner') {
+      dataSummary = `
+      Tracking Mode: Beginner (Basic fertility indicators)
+      ${currentCycleInfo}
+      Recent Data Analysis:
+      - BBT Trend: ${bbtTrend}
+      - Test Results: ${testResults}
+      - Libido Level: ${latestEntry?.libido || 'Not recorded'}/10
+      - Symptoms: ${latestEntry?.symptoms?.length || 0} recorded
+      - Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
+      Note: Cervical mucus tracking is only available in Advanced mode
+      `;
+    } else {
+      dataSummary = `
+      Tracking Mode: Advanced (Comprehensive fertility indicators)
+      ${currentCycleInfo}
+      Recent Data Analysis:
+      - BBT Trend: ${bbtTrend}
+      - Mucus Pattern: ${mucusPattern}
+      - Test Results: ${testResults}
+      - Cervical Position: ${latestEntry?.cervicalPosition || 'Not recorded'}
+      - Cervical Texture: ${latestEntry?.cervicalTexture || 'Not recorded'}
+      - Libido Level: ${latestEntry?.libido || 'Not recorded'}/10
+      - Symptoms: ${latestEntry?.symptoms?.length || 0} recorded
+      - Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
+      `;
+    }
+    
     return `
-    AFAB Fertility Analysis Request:
-    
-    User Profile:
-    - Age: ${age} years old
-    - Medical Conditions: ${conditions.join(', ') || 'None reported'}
-    - Family History: ${familyHistory.join(', ') || 'None reported'}
-    - Former smoker: ${userProfile.tobaccoUse || 'No'}
-    
-    Fertility Data:
-    - Trying to Conceive: ${fertilityData.isTryingToConceive ? 'Yes' : 'No'}
-    - Contraception Method: ${fertilityData.contraceptionMethod || 'None'}
-    - Ovulation Tracking: ${fertilityData.ovulationTracking ? 'Yes' : 'No'}
-    - Fertility Window: ${fertilityData.fertilityWindow || 'Unknown'}
-    
-    Cycle Data:
-    - Average Cycle Length: ${fertilityData.averageLength || 'Unknown'} days
-    - Is Regular: ${fertilityData.isRegular ? 'Yes' : 'No'}
-    - Last Period: ${fertilityData.lastPeriod || 'Unknown'}
-    
-    Please provide:
-    1. Fertility assessment based on age and health factors
-    2. Ovulation prediction and timing recommendations
-    3. Lifestyle optimization for fertility
-    4. Medical considerations and screening recommendations
-    5. Timeline expectations for conception
-    
-    Focus on evidence-based fertility insights and personalized recommendations.
+    You are a compassionate fertility specialist providing comprehensive fertility analysis. Generate a detailed, medically-informed fertility assessment in the following EXACT structure:
+
+    **FERTILITY INSIGHTS** (Compassionate medical summary - ~120 words):
+    - Opening line acknowledging the user's fertility journey
+    - Integrative summary of current fertility status based on recent data
+    - Reflection on fertility patterns and health factors
+    - Gentle guidance on fertility optimization
+    - Closing line with encouragement and support
+    Tone: Calm, reassuring, human, non-alarmist, supportive
+
+    **OVULATION ASSESSMENT** (Ovulation timing and prediction):
+    - Current ovulation status: ${bbtTrend.includes('rising') ? 'Likely imminent' : bbtTrend.includes('declining') ? 'Post-ovulation' : 'Uncertain'}
+    - Fertility window analysis: ${mucusPattern.includes('egg-white') ? 'Peak fertility window' : mucusPattern.includes('watery') ? 'Approaching fertile window' : 'Non-fertile phase'}
+    - Ovulation prediction accuracy: ${testResults.includes('LH surge') ? 'High - LH surge confirmed' : 'Moderate - based on BBT and mucus patterns'}
+    ${trackingMode === 'advanced' ? '- Advanced cervical analysis: Position and texture changes' : '- Limited to BBT and ovulation test data'}
+
+    **FERTILITY EVALUATION** (Overall fertility health):
+    - Age-related fertility factors: ${age < 30 ? 'Peak fertility age' : age < 35 ? 'Good fertility age' : age < 40 ? 'Declining fertility age' : 'Advanced maternal age'}
+    - Health condition impacts: ${conditions.length > 0 ? conditions.join(', ') : 'No known reproductive conditions'}
+    - Cycle regularity assessment: Based on ${fertilityData.length} entries
+    ${trackingMode === 'advanced' ? '- Comprehensive cervical mucus and position analysis' : '- Basic fertility indicators only'}
+
+    **ACTION ITEM** (Specific next steps):
+    - Immediate actionable recommendations based on current data
+    - Testing or monitoring suggestions
+    - Lifestyle modifications
+    ${trackingMode === 'advanced' ? '- Advanced tracking recommendations' : '- Consider upgrading to advanced tracking for cervical mucus and position monitoring'}
+
+    **CONFIDENCE LEVEL** (Assessment reliability):
+    - Confidence: ${confidencePercent}% (${confidenceLevel} confidence)
+    - Data quality assessment: ${confidenceFactors.length >= 3 ? 'Excellent' : confidenceFactors.length >= 2 ? 'Good' : 'Limited'}
+    - Recommendations for improvement: ${confidenceFactors.length < 3 ? 'Continue tracking for better accuracy' : 'Maintain current tracking routine'}
+    ${trackingMode === 'advanced' ? '- High confidence due to comprehensive cervical tracking data' : '- Moderate confidence - cervical mucus tracking unavailable in beginner mode'}
+
+    **PERSONALIZED TIPS** (Fertility optimization):
+    1. [Specific fertility tip based on ${trackingMode} data and current patterns]
+    2. [Lifestyle recommendation based on age and health]
+    3. [Timing or tracking suggestion based on current phase]
+    4. [Health optimization tip]
+    ${trackingMode === 'advanced' ? '5. [Cervical mucus and position monitoring tip]' : '5. [Consider advanced tracking for cervical mucus monitoring]'}
+
+    **GENTLE REMINDERS** (Daily fertility support):
+    1. [Encouraging daily reminder]
+    2. [Supportive tracking tip]
+    3. [Wellness reminder]
+    4. [Positive affirmation]
+    ${trackingMode === 'advanced' ? '5. [Cervical mucus observation reminder]' : '5. [Consider learning advanced tracking methods]'}
+
+    User Profile: Age ${age}, Conditions: ${conditions.join(', ') || 'None'}, Family History: ${familyHistory.join(', ') || 'None'}
+    ${dataSummary}
     `;
   }
 
   processFertilityInsights(insights, fertilityData, userProfile) {
+    // Extract structured content from AI response
+    const fertilityInsights = this.extractFertilityInsights(insights);
+    const ovulationAssessment = this.extractSection(insights, 'OVULATION ASSESSMENT');
+    const fertilityEvaluation = this.extractSection(insights, 'FERTILITY EVALUATION');
+    const actionItem = this.extractSection(insights, 'ACTION ITEM');
+    const confidenceLevel = this.extractSection(insights, 'CONFIDENCE LEVEL');
+    const personalizedTips = this.extractTips(insights, 'PERSONALIZED TIPS');
+    const gentleReminders = this.extractTips(insights, 'GENTLE REMINDERS');
+
     return {
-      fertilityAssessment: {
-        ageFactor: this.assessAgeFertility(userProfile.age),
-        healthFactors: this.assessHealthFertility(userProfile),
-        cycleFactors: this.assessCycleFertility(fertilityData),
-        recommendations: this.generateFertilityRecommendations(fertilityData, userProfile)
+      // Main AI insights - compassionate medical summary
+      aiInsights: fertilityInsights,
+      
+      // Quick check structure (same as cycle tracking)
+      quickCheck: {
+        ovulationAssessment: ovulationAssessment || 'Continue tracking ovulation patterns for better assessment',
+        fertilityEvaluation: fertilityEvaluation || 'Continue monitoring fertility indicators',
+        actionItem: actionItem || 'Maintain consistent tracking and healthy lifestyle',
+        confidence: confidenceLevel || 'Medium confidence - continue tracking for better assessment'
       },
-      aiInsights: insights,
+      
+      // Personalized recommendations
+      personalizedTips: personalizedTips.length > 0 ? personalizedTips : [
+        'Take prenatal vitamins with folic acid daily',
+        'Track basal body temperature for ovulation detection',
+        'Monitor cervical mucus changes throughout cycle',
+        'Maintain healthy weight and regular exercise',
+        'Consider ovulation predictor kits for timing'
+      ],
+      
+      // Gentle reminders
+      gentleReminders: gentleReminders.length > 0 ? gentleReminders : [
+        'Remember to take your prenatal vitamins today',
+        'Track your BBT at the same time each morning',
+        'Stay hydrated and maintain a balanced diet',
+        'Practice stress management techniques',
+        'Keep track of your fertility signs daily'
+      ],
+      
+      // Additional fertility-specific data
       ovulationPrediction: this.predictOvulation(fertilityData),
       conceptionTimeline: this.estimateConceptionTimeline(userProfile),
       medicalAlerts: this.generateFertilityAlerts(fertilityData, userProfile)
     };
+  }
+
+  extractFertilityInsights(insights) {
+    const fertilitySection = this.extractSection(insights, 'FERTILITY INSIGHTS');
+    if (fertilitySection) {
+      return fertilitySection;
+    }
+    
+    // Fallback compassionate fertility summary
+    return "Your fertility journey is unique and personal. Based on your current tracking data, your reproductive health shows positive indicators. Continue monitoring your cycle patterns, maintain a healthy lifestyle, and stay connected with your healthcare provider. Remember, fertility is influenced by many factors, and consistent tracking helps provide valuable insights for your reproductive health journey.";
   }
 
   assessAgeFertility(age) {
