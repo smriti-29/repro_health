@@ -20,6 +20,84 @@
   letter-spacing: 0.01em;
 }
 
+/* Enhanced AI Insights Styling */
+.insight-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.insight-card.insights {
+  border-left: 4px solid #4CAF50;
+}
+
+.insight-card.risk {
+  border-left: 4px solid #FF9800;
+}
+
+.insight-card.recommendations {
+  border-left: 4px solid #2196F3;
+}
+
+.insight-card.tips {
+  border-left: 4px solid #9C27B0;
+}
+
+.insight-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.insight-header h3 {
+  margin: 0;
+  margin-left: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.insight-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.insight-content {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+}
+
+.insight-content ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.insight-content li {
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.insight-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* Logout Button - Inline with Bell Icon */
 .notification-center {
   display: flex;

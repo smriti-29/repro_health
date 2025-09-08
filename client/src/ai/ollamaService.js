@@ -5,10 +5,12 @@ class OllamaService {
   constructor() {
     this.baseURL = 'http://localhost:11434/api';
     this.model = 'llama3.1:8b'; // Free, local model
+    this.timeout = 45000; // 45 second timeout for slower models
     
     console.log('🤖 OllamaService initialized');
     console.log('🔧 Using model:', this.model);
     console.log('🔧 Local endpoint:', this.baseURL);
+    console.log('🔧 Timeout:', this.timeout + 'ms');
     
     // Check if Ollama is running
     this.checkOllamaStatus();
@@ -31,6 +33,10 @@ class OllamaService {
     try {
       console.log('🤖 Using Ollama for health insights...');
 
+      // Create timeout controller
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
       const response = await fetch(`${this.baseURL}/generate`, {
         method: 'POST',
         headers: {
@@ -38,14 +44,18 @@ class OllamaService {
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: `You are an expert reproductive health AI assistant. Generate personalized health insights based on user data. Be medically accurate, inclusive, and actionable.
-
-User request: ${prompt}
-
-Please provide 3-5 actionable health insights in a clear, numbered format.`,
-          stream: false
-        })
+          prompt: `Analyze cycle data: ${prompt}. Provide 3 medical insights.`,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            max_tokens: 100
+          }
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Ollama API error: ${response.status}`);
@@ -264,6 +274,35 @@ Please provide comprehensive fertility insights with recommendations and trackin
       status: 'Local, Free',
       capabilities: ['Health analysis', 'Risk assessment', 'Personalized recommendations', 'Cycle analysis', 'Fertility insights']
     };
+  }
+
+  async healthCheck() {
+    try {
+      // Test if Ollama is running by making a simple request
+      const response = await fetch(`${this.baseURL}/tags`);
+      if (response.ok) {
+        return { 
+          configured: true, 
+          service: 'Ollama (Local)',
+          status: 'healthy',
+          model: this.model
+        };
+      } else {
+        return { 
+          configured: false, 
+          service: 'Ollama (Local)',
+          status: 'error',
+          error: 'Ollama not running'
+        };
+      }
+    } catch (error) {
+      return { 
+        configured: false, 
+        service: 'Ollama (Local)',
+        status: 'error',
+        error: error.message
+      };
+    }
   }
 
   isConfigured() {

@@ -1,0 +1,250 @@
+/* Medical Dashboard Styles */
+.medical-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 2rem;
+}
+
+.medical-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.medical-header h1 {
+  font-size: 2.5rem;
+  margin: 1rem 0;
+  background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.medical-header p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Clinical Alerts */
+.clinical-alerts {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clinical-alerts h2 {
+  color: #ff6b9d;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-left: 4px solid;
+}
+
+.alert-card.critical {
+  background: rgba(255, 71, 87, 0.1);
+  border-left-color: #ff4757;
+}
+
+.alert-card.high {
+  background: rgba(255, 165, 2, 0.1);
+  border-left-color: #ffa502;
+}
+
+.alert-card.medium {
+  background: rgba(78, 205, 196, 0.1);
+  border-left-color: #4ecdc4;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+}
+
+.alert-content p {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* Risk Assessment */
+.risk-assessment {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-assessment h2 {
+  color: #4ecdc4;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.risk-content {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-size: 1rem;
+}
+
+/* Medical Insights */
+.medical-insights {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 4px solid #ff6b9d;
+}
+
+.medical-insights h2 {
+  color: #ff6b9d;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.insights-content {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+}
+
+/* Medical Profile */
+.medical-profile {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.medical-profile h2 {
+  color: #4ecdc4;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.profile-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(78, 205, 196, 0.3);
+}
+
+.profile-card h3 {
+  color: #ff6b9d;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.profile-card p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+/* Emergency Section */
+.emergency-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.emergency-section h2 {
+  color: #ff6b9d;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emergency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.emergency-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.emergency-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 107, 157, 0.3);
+}
+
+.emergency-card h3 {
+  color: #4ecdc4;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.emergency-card p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .medical-dashboard {
+    padding: 1rem;
+  }
+  
+  .medical-header h1 {
+    font-size: 2rem;
+  }
+  
+  .profile-grid,
+  .emergency-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .alert-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+

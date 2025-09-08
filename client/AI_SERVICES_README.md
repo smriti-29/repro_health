@@ -199,3 +199,4 @@ curl -H "Content-Type: application/json" \
 ---
 
 **Ready to use!** The system will automatically handle all fallback scenarios, ensuring your AFAB reproductive health app always has AI capabilities available. 🚀
+

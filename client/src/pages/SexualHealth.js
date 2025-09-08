@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AIServiceManager from '../ai/aiServiceManager.js';
+import AFABAIService from '../ai/afabAIService.js';
 import './SexualHealth.css';
 
 const SexualHealth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AIServiceManager());
+  const [aiService] = useState(() => new AFABAIService());
   
   // Sexual health tracking form state
   const [sexualHealthForm, setSexualHealthForm] = useState({
@@ -23,9 +23,15 @@ const SexualHealth = () => {
 
   // Sexual health data and insights
   const [sexualHealthData, setSexualHealthData] = useState([]);
-  const [insights, setInsights] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [nextScreening, setNextScreening] = useState(null);
+
+  // AI-Powered Sexual Health Intelligence (SAME STRUCTURE AS OTHER MODULES)
+  const [insights, setInsights] = useState(null);
+  const [sexualHealthPatterns, setSexualHealthPatterns] = useState(null);
+  const [healthAlerts, setHealthAlerts] = useState([]);
+  const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
+  const [riskAssessment, setRiskAssessment] = useState(null);
 
   // Available sexual health symptoms for tracking
   const availableSymptoms = [

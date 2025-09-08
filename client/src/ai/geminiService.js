@@ -5,7 +5,7 @@ class GeminiService {
   constructor() {
     this.apiKey = process.env.REACT_APP_GEMINI_API_KEY;
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    this.model = 'gemini-pro';
+    this.model = 'gemini-1.5-flash';
     this.configured = !!this.apiKey;
     
     if (this.configured) {

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AIServiceManager from '../ai/aiServiceManager.js';
+import AFABAIService from '../ai/afabAIService.js';
 import './ConditionSpecific.css';
 
 const ConditionSpecific = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AIServiceManager());
+  const [aiService] = useState(() => new AFABAIService());
   
   // Condition tracking form state
   const [conditionForm, setConditionForm] = useState({
@@ -25,9 +25,15 @@ const ConditionSpecific = () => {
 
   // Condition data and insights
   const [conditionData, setConditionData] = useState([]);
-  const [insights, setInsights] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCondition, setSelectedCondition] = useState('PCOS');
+
+  // AI-Powered Condition Intelligence (SAME STRUCTURE AS OTHER MODULES)
+  const [insights, setInsights] = useState(null);
+  const [conditionPatterns, setConditionPatterns] = useState(null);
+  const [healthAlerts, setHealthAlerts] = useState([]);
+  const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
+  const [riskAssessment, setRiskAssessment] = useState(null);
 
   // PCOS-specific symptoms
   const pcosSymptoms = [
@@ -49,59 +55,145 @@ const ConditionSpecific = () => {
     'No symptoms'
   ];
 
-  // Endometriosis-specific symptoms
+  // MEDICAL-GRADE Endometriosis symptoms (what doctors actually track)
   const endometriosisSymptoms = [
+    // Primary Symptoms (Diagnostic)
     'Severe menstrual cramps',
     'Chronic pelvic pain',
-    'Pain during intercourse',
+    'Pain during intercourse (dyspareunia)',
     'Painful bowel movements',
     'Painful urination',
+    
+    // Menstrual Symptoms
     'Heavy menstrual bleeding',
     'Irregular periods',
-    'Fatigue',
-    'Nausea',
+    'Prolonged periods',
+    'Spotting between periods',
+    
+    // Gastrointestinal Symptoms
     'Bloating',
     'Constipation',
     'Diarrhea',
+    'Nausea',
+    'Abdominal cramping',
+    
+    // Pain Patterns
     'Lower back pain',
+    'Leg pain',
+    'Shoulder pain (rare)',
+    'Pain that worsens over time',
+    
+    // Reproductive Impact
     'Infertility',
+    'Pain during ovulation',
+    'Pain during pelvic exams',
+    
+    // Quality of Life
+    'Fatigue',
+    'Depression',
+    'Anxiety',
+    'Sleep disturbances',
+    
+    // Advanced Symptoms
+    'Blood in urine',
+    'Blood in stool',
+    'Chest pain (rare)',
     'No symptoms'
   ];
 
-  // Available treatments for both conditions
+  // MEDICAL-GRADE treatments for PCOS and Endometriosis
   const availableTreatments = [
-    'Birth control pills',
-    'Progestin therapy',
+    // Hormonal Treatments
+    'Birth control pills (combined)',
+    'Progestin-only pills',
+    'Hormonal IUD (Mirena)',
+    'Hormone therapy',
+    'GnRH agonists',
+    'Aromatase inhibitors',
+    
+    // PCOS-Specific Medications
     'Metformin',
     'Spironolactone',
-    'Pain medication',
-    'Hormone therapy',
+    'Clomiphene (fertility)',
+    'Letrozole (fertility)',
+    
+    // Pain Management
+    'NSAIDs (Ibuprofen, Naproxen)',
+    'Acetaminophen',
+    'Prescription pain medication',
+    'Muscle relaxants',
+    
+    // Surgical Options
     'Laparoscopic surgery',
     'Hysterectomy',
+    'Ovarian cyst removal',
+    'Endometriosis excision',
+    
+    // Lifestyle & Alternative
     'Regular exercise',
     'Healthy diet',
     'Weight management',
     'Stress management',
     'Physical therapy',
     'Acupuncture',
-    'Supplements',
-    'No treatment'
+    'Pelvic floor therapy',
+    
+    // Supplements & Natural
+    'Omega-3 supplements',
+    'Turmeric/Curcumin',
+    'Magnesium',
+    'Vitamin D',
+    'Probiotics',
+    
+    // Other
+    'No treatment',
+    'Other medications'
   ];
 
-  // Lifestyle modifications
+  // MEDICAL-GRADE Lifestyle modifications for PCOS and Endometriosis
   const lifestyleOptions = [
-    'Regular exercise',
-    'Balanced diet',
-    'Weight management',
-    'Stress reduction',
-    'Adequate sleep',
-    'Limit processed foods',
+    // Exercise & Physical Activity
+    'Regular exercise (150 min/week)',
+    'Low-impact exercises',
+    'Pelvic floor exercises',
+    'Yoga/Pilates',
+    'Walking/Swimming',
+    
+    // Diet & Nutrition
+    'Anti-inflammatory diet',
+    'Low-glycemic index foods',
     'Increase fiber intake',
     'Reduce sugar intake',
+    'Limit processed foods',
+    'Increase omega-3 foods',
     'Stay hydrated',
+    'Small, frequent meals',
+    
+    // Weight & Metabolic Health
+    'Weight management',
+    'Portion control',
+    'Regular meal timing',
+    'Limit alcohol',
+    'Quit smoking',
+    
+    // Stress & Mental Health
+    'Stress reduction techniques',
     'Mindfulness/Meditation',
+    'Deep breathing exercises',
     'Support groups',
-    'Regular check-ups'
+    'Counseling/Therapy',
+    
+    // Sleep & Recovery
+    'Adequate sleep (7-9 hours)',
+    'Consistent sleep schedule',
+    'Sleep hygiene',
+    'Rest when needed',
+    
+    // Medical & Monitoring
+    'Regular check-ups',
+    'Track symptoms',
+    'Medication compliance',
+    'Follow treatment plan'
   ];
 
   // Load existing condition data
@@ -170,26 +262,36 @@ const ConditionSpecific = () => {
       // Update selected condition
       setSelectedCondition(conditionEntry.condition);
       
-      // Generate AI insights
-      const prompt = `As an expert in women's health and reproductive conditions, analyze this ${conditionEntry.condition} data and provide personalized insights:
+      // Generate comprehensive AI insights (SAME STRUCTURE AS OTHER MODULES)
+      const userProfile = {
+        age: user?.age || 'Not specified',
+        medicalHistory: user?.medicalHistory || [],
+        chronicConditions: user?.chronicConditions || [],
+        medications: user?.medications || [],
+        lifestyle: user?.lifestyle || {}
+      };
 
-User Profile: ${JSON.stringify(user)}
-Latest Condition Data: ${JSON.stringify(conditionEntry)}
-Selected Condition: ${selectedCondition}
-Historical Data: ${JSON.stringify(conditionData.slice(-3))}
-
-Please provide:
-1. Condition-specific symptom assessment
-2. Treatment effectiveness evaluation
-3. Lifestyle modification recommendations
-4. When to contact healthcare provider
-5. Long-term health management strategies
-6. Fertility considerations (if applicable)
-
-Be medical, accurate, and supportive. Include specific guidance for ${conditionEntry.condition} management and symptom severity.`;
-
-      const aiInsights = await aiService.generateHealthInsights(prompt);
-      setInsights(aiInsights);
+      try {
+        // Force Ollama for demo (same as other modules)
+        aiService.service = aiService.fallbackService;
+        
+        const aiInsights = await aiService.generateConditionInsights(conditionEntry, userProfile);
+        
+        // Parse comprehensive AI insights (same structure as other modules)
+        if (aiInsights) {
+          setInsights(aiInsights.insights || aiInsights);
+          setConditionPatterns(aiInsights.patterns || 'Analyzing your condition patterns...');
+          setHealthAlerts(aiInsights.alerts || []);
+          setPersonalizedRecommendations(aiInsights.recommendations || []);
+          setRiskAssessment(aiInsights.riskAssessment || 'Evaluating your condition risk factors...');
+        }
+      } catch (aiError) {
+        console.error('AI insights generation failed:', aiError);
+        // Fallback insights
+        setInsights(`Based on your ${conditionEntry.condition} data, continue monitoring your symptoms and follow your treatment plan.`);
+        setHealthAlerts([]);
+        setPersonalizedRecommendations(['Continue current treatment', 'Monitor symptoms regularly', 'Maintain healthy lifestyle']);
+      }
       
       // Reset form for next entry
       setConditionForm({
@@ -414,9 +516,75 @@ Be medical, accurate, and supportive. Include specific guidance for ${conditionE
         {/* AI Insights */}
         {insights && (
           <div className="insights-section">
-            <h2>🤖 AI Condition Insights</h2>
+            <h2>✨ Your Condition Insights</h2>
             <div className="insights-content">
-              {insights}
+              {Array.isArray(insights) ? insights.map((insight, index) => (
+                <div key={index} className="insight-item">
+                  <div className="insight-icon">💡</div>
+                  <p className="insight-text">{insight}</p>
+                </div>
+              )) : (
+                <div className="insight-item">
+                  <div className="insight-icon">💡</div>
+                  <p className="insight-text">{insights}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Gentle Health Reminders */}
+        {healthAlerts.length > 0 && (
+          <div className="health-reminders-section">
+            <h2>💝 Gentle Reminders</h2>
+            <div className="reminders-list">
+              {healthAlerts.map((alert, index) => (
+                <div key={index} className="reminder-item">
+                  <div className="reminder-icon">🌸</div>
+                  <div className="reminder-content">
+                    <p className="reminder-text">{alert}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Condition Health Overview */}
+        {riskAssessment && (
+          <div className="condition-health-section">
+            <h2>🌺 Your Condition Health</h2>
+            <div className="health-content">
+              <div className="health-summary">
+                <div className="health-icon">🌱</div>
+                <p className="health-text">{riskAssessment}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Condition Patterns */}
+        {conditionPatterns && (
+          <div className="condition-patterns-section">
+            <h2>📈 Your Condition Patterns</h2>
+            <div className="patterns-content">
+              <div className="pattern-item">
+                <div className="pattern-icon">📊</div>
+                <p className="pattern-text">{conditionPatterns}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Personalized Tips */}
+        {personalizedRecommendations && personalizedRecommendations.length > 0 && (
+          <div className="recommendations-section">
+            <h2>💝 Personalized Tips for You</h2>
+            <div className="recommendations-content">
+              <div className="recommendation-item">
+                <div className="rec-icon">✨</div>
+                <p className="rec-text">{Array.isArray(personalizedRecommendations) ? personalizedRecommendations.join(' • ') : personalizedRecommendations}</p>
+              </div>
             </div>
           </div>
         )}
@@ -447,6 +615,60 @@ Be medical, accurate, and supportive. Include specific guidance for ${conditionE
           </div>
         )}
 
+        {/* Educational Resources */}
+        <div className="educational-resources">
+          <h2>📚 Condition Education & Resources</h2>
+          <div className="resources-grid">
+            <div className="resource-card">
+              <h3>🔄 Understanding PCOS</h3>
+              <p>Complete guide to Polycystic Ovary Syndrome</p>
+              <a href="https://www.acog.org/womens-health/faqs/polycystic-ovary-syndrome-pcos" target="_blank" rel="noopener noreferrer">
+                ACOG: PCOS Information
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🌺 Understanding Endometriosis</h3>
+              <p>Complete guide to endometriosis and treatment options</p>
+              <a href="https://www.mayoclinic.org/diseases-conditions/endometriosis/symptoms-causes/syc-20354656" target="_blank" rel="noopener noreferrer">
+                Mayo Clinic: Endometriosis Guide
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>💊 Treatment Options</h3>
+              <p>Medical and lifestyle treatments for reproductive conditions</p>
+              <a href="https://www.healthline.com/health/womens-health/reproductive-health-conditions" target="_blank" rel="noopener noreferrer">
+                Healthline: Treatment Options
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🍎 Lifestyle Management</h3>
+              <p>Diet, exercise, and lifestyle changes for condition management</p>
+              <a href="https://www.webmd.com/women/guide/lifestyle-changes-reproductive-health" target="_blank" rel="noopener noreferrer">
+                WebMD: Lifestyle Management
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>👩‍⚕️ When to See a Specialist</h3>
+              <p>Signs that indicate you should seek specialized care</p>
+              <a href="https://www.asrm.org/topics/topics-index/reproductive-health-conditions/" target="_blank" rel="noopener noreferrer">
+                ASRM: Specialist Care
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🧘 Mental Health & Conditions</h3>
+              <p>Managing mental health with reproductive health conditions</p>
+              <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4447118/" target="_blank" rel="noopener noreferrer">
+                Research: Mental Health & Conditions
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Condition Information */}
         <div className="condition-info">
           <h2>📚 Condition Information</h2>
@@ -468,10 +690,13 @@ Be medical, accurate, and supportive. Include specific guidance for ${conditionE
                   )}
                   {condition === 'Endometriosis' && (
                     <ul>
-                      <li>Affects 1 in 10 women of childbearing age</li>
-                      <li>Common symptoms: severe pain, heavy bleeding, infertility</li>
-                      <li>Can cause chronic pelvic pain</li>
-                      <li>Treatment options include medications and surgery</li>
+                      <li>Affects 1 in 10 women of childbearing age (190 million worldwide)</li>
+                      <li>Primary symptoms: severe pelvic pain, painful periods, pain during intercourse</li>
+                      <li>Can cause infertility in 30-50% of affected women</li>
+                      <li>Often misdiagnosed - average diagnosis takes 7-10 years</li>
+                      <li>Treatment: hormonal therapy, pain management, laparoscopic surgery</li>
+                      <li>No cure, but symptoms can be managed effectively</li>
+                      <li>May improve after menopause</li>
                     </ul>
                   )}
                 </div>

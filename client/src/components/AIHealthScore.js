@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import aiReasoningEngine from '../ai/aiReasoning';
 import './AIHealthScore.css';
 
@@ -7,11 +7,7 @@ const AIHealthScore = ({ userProfile }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (userProfile) {
-      generateHealthScore();
-    }
-  }, [userProfile]);
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
   const generateHealthScore = async () => {
     try {

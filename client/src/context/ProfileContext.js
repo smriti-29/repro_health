@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const ProfileContext = createContext();
@@ -233,16 +233,7 @@ export const ProfileProvider = ({ children }) => {
     return baseConfig;
   };
 
-  // Load profile when user changes
-  useEffect(() => {
-    if (user) {
-      const userProfile = analyzeProfile(user);
-      setProfile(userProfile);
-    } else {
-      setProfile(null);
-    }
-    setLoading(false);
-  }, [user, analyzeProfile]);
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
   const value = {
     profile,

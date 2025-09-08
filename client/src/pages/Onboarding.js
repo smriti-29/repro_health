@@ -153,7 +153,47 @@ const Onboarding = () => {
       console.log('📥 Password included:', !!parsedData.password);
       setFormData(prev => ({
         ...prev,
-        ...parsedData
+        ...parsedData,
+        // Ensure all nested objects are properly initialized
+        familyHistory: {
+          womensConditions: [],
+          mensConditions: [],
+          generalConditions: [],
+          cancerTypes: '',
+          ...parsedData.familyHistory
+        },
+        vaccinationHistory: {
+          hpv: '',
+          hepatitisB: '',
+          rubellaVaricella: '',
+          ...parsedData.vaccinationHistory
+        },
+        reproductiveHealth: {
+          ageAtFirstPeriod: '',
+          cycleRegularity: '',
+          cycleLength: '',
+          flowIntensity: '',
+          pubertyHistory: '',
+          fertilityConcerns: '',
+          lastProstateScreening: '',
+          hormoneTherapyHistory: '',
+          surgeriesUndergone: '',
+          fertilityPreservation: '',
+          ...parsedData.reproductiveHealth
+        },
+        screenings: {
+          papSmear: '',
+          mammogram: '',
+          pelvicUltrasound: '',
+          boneDensity: '',
+          stiScreening: '',
+          hormonePanel: '',
+          prostateScreening: '',
+          testicularExam: '',
+          hormoneMonitoring: '',
+          healthCheckup: '',
+          ...parsedData.screenings
+        }
       }));
     }
   }, []);

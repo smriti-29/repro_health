@@ -1,5 +1,5 @@
-/* Pregnancy Tracking Page Styles */
-.pregnancy-tracking-page {
+/* Mental Health Page Styles */
+.mental-health-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: white;
@@ -51,13 +51,13 @@
   margin: 0;
 }
 
-.pregnancy-content {
+.mental-health-content {
   max-width: 1000px;
   margin: 0 auto;
 }
 
-/* Pregnancy Overview */
-.pregnancy-overview {
+/* Mental Health Overview */
+.mental-health-overview {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
@@ -84,15 +84,15 @@
   margin-bottom: 1rem;
 }
 
-.date-display, .progress-display, .trimester-display {
+.trend-display, .count-display, .status-display {
   font-size: 1.5rem;
   font-weight: 600;
   color: #4ecdc4;
   margin: 0;
 }
 
-/* Pregnancy Form Section */
-.pregnancy-form-section {
+/* Mental Health Form Section */
+.mental-health-form-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 2.5rem;
@@ -100,14 +100,14 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.pregnancy-form-section h2 {
+.mental-health-form-section h2 {
   color: #ff6b9d;
   font-size: 1.8rem;
   margin-bottom: 2rem;
   text-align: center;
 }
 
-.pregnancy-form {
+.mental-health-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -155,19 +155,115 @@
   color-scheme: dark;
 }
 
-.form-group input[type="number"] {
-  color-scheme: dark;
-}
-
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
 }
 
 .form-group small {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
   margin-top: 0.3rem;
+}
+
+/* Mood Options */
+.mood-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.mood-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.mood-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.mood-option input[type="radio"] {
+  display: none;
+}
+
+.mood-option input[type="radio"]:checked + .mood-emoji + .mood-label {
+  color: #ff6b9d;
+}
+
+.mood-option:has(input[type="radio"]:checked) {
+  border-color: #ff6b9d;
+  background: rgba(255, 107, 157, 0.1);
+}
+
+.mood-emoji {
+  font-size: 2rem;
+}
+
+.mood-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Sliders */
+.anxiety-slider,
+.depression-slider,
+.stress-slider,
+.sleep-slider,
+.energy-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.anxiety-slider::-webkit-slider-thumb,
+.depression-slider::-webkit-slider-thumb,
+.stress-slider::-webkit-slider-thumb,
+.sleep-slider::-webkit-slider-thumb,
+.energy-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.anxiety-slider::-moz-range-thumb,
+.depression-slider::-moz-range-thumb,
+.stress-slider::-moz-range-thumb,
+.sleep-slider::-moz-range-thumb,
+.energy-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.5rem;
 }
 
 /* Symptoms Grid */
@@ -211,6 +307,88 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* Triggers Grid */
+.triggers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.trigger-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.trigger-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.trigger-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ff9f43;
+}
+
+.trigger-option:has(input[type="checkbox"]:checked) {
+  border-color: #ff9f43;
+  background: rgba(255, 159, 67, 0.1);
+}
+
+.trigger-label {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Coping Grid */
+.coping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.coping-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.coping-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.coping-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4ecdc4;
+}
+
+.coping-option:has(input[type="checkbox"]:checked) {
+  border-color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.1);
+}
+
+.coping-label {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 /* Medications Grid */
 .medications-grid {
   display: grid;
@@ -239,17 +417,52 @@
 .medication-option input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #4ecdc4;
+  accent-color: #a55eea;
 }
 
 .medication-option:has(input[type="checkbox"]:checked) {
-  border-color: #4ecdc4;
-  background: rgba(78, 205, 196, 0.1);
+  border-color: #a55eea;
+  background: rgba(165, 94, 234, 0.1);
 }
 
 .medication-label {
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.checkbox-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.checkbox-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ff6b9d;
+}
+
+.checkbox-option:has(input[type="checkbox"]:checked) {
+  border-color: #ff6b9d;
+  background: rgba(255, 107, 157, 0.1);
 }
 
 /* Submit Button */
@@ -301,8 +514,8 @@
   font-size: 1rem;
 }
 
-/* Pregnancy History */
-.pregnancy-history {
+/* Mental Health History */
+.mental-health-history {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 2.5rem;
@@ -310,7 +523,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.pregnancy-history h2 {
+.mental-health-history h2 {
   color: #ff6b9d;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
@@ -357,69 +570,72 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Trimester Information */
-.trimester-info {
+/* Mental Health Resources */
+.mental-health-resources {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 2.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.trimester-info h2 {
+.mental-health-resources h2 {
   color: #ff6b9d;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   text-align: center;
 }
 
-.trimester-cards {
+.resources-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
 }
 
-.trimester-card {
+.resource-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 2rem;
-  text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
-.trimester-card:hover {
+.resource-card:hover {
   transform: translateY(-5px);
   border-color: rgba(78, 205, 196, 0.3);
 }
 
-.trimester-card.active {
-  border-color: #ff6b9d;
-  background: rgba(255, 107, 157, 0.1);
-}
-
-.trimester-card h3 {
+.resource-card h3 {
   color: #4ecdc4;
   font-size: 1.3rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.trimester-weeks {
-  color: #ff6b9d;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.resource-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.trimester-description {
+.resource-card li {
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
-  line-height: 1.5;
-  margin: 0;
+  margin-bottom: 0.8rem;
+  padding-left: 1.5rem;
+  position: relative;
+  line-height: 1.4;
+}
+
+.resource-card li::before {
+  content: "•";
+  color: #ff6b9d;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .pregnancy-tracking-page {
+  .mental-health-page {
     padding: 1rem;
   }
   
@@ -438,7 +654,7 @@
     min-width: auto;
   }
   
-  .pregnancy-overview {
+  .mental-health-overview {
     grid-template-columns: 1fr;
   }
   
@@ -446,12 +662,18 @@
     grid-template-columns: 1fr;
   }
   
+  .mood-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .symptoms-grid,
+  .triggers-grid,
+  .coping-grid,
   .medications-grid {
     grid-template-columns: 1fr;
   }
   
-  .trimester-cards {
+  .resources-content {
     grid-template-columns: 1fr;
   }
   

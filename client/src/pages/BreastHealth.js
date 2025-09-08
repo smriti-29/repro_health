@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AIServiceManager from '../ai/aiServiceManager.js';
+import AFABAIService from '../ai/afabAIService.js';
 import './BreastHealth.css';
 
 const BreastHealth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AIServiceManager());
+  const [aiService] = useState(() => new AFABAIService());
   
   // Breast health tracking form state
   const [breastForm, setBreastForm] = useState({
@@ -25,9 +25,15 @@ const BreastHealth = () => {
 
   // Breast health data and insights
   const [breastData, setBreastData] = useState([]);
-  const [insights, setInsights] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [nextScreening, setNextScreening] = useState(null);
+
+  // AI-Powered Breast Health Intelligence (SAME STRUCTURE AS OTHER MODULES)
+  const [insights, setInsights] = useState(null);
+  const [breastPatterns, setBreastPatterns] = useState(null);
+  const [healthAlerts, setHealthAlerts] = useState([]);
+  const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
+  const [riskAssessment, setRiskAssessment] = useState(null);
 
   // Self-exam findings
   const examFindings = [
@@ -171,26 +177,36 @@ const BreastHealth = () => {
         setNextScreening(nextDate);
       }
       
-      // Generate AI insights
-      const prompt = `As an expert in breast health and cancer prevention, analyze this breast health data and provide personalized insights:
+      // Generate comprehensive AI insights (SAME STRUCTURE AS OTHER MODULES)
+      const userProfile = {
+        age: user?.age || 'Not specified',
+        medicalHistory: user?.medicalHistory || [],
+        chronicConditions: user?.chronicConditions || [],
+        medications: user?.medications || [],
+        lifestyle: user?.lifestyle || {}
+      };
 
-User Profile: ${JSON.stringify(user)}
-Latest Breast Health Data: ${JSON.stringify(breastEntry)}
-Next Screening: ${nextScreening ? nextScreening.toDateString() : 'Not scheduled'}
-Historical Data: ${JSON.stringify(breastData.slice(-3))}
-
-Please provide:
-1. Breast health assessment and risk factors
-2. Self-exam technique guidance
-3. Screening recommendations
-4. When to contact healthcare provider
-5. Lifestyle modifications for breast health
-6. Family history implications
-
-Be medical, accurate, and supportive. Include specific guidance for breast health maintenance and early detection.`;
-
-      const aiInsights = await aiService.generateHealthInsights(prompt);
-      setInsights(aiInsights);
+      try {
+        // Force Ollama for demo (same as other modules)
+        aiService.service = aiService.fallbackService;
+        
+        const aiInsights = await aiService.generateBreastHealthInsights(breastEntry, userProfile);
+        
+        // Parse comprehensive AI insights (same structure as other modules)
+        if (aiInsights) {
+          setInsights(aiInsights.insights || aiInsights);
+          setBreastPatterns(aiInsights.patterns || 'Analyzing your breast health patterns...');
+          setHealthAlerts(aiInsights.alerts || []);
+          setPersonalizedRecommendations(aiInsights.recommendations || []);
+          setRiskAssessment(aiInsights.riskAssessment || 'Evaluating your breast health risk factors...');
+        }
+      } catch (aiError) {
+        console.error('AI insights generation failed:', aiError);
+        // Fallback insights
+        setInsights(`Based on your breast health data, continue regular self-exams and follow screening guidelines.`);
+        setHealthAlerts([]);
+        setPersonalizedRecommendations(['Perform monthly self-exams', 'Follow screening guidelines', 'Maintain healthy lifestyle']);
+      }
       
       // Reset form for next entry
       setBreastForm({
@@ -428,9 +444,75 @@ Be medical, accurate, and supportive. Include specific guidance for breast healt
         {/* AI Insights */}
         {insights && (
           <div className="insights-section">
-            <h2>🤖 AI Breast Health Insights</h2>
+            <h2>✨ Your Breast Health Insights</h2>
             <div className="insights-content">
-              {insights}
+              {Array.isArray(insights) ? insights.map((insight, index) => (
+                <div key={index} className="insight-item">
+                  <div className="insight-icon">💡</div>
+                  <p className="insight-text">{insight}</p>
+                </div>
+              )) : (
+                <div className="insight-item">
+                  <div className="insight-icon">💡</div>
+                  <p className="insight-text">{insights}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Gentle Health Reminders */}
+        {healthAlerts.length > 0 && (
+          <div className="health-reminders-section">
+            <h2>💝 Gentle Reminders</h2>
+            <div className="reminders-list">
+              {healthAlerts.map((alert, index) => (
+                <div key={index} className="reminder-item">
+                  <div className="reminder-icon">🌸</div>
+                  <div className="reminder-content">
+                    <p className="reminder-text">{alert}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Breast Health Overview */}
+        {riskAssessment && (
+          <div className="breast-health-section">
+            <h2>🌺 Your Breast Health</h2>
+            <div className="health-content">
+              <div className="health-summary">
+                <div className="health-icon">🌱</div>
+                <p className="health-text">{riskAssessment}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Breast Health Patterns */}
+        {breastPatterns && (
+          <div className="breast-patterns-section">
+            <h2>📈 Your Breast Health Patterns</h2>
+            <div className="patterns-content">
+              <div className="pattern-item">
+                <div className="pattern-icon">📊</div>
+                <p className="pattern-text">{breastPatterns}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Personalized Tips */}
+        {personalizedRecommendations && personalizedRecommendations.length > 0 && (
+          <div className="recommendations-section">
+            <h2>💝 Personalized Tips for You</h2>
+            <div className="recommendations-content">
+              <div className="recommendation-item">
+                <div className="rec-icon">✨</div>
+                <p className="rec-text">{Array.isArray(personalizedRecommendations) ? personalizedRecommendations.join(' • ') : personalizedRecommendations}</p>
+              </div>
             </div>
           </div>
         )}
@@ -461,6 +543,60 @@ Be medical, accurate, and supportive. Include specific guidance for breast healt
             </div>
           </div>
         )}
+
+        {/* Educational Resources */}
+        <div className="educational-resources">
+          <h2>📚 Breast Health Education & Resources</h2>
+          <div className="resources-grid">
+            <div className="resource-card">
+              <h3>🔍 Breast Self-Exam Guide</h3>
+              <p>Step-by-step guide to performing monthly breast self-exams</p>
+              <a href="https://www.acog.org/womens-health/faqs/breast-cancer-screening" target="_blank" rel="noopener noreferrer">
+                ACOG: Breast Cancer Screening
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>📅 Screening Guidelines</h3>
+              <p>Current recommendations for mammograms and clinical exams</p>
+              <a href="https://www.mayoclinic.org/tests-procedures/mammogram/about/pac-20384806" target="_blank" rel="noopener noreferrer">
+                Mayo Clinic: Mammogram Guide
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>⚠️ Warning Signs</h3>
+              <p>Know the signs and symptoms of breast cancer</p>
+              <a href="https://www.healthline.com/health/breast-cancer/signs-and-symptoms" target="_blank" rel="noopener noreferrer">
+                Healthline: Breast Cancer Symptoms
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🧬 Risk Factors</h3>
+              <p>Understanding your personal risk factors for breast cancer</p>
+              <a href="https://www.webmd.com/breast-cancer/guide/breast-cancer-risk-factors" target="_blank" rel="noopener noreferrer">
+                WebMD: Breast Cancer Risk Factors
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🏃‍♀️ Prevention & Lifestyle</h3>
+              <p>Lifestyle changes to reduce breast cancer risk</p>
+              <a href="https://www.asrm.org/topics/topics-index/breast-health/" target="_blank" rel="noopener noreferrer">
+                ASRM: Breast Health
+              </a>
+            </div>
+            
+            <div className="resource-card">
+              <h3>🧘 Mental Health & Support</h3>
+              <p>Managing anxiety and finding support for breast health concerns</p>
+              <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4447118/" target="_blank" rel="noopener noreferrer">
+                Research: Breast Health & Mental Health
+              </a>
+            </div>
+          </div>
+        </div>
 
         {/* Screening Guidelines */}
         <div className="screening-guidelines">

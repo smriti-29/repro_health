@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AIServiceManager from '../ai/aiServiceManager.js';
+import AFABAIService from '../ai/afabAIService.js';
 import './MenopauseSupport.css';
 
 const MenopauseSupport = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AIServiceManager());
+  const [aiService] = useState(() => new AFABAIService());
   
   // Menopause tracking form state
   const [menopauseForm, setMenopauseForm] = useState({

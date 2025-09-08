@@ -1,7 +1,7 @@
 // AFAB DASHBOARD COMPONENT
 // Comprehensive dashboard for AFAB users with lifecycle detection and personalized tracking
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
@@ -77,48 +77,7 @@ const AFABDashboard = () => {
     }
   }, [aiService]);
   
-  // Initialize AFAB profile and detect life stage
-  useEffect(() => {
-    const initializeAFABProfile = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Create AFAB profile from existing user data
-        const baseUserData = {
-          ...user,
-          ...profileData,
-          ...healthData
-        };
-        
-        const newAfabProfile = createAFABUserProfile(baseUserData);
-        setAfabProfile(newAfabProfile);
-        
-        // Detect current life stage
-        const lifeStage = detectAFABLifeStage(newAfabProfile);
-        setCurrentLifeStage(lifeStage);
-        
-        // Get welcome message and tracking options
-        const welcome = getAFABWelcomeMessage(lifeStage, newAfabProfile);
-        setWelcomeMessage(welcome);
-        
-        const options = getTrackingOptions(lifeStage, newAfabProfile);
-        setTrackingOptions(options);
-        
-        // Generate initial AI insights
-        await generateInitialInsights(newAfabProfile, lifeStage);
-        
-      } catch (err) {
-        console.error('Error initializing AFAB profile:', err);
-        setError('Failed to initialize AFAB dashboard');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    if (user && profileData) {
-      initializeAFABProfile();
-    }
-  }, [user, profileData, healthData, generateInitialInsights]);
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
   
   // Handle module selection
   const handleModuleSelect = async (moduleId) => {

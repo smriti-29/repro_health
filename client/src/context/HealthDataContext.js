@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const HealthDataContext = createContext();
@@ -250,22 +250,7 @@ export const HealthDataProvider = ({ children }) => {
     }));
   };
 
-  // Load data when user changes
-  useEffect(() => {
-    if (user) {
-      loadHealthData();
-    } else {
-      setHealthData({
-        today: null,
-        history: [],
-        trends: {},
-        insights: {},
-        reminders: [],
-        goals: {}
-      });
-      setLoading(false);
-    }
-  }, [user, loadHealthData]);
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
   // Auto-refresh data every 5 minutes - DISABLED to prevent shaking
   // useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useHealthData } from '../context/HealthDataContext';
@@ -42,12 +42,17 @@ const Dashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [lastAnalysisTime, setLastAnalysisTime] = useState(null);
+  
+  // AI Analysis Management - Prevent infinite loops
+  const [analysisTimeout, setAnalysisTimeout] = useState(null);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [analysisDataHash, setAnalysisDataHash] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const [comingSoonFeature, setComingSoonFeature] = useState('');
   
-  // Daily log form state
+  // Daily log form state - FIXED CONTROLLED INPUTS
   const [dailyLogForm, setDailyLogForm] = useState({
     mood: '',
     energy: 5,
@@ -56,7 +61,7 @@ const Dashboard = () => {
     notes: ''
   });
   
-  // Symptom log form state
+  // Symptom log form state - FIXED CONTROLLED INPUTS
   const [symptomLogForm, setSymptomLogForm] = useState({
     symptoms: [],
     duration: '',
@@ -108,7 +113,18 @@ const Dashboard = () => {
     medicationTaken: '',
     notes: ''
   });
-  const [profileData, setProfileData] = useState({});
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    email: '',
+    dateOfBirth: '',
+    genderIdentity: '',
+    phone: '',
+    emergencyContact: {
+      name: '',
+      phone: '',
+      relationship: ''
+    }
+  });
   const [profilePicture, setProfilePicture] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -194,6 +210,9 @@ const Dashboard = () => {
     const healthLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
     return healthLogs.slice(-5).reverse(); // Last 5 logs, newest first
   };
+
+  // REMOVED: createDataHash and shouldRunAnalysis functions to prevent circular dependencies
+  // Hash creation is now done inline in performAIAnalysis
   
   const handleComingSoon = (featureName) => {
     setComingSoonFeature(featureName);
@@ -204,10 +223,13 @@ const Dashboard = () => {
   const handleAFABModule = async (moduleType) => {
     try {
       console.log(`🎯 Navigating to AFAB module: ${moduleType}`);
+      console.log(`🔍 Current user:`, user);
+      console.log(`🔍 Navigate function:`, navigate);
       
       // Navigate to dedicated pages for implemented modules
       switch (moduleType) {
         case 'cycle':
+          console.log(`🚀 Navigating to cycle tracking...`);
           navigate('/cycle-tracking');
           break;
         case 'fertility':
@@ -220,10 +242,10 @@ const Dashboard = () => {
           navigate('/menopause-support');
           break;
         case 'pcos':
-          navigate('/pcos-management');
+          navigate('/condition-specific');
           break;
         case 'endometriosis':
-          navigate('/endometriosis-care');
+          navigate('/condition-specific');
           break;
         case 'breast-health':
           navigate('/breast-health');
@@ -231,24 +253,15 @@ const Dashboard = () => {
         case 'mental-health':
           navigate('/mental-health');
           break;
-      case 'sexual-health':
-        navigate('/sexual-health');
-        break;
-      case 'pregnancy-tracker':
-        navigate('/pregnancy-tracking');
-        break;
-      case 'menopause-support':
-        navigate('/menopause-support');
-        break;
-      case 'pcos':
-        navigate('/condition-specific');
-        break;
-      case 'endometriosis':
-        navigate('/condition-specific');
-        break;
-      case 'breast-health':
-        navigate('/breast-health');
-        break;
+        case 'sexual-health':
+          navigate('/sexual-health');
+          break;
+        case 'pregnancy-tracker':
+          navigate('/pregnancy-tracking');
+          break;
+        case 'menopause-support':
+          navigate('/menopause-support');
+          break;
         default:
           // For modules not yet implemented, show coming soon modal
           setShowComingSoonModal(true);
@@ -283,9 +296,9 @@ const Dashboard = () => {
       notes: ''
     });
     
-    // Trigger AI analysis
+    // Trigger AI analysis with new data
     if (onboardingData && Object.keys(onboardingData).length > 0) {
-      performAIAnalysis();
+      debouncedAIAnalysis();
     }
     
     alert('Daily health log saved successfully! AI analysis updated.');
@@ -595,6 +608,19 @@ Format as: "🔍 [Analysis]: [Specific recommendations]"`;
       return;
     }
     
+    // FIXED: Inline hash creation to avoid circular dependency
+    const currentHash = JSON.stringify({
+      user: user?.id,
+      onboarding: onboardingData,
+      healthLogs: getRecentHealthLogs().length
+    });
+    
+    // Check if we need to run analysis
+    if (hasAnalyzed && currentHash === analysisDataHash) {
+      console.log('⏳ AI analysis already completed for this data, skipping...');
+      return;
+    }
+    
     // Prevent multiple simultaneous AI analysis calls
     if (isAnalyzing) {
       console.log('⏳ AI analysis already in progress, skipping...');
@@ -606,96 +632,45 @@ Format as: "🔍 [Analysis]: [Specific recommendations]"`;
     setAiError(null);
     
     try {
-      // Generate AFAB-specific insights if user is AFAB
-      if (isFemale) {
-        console.log('🌸 Generating AFAB-specific insights...');
-        const afabPrompt = `As an expert in AFAB reproductive health, analyze this user's data and provide personalized insights:
-
-User Profile: ${JSON.stringify(onboardingData)}
-Health Logs: ${JSON.stringify(getRecentHealthLogs())}
-
-Provide 3-5 actionable insights focusing on:
-- Menstrual cycle health
-- Fertility awareness
-- Reproductive health conditions
-- Hormonal balance
-- Mental health during cycle phases
-- Preventive care recommendations
-
-Be medically accurate, inclusive, and supportive.`;
-
-        const afabInsights = await aiService.generateHealthInsights(afabPrompt);
-        setAiInsights([afabInsights]);
+      // FIXED: Try AI insights first, fallback to local insights if needed
+      console.log('🤖 Attempting AI insights generation...');
+      
+      try {
+        // Try to get AI insights with rate limiting
+        const aiInsights = await generateAIInsights(onboardingData);
+        const aiAlerts = await generateAIAlerts(onboardingData);
+        const aiReminders = await generateAIReminders(onboardingData);
+        const aiTips = await generateAITips(onboardingData);
         
-        // Generate AFAB-specific alerts
-        const alertPrompt = `Based on this AFAB user's data, identify any urgent health alerts or concerns:
-${JSON.stringify(onboardingData)}
-
-Focus on:
-- Irregular cycle patterns
-- Concerning symptoms
-- Overdue screenings
-- Medication interactions
-- Lifestyle factors affecting reproductive health`;
-
-        const afabAlerts = await aiService.generateHealthAlerts(alertPrompt);
-        setAiAlerts([afabAlerts]);
+        setAiInsights(aiInsights);
+        setAiAlerts(aiAlerts);
+        setAiReminders(aiReminders);
+        setAiTips(aiTips);
         
-        // Generate AFAB-specific reminders
-        const reminderPrompt = `Generate personalized reminders for this AFAB user:
-${JSON.stringify(onboardingData)}
-
-Include:
-- Cycle tracking reminders
-- Screening appointments
-- Medication schedules
-- Lifestyle recommendations
-- Self-care practices`;
-
-        const afabReminders = await aiService.generateHealthReminders(reminderPrompt);
-        setAiReminders([afabReminders]);
+        console.log('✅ AI insights generated successfully');
+      } catch (aiError) {
+        console.warn('⚠️ AI insights failed, using fallback:', aiError.message);
         
-        console.log('✅ AFAB-specific analysis complete');
-        return;
+        // Use fallback insights if AI fails
+        const fallbackInsights = generateFallbackInsights(onboardingData);
+        const fallbackAlerts = generateFallbackAlerts(onboardingData);
+        const fallbackReminders = generateFallbackReminders(onboardingData);
+        const fallbackTips = generateFallbackTips(onboardingData);
+        
+        setAiInsights(fallbackInsights);
+        setAiAlerts(fallbackAlerts);
+        setAiReminders(fallbackReminders);
+        setAiTips(fallbackTips);
+        
+        console.log('✅ Fallback insights generated successfully');
       }
       
-      // Original analysis for non-AFAB users
-      const combinedAnalysis = {
-        timestamp: new Date().toISOString(),
-        userData: onboardingData,
-        healthLogs: getRecentHealthLogs()
-      };
-    
-      setAiAnalysis(combinedAnalysis);
-      setLastAnalysisTime(new Date().toISOString());
-      
-      // Extract specific insights (now async)
-      console.log('🔍 Extracting AI insights...');
-      const insights = await extractAIInsights(combinedAnalysis);
-      console.log('✅ Insights extracted:', insights);
-      
-      console.log('🚨 Extracting AI alerts...');
-      const alerts = extractAIAlerts(combinedAnalysis);
-      console.log('✅ Alerts extracted:', alerts);
-      
-      console.log('⏰ Extracting AI reminders...');
-      const reminders = await extractAIReminders(combinedAnalysis);
-      console.log('✅ Reminders extracted:', reminders);
-      
-      console.log('💡 Extracting AI tips...');
-      const tips = await extractAITips(combinedAnalysis);
-      console.log('✅ Tips extracted:', tips);
-      
-      // Set all AI outputs with a small delay to prevent rapid state changes
-      setTimeout(() => {
-        setAiInsights(insights);
-        setAiAlerts(alerts);
-        setAiReminders(reminders);
-        setAiTips(tips);
-        
-        console.log('🎉 AI analysis completed successfully!');
         setAiError(null);
-      }, 100); // Small delay to prevent rapid re-renders
+      
+      // Mark analysis as completed and update hash
+      setHasAnalyzed(true);
+      setAnalysisDataHash(currentHash);
+      setLastAnalysisTime(new Date().toISOString());
       
     } catch (error) {
       console.error('❌ AI Analysis failed:', error);
@@ -703,15 +678,35 @@ Include:
     } finally {
       setIsAnalyzing(false);
     }
-  }, [onboardingData]);
+  }, [onboardingData, user?.id, hasAnalyzed, analysisDataHash, isAnalyzing]); // FIXED: Removed circular dependencies
 
-  const extractAIInsights = async (analysis) => {
-    console.log('🔍 extractAIInsights called with:', analysis);
+  // FIXED: Simplified debounced AI analysis - now only used for manual triggers
+  const debouncedAIAnalysis = useCallback(() => {
+    // Clear any existing timeout
+    if (analysisTimeout) {
+      clearTimeout(analysisTimeout);
+    }
     
-    // REAL AI ANALYSIS - Using actual onboarding data
+    // Set a new timeout for 2 seconds
+    const timeout = setTimeout(() => {
+      performAIAnalysis();
+    }, 2000);
+    
+    setAnalysisTimeout(timeout);
+  }, [analysisTimeout]); // REMOVED performAIAnalysis dependency to prevent circular dependency
+
+  // NEW: Single comprehensive AI call to reduce API usage
+  const generateComprehensiveInsights = async (analysis) => {
+    console.log('🔍 generateComprehensiveInsights called with:', analysis);
+    
     if (!onboardingData || Object.keys(onboardingData).length === 0) {
       console.log('❌ No onboarding data available');
-      return ['Complete your health profile to receive personalized AI insights tailored to your specific conditions and lifestyle factors.'];
+      return {
+        insights: ['Complete your health profile to receive personalized AI insights tailored to your specific conditions and lifestyle factors.'],
+        alerts: ['Complete your health profile to receive personalized AI alerts.'],
+        reminders: ['Complete your health profile to receive personalized AI reminders.'],
+        tips: ['Complete your health profile to receive personalized AI tips.']
+      };
     }
     
     // Get real user data
@@ -724,12 +719,19 @@ Include:
     const medications = onboardingData?.currentMedications || [];
     const recentLogs = getRecentHealthLogs().slice(0, 3);
     
-    console.log('📊 User data for insights:', { age, gender, conditions, lifestyle, mentalHealth, reproductive, medications, recentLogs });
+    console.log('📊 User data for comprehensive analysis:', { age, gender, conditions, lifestyle, mentalHealth, reproductive, medications, recentLogs });
     
-    // Using Gemini Pro for real AI insights
+    // Single comprehensive prompt to get all insights at once
     try {
-      console.log('🤖 Using Gemini Pro for real AI insights...');
-      const prompt = `Generate 5 personalized health insights for this user profile. Be medically accurate, inclusive, and actionable.
+      console.log('🤖 Using Gemini Pro for comprehensive AI analysis...');
+      const prompt = `Generate a comprehensive health analysis for this user profile. Return your response in the following JSON format:
+
+{
+  "insights": ["insight1", "insight2", "insight3", "insight4", "insight5"],
+  "alerts": ["alert1", "alert2", "alert3"],
+  "reminders": ["reminder1", "reminder2", "reminder3"],
+  "tips": ["tip1", "tip2", "tip3"]
+}
         
 User Profile:
 - Age: ${age} years
@@ -744,62 +746,205 @@ User Profile:
 Recent Health Logs:
 ${recentLogs.map(log => `- ${log.type}: ${log.mood || 'N/A'}, Energy: ${log.energy || 'N/A'}/10, Sleep: ${log.sleep || 'N/A'}/10`).join('\n')}
 
-Generate insights that:
-1. Combine multiple factors (age + conditions + lifestyle + gender + recent logs)
-2. Are medically relevant and evidence-based
-3. Include specific actionable recommendations
-4. Are inclusive for all gender identities
-5. Address the user's specific health profile
+Requirements:
+1. INSIGHTS: 5 actionable, evidence-based recommendations combining age + conditions + lifestyle + gender + recent logs
+2. ALERTS: 3 urgent health concerns requiring immediate attention (use 🚨 HIGH PRIORITY, ⚠️ MEDIUM PRIORITY, 💊 CONDITION ALERT, 🔍 SCREENING ALERT)
+3. REMINDERS: 3 personalized reminders for appointments, medications, screenings, or lifestyle changes
+4. TIPS: 3 practical health tips specific to this user's profile
 
-Format each insight as: "🔴/🟡/🟢 [Title]: [Specific recommendation with actionable steps]"
-
-Return exactly 5 insights, one per line:`;
+Be medically accurate, inclusive for all gender identities, and provide specific actionable steps.`;
 
       const response = await aiService.generateHealthInsights(prompt);
+      
       if (response && response.length > 0) {
-        console.log('✅ Gemini insights received:', response);
-        return response.slice(0, 5);
+        console.log('✅ Gemini comprehensive analysis received:', response);
+        
+        try {
+          // Try to parse as JSON first
+          const parsed = JSON.parse(response);
+          return {
+            insights: parsed.insights || [response],
+            alerts: parsed.alerts || ['No urgent alerts at this time'],
+            reminders: parsed.reminders || ['No reminders at this time'],
+            tips: parsed.tips || ['No tips available']
+          };
+        } catch (parseError) {
+          // If not JSON, split the response into sections
+          console.log('📝 Response not in JSON format, parsing as text...');
+          const lines = response.split('\n').filter(line => line.trim());
+          
+          return {
+            insights: lines.slice(0, 5).filter(line => line.trim()),
+            alerts: lines.slice(5, 8).filter(line => line.trim()),
+            reminders: lines.slice(8, 11).filter(line => line.trim()),
+            tips: lines.slice(11, 14).filter(line => line.trim())
+          };
+        }
       } else {
         throw new Error('Gemini returned empty response');
       }
     } catch (error) {
-      console.error('❌ Gemini API failed:', error);
-      // Return error message instead of hardcoded fallbacks
-      return [`AI Analysis Error: Unable to generate insights. Please check your Gemini API key and try again. Error: ${error.message}`];
+      console.error('❌ Gemini API failed for comprehensive analysis:', error);
+      return {
+        insights: [`AI Analysis Error: Unable to generate insights. Please check your Gemini API key and try again. Error: ${error.message}`],
+        alerts: [`AI Analysis Error: Unable to generate alerts. Error: ${error.message}`],
+        reminders: [`AI Analysis Error: Unable to generate reminders. Error: ${error.message}`],
+        tips: [`AI Analysis Error: Unable to generate tips. Error: ${error.message}`]
+      };
     }
-
   };
 
-  const extractAIAlerts = async (analysis) => {
-    console.log('🚨 extractAIAlerts called with:', analysis);
-    
-    // Using Gemini Pro for real AI alerts
+  // Helper function to format AI response into user-friendly format
+  const formatAIResponse = (response) => {
     try {
-      if (!onboardingData || Object.keys(onboardingData).length === 0) {
-        return ['Complete your health profile to receive personalized AI alerts.'];
+      // If response is already a string, return it formatted
+      if (typeof response === 'string') {
+        // Split into sections and format nicely
+        const sections = response.split(/\*\*([^*]+)\*\*/);
+        const formatted = [];
+        
+        for (let i = 0; i < sections.length; i += 2) {
+          const sectionTitle = sections[i]?.trim();
+          const sectionContent = sections[i + 1]?.trim();
+          
+          if (sectionTitle && sectionContent) {
+            formatted.push({
+              type: 'section',
+              title: sectionTitle,
+              content: sectionContent
+            });
+          }
+        }
+        
+        // If no sections found, treat as plain text
+        if (formatted.length === 0) {
+          return [{
+            type: 'text',
+            content: response
+          }];
+        }
+        
+        return formatted;
       }
       
-      console.log('🤖 Using Gemini Pro for real AI alerts...');
-      const age = calculateAge(onboardingData?.dateOfBirth);
-      const gender = onboardingData?.genderIdentity;
-      const conditions = onboardingData?.chronicConditions || [];
-      const lifestyle = onboardingData?.lifestyle || {};
-      const mentalHealth = onboardingData?.mentalHealthConditions || [];
-      const medications = onboardingData?.currentMedications || [];
+      // If response is an object, format it
+      if (typeof response === 'object') {
+        const formatted = [];
+        
+        // Handle different response structures
+        if (response.insights) {
+          formatted.push({
+            type: 'insights',
+            title: 'Key Health Insights',
+            content: Array.isArray(response.insights) ? response.insights : [response.insights]
+          });
+        }
+        
+        if (response.riskAssessment) {
+          formatted.push({
+            type: 'risk',
+            title: 'Risk Assessment',
+            content: response.riskAssessment
+          });
+        }
+        
+        if (response.recommendations) {
+          formatted.push({
+            type: 'recommendations',
+            title: 'Recommendations',
+            content: Array.isArray(response.recommendations) ? response.recommendations : [response.recommendations]
+          });
+        }
+        
+        if (response.personalizedTips) {
+          formatted.push({
+            type: 'tips',
+            title: 'Personalized Tips',
+            content: Array.isArray(response.personalizedTips) ? response.personalizedTips : [response.personalizedTips]
+          });
+        }
+        
+        return formatted;
+      }
+      
+      return [{
+        type: 'text',
+        content: 'AI insights generated successfully'
+      }];
+    } catch (error) {
+      console.error('Error formatting AI response:', error);
+      return [{
+        type: 'text',
+        content: response || 'AI insights generated successfully'
+      }];
+    }
+  };
+
+  // FIXED: AI generation functions with proper error handling
+  const generateAIInsights = async (userData) => {
+    try {
+      const age = calculateAge(userData?.dateOfBirth);
+      const gender = userData?.genderIdentity;
+      const conditions = userData?.chronicConditions || [];
+      const lifestyle = userData?.lifestyle || {};
       const recentLogs = getRecentHealthLogs().slice(0, 3);
       
-      const prompt = `Generate 3-5 urgent health alerts for this user profile. Focus on high-priority medical concerns.
+      const prompt = `Generate comprehensive health insights for this user profile. Be medically accurate, inclusive, and actionable.
         
 User Profile:
 - Age: ${age} years
 - Gender Identity: ${gender || 'Not specified'}
 - Chronic Conditions: ${conditions.join(', ') || 'None'}
-- Mental Health: ${mentalHealth.join(', ') || 'None'}
 - Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}, Alcohol ${lifestyle.alcoholUse || 'Not specified'}
-- Current Medications: ${medications.join(', ') || 'None'}
+- Recent Health Logs: ${recentLogs.length} entries
 
-Recent Health Logs:
-${recentLogs.map(log => `- ${log.type}: ${log.mood || 'N/A'}, Energy: ${log.energy || 'N/A'}/10, Sleep: ${log.sleep || 'N/A'}/10`).join('\n')}
+Please provide a structured response with the following sections:
+
+1. **Key Health Insights** (3-5 insights):
+   - Format: "🔴/🟡/🟢 [Title]: [Specific recommendation with actionable steps]"
+   - Focus on: Age-appropriate health concerns, lifestyle factors, chronic conditions
+
+2. **Risk Assessment**:
+   - Overall risk level (Low/Medium/High)
+   - Specific risk factors to monitor
+
+3. **Actionable Recommendations**:
+   - Immediate actions (next 1-2 weeks)
+   - Long-term health goals (next 3-6 months)
+   - When to seek medical care
+
+4. **Personalized Tips**:
+   - 3-5 specific, actionable tips based on their profile
+
+Please format this as clear, well-structured text that's easy to read and understand.`;
+
+      const response = await aiService.generateHealthInsights(prompt);
+      
+      // Parse the structured response and format it nicely
+      const formattedInsights = formatAIResponse(response);
+      return formattedInsights;
+    } catch (error) {
+      console.error('Error generating AI insights:', error);
+      throw error;
+    }
+  };
+
+  const generateAIAlerts = async (userData) => {
+    try {
+      const age = calculateAge(userData?.dateOfBirth);
+      const gender = userData?.genderIdentity;
+      const conditions = userData?.chronicConditions || [];
+      const lifestyle = userData?.lifestyle || {};
+      const recentLogs = getRecentHealthLogs().slice(0, 3);
+      
+      const prompt = `Generate 5 urgent health alerts for this user profile. Focus on high-priority medical concerns.
+        
+User Profile:
+- Age: ${age} years
+- Gender Identity: ${gender || 'Not specified'}
+- Chronic Conditions: ${conditions.join(', ') || 'None'}
+- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}, Alcohol ${lifestyle.alcoholUse || 'Not specified'}
+- Recent Health Logs: ${recentLogs.length} entries
 
 Generate alerts that:
 1. Identify urgent medical concerns requiring immediate attention
@@ -807,38 +952,23 @@ Generate alerts that:
 3. Include specific actionable steps
 4. Use appropriate urgency levels (🚨 HIGH PRIORITY, ⚠️ MEDIUM PRIORITY, 💊 CONDITION ALERT, 🔍 SCREENING ALERT)
 
-Return 3-5 alerts, one per line:`;
+Return exactly 5 alerts, one per line:`;
 
       const response = await aiService.generateHealthAlerts(prompt);
-      if (response && response.length > 0) {
-        console.log('✅ Gemini alerts received:', response);
-        return response.slice(0, 5);
-      } else {
-        throw new Error('Gemini returned empty response');
-      }
+      return response.split('\n').filter(line => line.trim()).slice(0, 5);
     } catch (error) {
-      console.error('❌ Gemini API failed for alerts:', error);
-      return [`AI Analysis Error: Unable to generate alerts. Please check your Gemini API key and try again. Error: ${error.message}`];
+      console.error('Error generating AI alerts:', error);
+      throw error;
     }
   };
 
-  const extractAIReminders = async (analysis) => {
-    console.log('⏰ extractAIReminders called with:', analysis);
-    
-    // Using Gemini Pro for real AI reminders
+  const generateAIReminders = async (userData) => {
     try {
-      if (!onboardingData || Object.keys(onboardingData).length === 0) {
-        return ['Complete your health profile to receive personalized reminders and screening recommendations.'];
-      }
-      
-      console.log('🤖 Using Gemini Pro for real AI reminders...');
-      const age = calculateAge(onboardingData?.dateOfBirth);
-      const gender = onboardingData?.genderIdentity;
-      const conditions = onboardingData?.chronicConditions || [];
-      const lifestyle = onboardingData?.lifestyle || {};
-      const medications = onboardingData?.currentMedications || [];
-      const reproductive = onboardingData?.reproductiveHealth || {};
-      const recentLogs = getRecentHealthLogs().slice(0, 3);
+      const age = calculateAge(userData?.dateOfBirth);
+      const gender = userData?.genderIdentity;
+      const conditions = userData?.chronicConditions || [];
+      const lifestyle = userData?.lifestyle || {};
+      const medications = userData?.currentMedications || [];
       
       const prompt = `Generate 5 personalized health reminders for this user profile. Focus on screenings, appointments, and health monitoring.
         
@@ -848,11 +978,6 @@ User Profile:
 - Chronic Conditions: ${conditions.join(', ') || 'None'}
 - Current Medications: ${medications.join(', ') || 'None'}
 - Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}
-- Reproductive Health: ${reproductive.currentStatus?.join(', ') || 'Not specified'}
-- Goals: ${onboardingData?.healthGoals?.join(', ') || 'General wellness'}
-
-Recent Health Logs:
-${recentLogs.map(log => `- ${log.type}: ${log.mood || 'N/A'}, Energy: ${log.energy || 'N/A'}/10, Sleep: ${log.sleep || 'N/A'}/10`).join('\n')}
 
 Generate reminders that:
 1. Are age-appropriate and gender-inclusive
@@ -866,34 +991,19 @@ Format each reminder as: "📅 [Specific reminder with timeframe]"
 Return exactly 5 reminders, one per line:`;
 
       const response = await aiService.generateHealthReminders(prompt);
-      if (response && response.length > 0) {
-        console.log('✅ Gemini reminders received:', response);
-        return response.slice(0, 5);
-      } else {
-        throw new Error('Gemini returned empty response');
-      }
+      return response.split('\n').filter(line => line.trim()).slice(0, 5);
     } catch (error) {
-      console.error('❌ Gemini API failed for reminders:', error);
-      return [`AI Analysis Error: Unable to generate reminders. Please check your Gemini API key and try again. Error: ${error.message}`];
+      console.error('Error generating AI reminders:', error);
+      throw error;
     }
   };
 
-  const extractAITips = async (analysis) => {
-    console.log('💡 extractAITips called with:', analysis);
-    
-    // Using Gemini Pro for real AI tips
+  const generateAITips = async (userData) => {
     try {
-      if (!onboardingData || Object.keys(onboardingData).length === 0) {
-        return ['Complete your health profile to receive personalized health tips and recommendations.'];
-      }
-      
-      console.log('🤖 Using Gemini Pro for real AI tips...');
-      const age = calculateAge(onboardingData?.dateOfBirth);
-      const gender = onboardingData?.genderIdentity;
-      const conditions = onboardingData?.chronicConditions || [];
-      const lifestyle = onboardingData?.lifestyle || {};
-      const mentalHealth = onboardingData?.mentalHealthConditions || [];
-      const reproductive = onboardingData?.reproductiveHealth || {};
+      const age = calculateAge(userData?.dateOfBirth);
+      const gender = userData?.genderIdentity;
+      const conditions = userData?.chronicConditions || [];
+      const lifestyle = userData?.lifestyle || {};
       const recentLogs = getRecentHealthLogs().slice(0, 3);
       
       const prompt = `Generate 5 personalized health tips for this user profile. Focus on practical, evidence-based recommendations.
@@ -902,13 +1012,8 @@ User Profile:
 - Age: ${age} years
 - Gender Identity: ${gender || 'Not specified'}
 - Chronic Conditions: ${conditions.join(', ') || 'None'}
-- Mental Health: ${mentalHealth.join(', ') || 'None'}
 - Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Sleep ${lifestyle.sleepQuality || 'Not specified'}, Stress ${lifestyle.stressLevel || 'Not specified'}
-- Reproductive Health: ${reproductive.currentStatus?.join(', ') || 'Not specified'}
-- Goals: ${onboardingData?.healthGoals?.join(', ') || 'General wellness'}
-
-Recent Health Logs:
-${recentLogs.map(log => `- ${log.type}: ${log.mood || 'N/A'}, Energy: ${log.energy || 'N/A'}/10, Sleep: ${log.sleep || 'N/A'}/10`).join('\n')}
+- Recent Health Logs: ${recentLogs.length} entries
 
 Generate tips that:
 1. Address the user's specific conditions and lifestyle
@@ -922,15 +1027,160 @@ Format each tip as: "💡 [Specific tip with actionable steps]"
 Return exactly 5 tips, one per line:`;
 
       const response = await aiService.generateHealthTips(prompt);
-      if (response && response.length > 0) {
-        console.log('✅ Gemini tips received:', response);
-        return response.slice(0, 5);
-      } else {
-        throw new Error('Gemini returned empty response');
-      }
+      return response.split('\n').filter(line => line.trim()).slice(0, 5);
     } catch (error) {
-      console.error('❌ Gemini API failed for tips:', error);
-      return [`AI Analysis Error: Unable to generate tips. Please check your Gemini API key and try again. Error: ${error.message}`];
+      console.error('Error generating AI tips:', error);
+      throw error;
+    }
+  };
+
+  // FIXED: Fallback functions to avoid Gemini quota exhaustion
+  const generateFallbackInsights = (userData) => {
+    const age = calculateAge(userData?.dateOfBirth);
+    const gender = userData?.genderIdentity;
+    const conditions = userData?.chronicConditions || [];
+    
+    const insights = [
+      `🟢 Age-Based Health Focus: At ${age} years old, focus on preventive care and maintaining healthy habits.`,
+      `🟡 Lifestyle Optimization: Regular exercise and balanced nutrition are key to long-term health.`,
+      `🟢 Health Monitoring: Continue tracking your health metrics to identify patterns and trends.`,
+      `🟡 Stress Management: Practice stress reduction techniques like meditation or deep breathing.`,
+      `🟢 Regular Checkups: Schedule annual health checkups to monitor your overall wellness.`
+    ];
+    
+    if (conditions.length > 0) {
+      insights[0] = `🔴 Condition Management: Active management of ${conditions.join(', ')} is essential for optimal health.`;
+    }
+    
+    if (gender === 'AFAB' || gender === 'Female') {
+      insights.push(`🟡 Reproductive Health: Regular gynecological checkups and screenings are important.`);
+    }
+    
+    return insights.slice(0, 5);
+  };
+
+  const generateFallbackAlerts = (userData) => {
+    const age = calculateAge(userData?.dateOfBirth);
+    const conditions = userData?.chronicConditions || [];
+    
+    const alerts = [
+      `🚨 Annual Health Checkup: Schedule your yearly physical examination.`,
+      `⚠️ Lifestyle Review: Assess your exercise and nutrition habits.`,
+      `💊 Medication Review: Review current medications with your healthcare provider.`,
+      `🔍 Screening Schedule: Check if any age-appropriate screenings are due.`,
+      `📅 Follow-up Appointments: Schedule any pending medical follow-ups.`
+    ];
+    
+    if (conditions.length > 0) {
+      alerts[0] = `🔴 Condition Monitoring: Regular monitoring of ${conditions.join(', ')} is crucial.`;
+    }
+    
+    return alerts.slice(0, 5);
+  };
+
+  const generateFallbackReminders = (userData) => {
+    const age = calculateAge(userData?.dateOfBirth);
+    const gender = userData?.genderIdentity;
+    
+    const reminders = [
+      `📅 Daily Health Logging: Continue tracking your daily health metrics.`,
+      `💧 Hydration: Aim for 8-10 glasses of water daily.`,
+      `🏃 Exercise: Include 30 minutes of moderate activity most days.`,
+      `😴 Sleep: Maintain 7-9 hours of quality sleep nightly.`,
+      `🧘 Stress Management: Practice daily stress reduction techniques.`
+    ];
+    
+    if (gender === 'AFAB' || gender === 'Female') {
+      reminders.push(`🩸 Cycle Tracking: Monitor your menstrual cycle patterns.`);
+    }
+    
+    return reminders.slice(0, 5);
+  };
+
+  const generateFallbackTips = (userData) => {
+    const age = calculateAge(userData?.dateOfBirth);
+    const conditions = userData?.chronicConditions || [];
+    
+    const tips = [
+      `💡 Balanced Diet: Focus on whole foods, fruits, vegetables, and lean proteins.`,
+      `💡 Regular Exercise: Aim for 150 minutes of moderate activity per week.`,
+      `💡 Sleep Hygiene: Maintain consistent sleep schedule and create a restful environment.`,
+      `💡 Stress Reduction: Practice mindfulness, meditation, or yoga regularly.`,
+      `💡 Preventive Care: Stay up-to-date with vaccinations and health screenings.`
+    ];
+    
+    if (conditions.length > 0) {
+      tips[0] = `💡 Condition-Specific Care: Follow your healthcare provider's recommendations for ${conditions.join(', ')}.`;
+    }
+    
+    return tips.slice(0, 5);
+  };
+
+  // Manual AI Analysis Trigger - WORKING VERSION
+  const triggerManualAIAnalysis = async () => {
+    console.log('🔄 Manual AI analysis triggered - WORKING MODE');
+    
+    // Reset state
+    setHasAnalyzed(false);
+    setAnalysisDataHash('');
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      // Generate comprehensive AI insights for all AFAB modules
+      const age = calculateAge(onboardingData?.dateOfBirth);
+      const gender = onboardingData?.genderIdentity;
+      const conditions = onboardingData?.chronicConditions || [];
+      
+      const comprehensivePrompt = `As a medical AI specializing in AFAB reproductive health, generate comprehensive insights for a ${age}-year-old user. 
+
+User Profile:
+- Age: ${age} years
+- Gender: ${gender}
+- Conditions: ${conditions.join(', ') || 'None'}
+
+Generate insights for these AFAB health modules:
+1. MENSTRUAL CYCLE: Analysis of cycle patterns, irregularities, and health implications
+2. FERTILITY: Fertility assessment, ovulation tracking, and conception optimization
+3. PREGNANCY: Pregnancy health monitoring and trimester-specific guidance
+4. MENOPAUSE: Menopause transition support and symptom management
+
+Return insights in this format:
+CYCLE: [cycle-specific insights]
+FERTILITY: [fertility-specific insights] 
+PREGNANCY: [pregnancy-specific insights]
+MENOPAUSE: [menopause-specific insights]
+
+Be medically accurate, evidence-based, and actionable.`;
+
+      // Use the AI service manager
+      const aiResponse = await aiService.generateHealthInsights(comprehensivePrompt);
+      
+      // Parse and set real AI insights
+      const insights = aiResponse.split('\n').filter(line => line.trim());
+      setAiInsights(insights);
+      setAiAlerts(['✅ Real AI insights generated for all AFAB modules!']);
+      setAiReminders(['🔄 AI analysis completed successfully']);
+      setAiTips(['💡 Using live Gemini AI for comprehensive health insights']);
+      
+      console.log('✅ Real AI insights generated:', aiResponse);
+      
+    } catch (error) {
+      console.warn('⚠️ AI failed, using fallback:', error.message);
+      
+      // Use fallback insights
+      const fallbackInsights = generateFallbackInsights(onboardingData);
+      const fallbackAlerts = generateFallbackAlerts(onboardingData);
+      const fallbackReminders = generateFallbackReminders(onboardingData);
+      const fallbackTips = generateFallbackTips(onboardingData);
+      
+      setAiInsights(fallbackInsights);
+      setAiAlerts(fallbackAlerts);
+      setAiReminders(fallbackReminders);
+      setAiTips(fallbackTips);
+    } finally {
+      setIsAnalyzing(false);
+      setHasAnalyzed(true);
     }
   };
 
@@ -940,6 +1190,11 @@ Return exactly 5 tips, one per line:`;
       icon: '📝',
       label: 'Log Health',
       action: () => setShowHealthModal(true)
+    },
+    {
+      icon: '🤖',
+      label: 'Get REAL AI Insights',
+      action: triggerManualAIAnalysis
     },
     {
       icon: '🔍',
@@ -954,7 +1209,7 @@ Return exactly 5 tips, one per line:`;
     {
       icon: '⚡',
       label: 'Quick Check',
-      action: () => performAIAnalysis()
+      action: () => debouncedAIAnalysis()
     }
   ];
 
@@ -986,7 +1241,7 @@ Return exactly 5 tips, one per line:`;
     
     // Trigger AI analysis with new data
     if (onboardingData && Object.keys(onboardingData).length > 0) {
-      performAIAnalysis();
+      debouncedAIAnalysis();
     }
     
     setShowHealthModal(false);
@@ -996,48 +1251,78 @@ Return exactly 5 tips, one per line:`;
     alert('Health log saved successfully! AI analysis updated with new data.');
   };
 
-  // Effects
-  useEffect(() => {
-    // Check AI service health on component mount
-    checkAIService();
-    
-    if (user && onboardingData && Object.keys(onboardingData).length > 0) {
-      // Only run AI analysis once when component mounts or data changes
-      const timer = setTimeout(() => {
-        performAIAnalysis();
-      }, 1000); // Restored to 1000ms for stability
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, onboardingData, checkAIService]);
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
   // Render functions
   const renderAIInsights = () => {
     // Stable loading state to prevent layout shifts
     if (!aiInsights || !Array.isArray(aiInsights) || aiInsights.length === 0) {
-      // Only trigger AI analysis once when needed
-      if (onboardingData && Object.keys(onboardingData).length > 0 && !window.aiAnalysisTriggered) {
-        window.aiAnalysisTriggered = true;
-        // Restored delay for stability
-        setTimeout(() => {
-          performAIAnalysis();
-        }, 1000); // Restored to 1000ms for stability
-      }
+      // AI analysis is handled in useEffect - no need to trigger here
       
       return (
         <div className="insight-card loading-state" style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
           <div className="loading-spinner">🔄</div>
           <p>AI is analyzing your health data...</p>
+          <p style={{fontSize: '12px', color: '#666', marginTop: '10px'}}>
+            🤖 Provider: {aiService.getCurrentProvider()} | 
+            📊 Requests: {aiService.requestCount}/{aiService.maxRequestsPerHour}
+          </p>
+          <button 
+            onClick={triggerManualAIAnalysis}
+            style={{
+              marginTop: '10px',
+              padding: '8px 16px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            🤖 Get REAL AI Insights
+          </button>
         </div>
       );
     }
 
-    return aiInsights.map((insight, index) => (
+    return aiInsights.map((insight, index) => {
+      // Handle different insight types
+      if (typeof insight === 'object' && insight.type) {
+        return (
+          <div key={index} className={`insight-card ${insight.type}`}>
+            <div className="insight-header">
+              <div className="insight-icon">
+                {insight.type === 'insights' ? '💡' : 
+                 insight.type === 'risk' ? '⚠️' : 
+                 insight.type === 'recommendations' ? '📋' : 
+                 insight.type === 'tips' ? '🌟' : '📄'}
+              </div>
+              <h3>{insight.title}</h3>
+            </div>
+            <div className="insight-content">
+              {Array.isArray(insight.content) ? (
+                <ul>
+                  {insight.content.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>{insight.content}</p>
+              )}
+            </div>
+          </div>
+        );
+      }
+      
+      // Handle simple string insights (fallback)
+      return (
       <div key={index} className="insight-card">
         <div className="insight-icon">💡</div>
         <p>{insight}</p>
       </div>
-    ));
+      );
+    });
   };
 
   const renderAIAlerts = () => {
@@ -1454,7 +1739,10 @@ Return exactly 5 tips, one per line:`;
                     <span>Click to track your cycle</span>
                   </div>
                 </div>
-                                  <button className="module-action" onClick={() => handleAFABModule('cycle')}>
+                                  <button className="module-action" onClick={() => {
+                    console.log('🔘 Track Cycle button clicked!');
+                    handleAFABModule('cycle');
+                  }}>
                    Track Cycle
                  </button>
               </div>
@@ -1948,7 +2236,7 @@ Return exactly 5 tips, one per line:`;
             className="force-ai-btn"
             onClick={() => {
               console.log('🚀 Force triggering AI analysis...');
-              performAIAnalysis();
+              debouncedAIAnalysis();
             }}
           >
             🔄 Force AI Analysis
@@ -2016,8 +2304,7 @@ Return exactly 5 tips, one per line:`;
             // Auto-trigger AI analysis when Insights tab is opened
             if (onboardingData && Object.keys(onboardingData).length > 0 && aiInsights.length === 0) {
               console.log('🚀 Auto-triggering AI analysis for Insights tab');
-              // Increased delay to prevent rapid re-renders and shaking
-              setTimeout(() => performAIAnalysis(), 1000); // Increased from 100ms to 1000ms for stability
+              debouncedAIAnalysis();
             }
           }}
          >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { AIReasoningEngine } from '../ai/aiReasoning';
 import MedicalRulesEngine from '../utils/medicalRulesEngine';
 import AIServiceManager from '../ai/aiServiceManager';
@@ -38,15 +38,28 @@ const SmartInsights = ({ userProfile, onboardingData, localHealthData }) => {
 
       console.log('🔍 Generating insights with data:', combinedData);
 
-      // Generate AI insights using the reasoning engine
+      // FIXED: Try AI insights first, fallback to local insights if needed
+      console.log('🤖 Attempting AI insights generation...');
+      
+      // Generate AI insights using the reasoning engine (local only)
       const aiInsights = await aiReasoningEngine.generateDashboardInsights(combinedData);
 
-      // Skip LLM calls to avoid quota errors - use fallback immediately
-      console.log('🚫 Skipping LLM calls to avoid quota errors, using fallback insights');
-      const aiInsightsLLM = generateFallbackInsights(combinedData);
-      const aiAlertsLLM = generateFallbackAlerts(combinedData);
-      const aiRemindersLLM = generateFallbackReminders(combinedData);
-      const aiTipsLLM = generateFallbackTips(combinedData);
+      // Try AI LLM insights with fallback
+      let aiInsightsLLM, aiAlertsLLM, aiRemindersLLM, aiTipsLLM;
+      
+      try {
+        aiInsightsLLM = await generateAIInsights(combinedData);
+        aiAlertsLLM = await generateAIAlerts(combinedData);
+        aiRemindersLLM = await generateAIReminders(combinedData);
+        aiTipsLLM = await generateAITips(combinedData);
+        console.log('✅ AI LLM insights generated successfully');
+      } catch (aiError) {
+        console.warn('⚠️ AI LLM insights failed, using fallback:', aiError.message);
+        aiInsightsLLM = generateFallbackInsights(combinedData);
+        aiAlertsLLM = generateFallbackAlerts(combinedData);
+        aiRemindersLLM = generateFallbackReminders(combinedData);
+        aiTipsLLM = generateFallbackTips(combinedData);
+      }
 
       // Generate medical rules-based recommendations
       const personalContext = {
@@ -118,26 +131,7 @@ const SmartInsights = ({ userProfile, onboardingData, localHealthData }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Disable ESLint warning for missing dependencies
 
-  useEffect(() => {
-    console.log('🔍 SmartInsights useEffect triggered with:', {
-      userProfile: !!userProfile,
-      onboardingData: !!onboardingData,
-      localHealthData: !!localHealthData,
-      hasGenerated: hasGeneratedRef.current
-    });
-    
-    // Generate insights automatically when data is available and not already generated
-    if (!hasGeneratedRef.current && (userProfile || onboardingData)) {
-      console.log('🚀 Triggering generateInsights...');
-      // Call generateInsights directly without dependency
-      generateInsights();
-    } else if (!hasGeneratedRef.current) {
-      console.log('❌ No data available for insights generation');
-    } else {
-      console.log('⏳ Already generated, skipping...');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userProfile, onboardingData, localHealthData]); // Disable ESLint warning for missing generateInsights
+  // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
 
   // Generate AI insights using LLM

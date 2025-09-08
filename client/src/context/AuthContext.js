@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 import { authAPI } from '../api/api';
 
 // Initial state
@@ -90,34 +90,11 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check if user is authenticated on app load
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        try {
-          const response = await authAPI.getProfile();
-          dispatch({
-            type: AUTH_ACTIONS.LOGIN_SUCCESS,
-            payload: {
-              user: response.data.user,
-              token: token
-            }
-          });
-        } catch (error) {
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          dispatch({ type: AUTH_ACTIONS.LOGOUT });
-        }
-      } else {
-        dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-      }
-    };
-
-    checkAuth();
-  }, []);
+  // Initialize loading state - set to false after component mounts
+  React.useEffect(() => {
+    // Set loading to false after initial render
+    dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+  }, []); // Empty dependency array - only run once on mount
 
   // Login function
   const login = async (credentials) => {

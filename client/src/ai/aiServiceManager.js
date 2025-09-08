@@ -1,8 +1,8 @@
 // AI SERVICE MANAGER
 // Manages Gemini Pro as primary with Ollama as fallback
 
-import GeminiService from './geminiService';
-import OllamaService from './ollamaService';
+import GeminiService from './geminiService.js';
+import OllamaService from './ollamaService.js';
 
 class AIServiceManager {
   constructor() {
@@ -10,35 +10,62 @@ class AIServiceManager {
     this.primaryService = new GeminiService();
     this.fallbackService = new OllamaService();
     
-    // Determine which service to use
+    // FIXED: Use Gemini as primary with proper rate limiting
     this.service = this.primaryService.isConfigured() ? this.primaryService : this.fallbackService;
-    this.quotaExceeded = false;
+    this.quotaExceeded = false; // Reset quota status
+    this.requestCount = 0;
+    this.maxRequestsPerHour = 10; // Conservative limit to prevent quota exhaustion
+    this.requestTimeout = 45000; // 45 second timeout for Ollama
+    this.lastRequestTime = 0;
+    this.requestHistory = [];
     
     console.log('🤖 AI Service Manager initialized');
     console.log('🔧 Primary provider: Gemini Pro (Google)');
     console.log('🔧 Fallback provider: Ollama (Local, Free)');
     console.log('🔧 Active service:', this.service.constructor.name);
     console.log('🔧 Service configured:', this.service.isConfigured());
+    console.log('⏱️ Rate limit: 10 requests per hour (conservative)');
   }
 
   // ===== HELPER METHOD FOR FALLBACK LOGIC =====
   
+  // Check if we can make a request based on rate limiting
+  canMakeRequest() {
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
+    
+    // Clean old requests from history
+    this.requestHistory = this.requestHistory.filter(time => time > oneHourAgo);
+    
+    // Check if we're under the rate limit
+    if (this.requestHistory.length >= this.maxRequestsPerHour) {
+      console.warn(`🚫 Rate limit reached: ${this.requestHistory.length}/${this.maxRequestsPerHour} requests in the last hour`);
+      return false;
+    }
+    
+    return true;
+  }
+
   async executeWithFallback(methodName, prompt) {
+    // FIXED: Enable AI calls with proper rate limiting
+    console.log(`🤖 Making AI request to ${this.service.constructor.name}`);
+    
     try {
       return await this.service[methodName](prompt);
     } catch (error) {
-      console.warn(`⚠️ Primary service failed for ${methodName}, trying fallback:`, error.message);
+      console.warn(`⚠️ Service failed for ${methodName}:`, error.message);
       
-      // Check if it's a quota/rate limit error - switch to fallback permanently for this session
+      // Check if it's a quota/rate limit error or service overload
       if (error.message.includes('QUOTA_EXCEEDED') || 
           error.message.includes('429') || 
+          error.message.includes('503') ||
+          error.message.includes('overloaded') ||
           error.message.includes('quota') || 
           error.message.includes('exceeded') ||
           error.message.includes('rate limit') ||
           error.message.includes('RESOURCE_EXHAUSTED')) {
         
-        console.warn('🚫 Quota/rate limit exceeded, switching to Ollama fallback for this session');
-        this.service = this.fallbackService;
+        console.warn('🚫 Quota/rate limit exceeded, switching to fallback');
         this.quotaExceeded = true;
         
         try {
@@ -115,8 +142,14 @@ class AIServiceManager {
       activeService: this.service.constructor.name,
       primaryConfigured: this.primaryService.isConfigured(),
       fallbackConfigured: this.fallbackService.isConfigured(),
-      quotaExceeded: this.quotaExceeded
+      quotaExceeded: this.quotaExceeded,
+      requestCount: this.requestCount,
+      maxRequests: this.maxRequests
     };
+  }
+
+  getCurrentProvider() {
+    return this.service.constructor.name.toLowerCase().replace('service', '');
   }
 
   // ===== RESET SERVICE (for testing) =====

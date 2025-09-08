@@ -82,7 +82,8 @@ class AFABAIService extends AIServiceManager {
   async generateCycleInsights(cycleData, userProfile) {
     const prompt = this.buildCyclePrompt(cycleData, userProfile);
     try {
-      const insights = await this.generateHealthInsights(prompt);
+      // Use the parent class's executeWithFallback method for seamless fallback
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
       return this.processCycleInsights(insights, cycleData, userProfile);
     } catch (error) {
       console.error('Error generating cycle insights:', error);
@@ -91,57 +92,227 @@ class AFABAIService extends AIServiceManager {
   }
 
   buildCyclePrompt(cycleData, userProfile) {
-    const age = userProfile.age;
-    const conditions = userProfile.conditions?.reproductive || [];
-    const familyHistory = userProfile.familyHistory?.womensConditions || [];
-    const lifestyle = userProfile.lifestyle;
+    const latestCycle = cycleData[cycleData.length - 1];
+    const cycleCount = cycleData.length;
+    const age = userProfile.age || 25;
     
-    return `
-    AFAB Cycle Analysis Request:
-    
-    User Profile:
-    - Age: ${age} years old
-    - Medical Conditions: ${conditions.join(', ') || 'None reported'}
-    - Family History: ${familyHistory.join(', ') || 'None reported'}
-    - Lifestyle: ${lifestyle?.exercise?.frequency || 'Not specified'} exercise, ${lifestyle?.stress?.level || 'Not specified'} stress
-    - Former smoker: ${userProfile.tobaccoUse || 'No'}
-    
-    Current Cycle Data:
-    - Cycle Day: ${cycleData.currentDay || 'Unknown'}
-    - Flow Intensity: ${cycleData.flow || 'Not specified'}
-    - Symptoms: ${cycleData.symptoms?.join(', ') || 'None reported'}
-    - Mood: ${cycleData.mood || 'Not specified'}
-    - Energy Level: ${cycleData.energy || 'Not specified'}
-    - Sleep Quality: ${cycleData.sleep || 'Not specified'}
-    
-    Cycle History:
-    - Average Cycle Length: ${cycleData.averageLength || 'Unknown'} days
-    - Is Regular: ${cycleData.isRegular ? 'Yes' : 'No'}
-    - Last Period: ${cycleData.lastPeriod || 'Unknown'}
-    
-    Please provide:
-    1. Cycle pattern analysis and insights
-    2. Symptom correlation analysis
-    3. Personalized recommendations based on medical history
-    4. Any concerning patterns that need medical attention
-    5. Lifestyle optimization suggestions
-    
-    Focus on evidence-based medical insights and personalized recommendations.
-    `;
+    return `You are a medical-grade reproductive health AI assistant. Provide comprehensive, clinically accurate analysis.
+
+PATIENT PROFILE:
+- Age: ${age} years old
+- Medical History: ${userProfile.conditions?.reproductive?.join(', ') || 'None reported'}
+- Family History: ${userProfile.familyHistory?.womensConditions?.join(', ') || 'None reported'}
+- Lifestyle: ${userProfile.lifestyle?.exercise?.frequency || 'Moderate'} exercise, ${userProfile.lifestyle?.stress?.level || 'Moderate'} stress
+
+CYCLE DATA:
+- Cycle Length: ${latestCycle.cycleLength} days
+- Period Length: ${latestCycle.periodLength || 'Not specified'} days
+- Flow Intensity: ${latestCycle.flowIntensity}
+- Pain Level: ${latestCycle.pain}/10
+- Symptoms: ${latestCycle.symptoms?.join(', ') || 'None reported'}
+- Bleeding Pattern: ${latestCycle.bleedingPattern || 'Normal'}
+- Clots: ${latestCycle.clots || 'None'}
+- Cycles Tracked: ${cycleCount}
+
+Provide a comprehensive health analysis with these specific sections:
+
+**CYCLE INSIGHTS** (Compassionate medical summary - ~120 words)
+Write a caring, medical summary that tells the user's story. Requirements:
+- Medically accurate, evidence-based
+- Respectful, empathetic, supportive
+- Clear and concise (~120 words)
+- Non-repetitive (do NOT restate details already shown in Flow, Symptom, or Tips cards)
+
+Structure:
+1. Opening line: acknowledge the cycle and set a caring tone
+2. Integrative summary: what this cycle reveals (medical terms allowed, define briefly if needed)
+3. Reflection on impact / importance
+4. Gentle guidance: what to focus on next (tracking, evaluation, self-care)
+5. Closing line: reassurance or encouragement
+
+Tone: calm, reassuring, human. Avoid alarmist language, but don't minimize real risks.
+
+Example format:
+"This cycle reflects how much your body has navigated—[cycle length] days with [medical term] ([definition]) and episodes of [symptom description]. Together, these signs suggest [medical insight]. [Impact/importance]. The next step is simple but meaningful: [gentle guidance]. Your careful attention now can bring clarity, protect your long-term health, and help you feel more in tune with your body."
+
+Output: Markdown-friendly text only, no JSON.
+
+**FLOW ASSESSMENT** (For Cycle Patterns section)
+Brief statement of bleeding pattern using medical term + quick plain-English definition.
+• E.g., "Menorrhagia (heavy menstrual bleeding) lasting 7 days may increase anemia risk."
+
+**SYMPTOM EVALUATION** (For Cycle Patterns section)
+Concise review of key symptoms with severity. Use correct term if available:
+• Dysmenorrhea (severe menstrual pain) rated ${latestCycle.pain}/10  
+• Associated fatigue, nausea, intermittent hot flashes  
+Add short comment if constellation warrants review.
+
+**ACTION ITEM** (For Cycle Patterns section)
+Clear, user-friendly next step(s):
+• Track at least three cycles  
+• Schedule gynecologic evaluation if pain/bleeding persists
+
+**CONFIDENCE LEVEL** (For Cycle Patterns section)
+Reflect model certainty in plain text:
+• "Moderate confidence – only one cycle logged; trends may change with more data."
+
+**PERSONALIZED TIPS** (For Personalized Tips section)
+3–4 actionable, medically sound suggestions:
+• Maintain an iron-rich diet (leafy greens, lentils, lean meat)  
+• NSAIDs (e.g., ibuprofen) for dysmenorrhea if no contraindication  
+• Heat therapy, rest, gentle movement (yoga)  
+• Stress-reduction techniques
+
+**GENTLE REMINDERS** (For Gentle Reminders section)
+Supportive nudges, not alarms:
+• "Keep logging your cycle details for accurate pattern detection."  
+• "Consult a clinician promptly if bleeding soaks >1 pad/hour or you feel dizzy."
+
+Formatting:
+- Use clear sentences or bullets, no jargon without definition
+- ≤40 words per tile unless a critical alert exists`;
   }
 
   processCycleInsights(insights, cycleData, userProfile) {
-    return {
-      cycleAnalysis: {
-        pattern: this.analyzeCyclePattern(cycleData),
-        regularity: this.assessCycleRegularity(cycleData),
-        symptoms: this.analyzeCycleSymptoms(cycleData),
-        recommendations: this.generateCycleRecommendations(cycleData, userProfile)
-      },
-      aiInsights: insights,
-      medicalAlerts: this.generateCycleAlerts(cycleData, userProfile),
-      personalizedTips: this.generateCycleTips(cycleData, userProfile)
-    };
+    try {
+      // Try to parse JSON response from AI
+      const parsedInsights = JSON.parse(insights);
+      
+      return {
+        quickCheck: {
+          // Remove cycleAnalysis - it duplicates aiInsights
+          flowAssessment: parsedInsights.quickCheck?.flowAssessment || 'Flow patterns analyzed',
+          symptomEvaluation: parsedInsights.quickCheck?.symptomEvaluation || 'Symptoms evaluated',
+          actionItem: parsedInsights.quickCheck?.actionItem || 'Continue tracking for comprehensive insights',
+          confidence: parsedInsights.quickCheck?.confidence || 'Moderate'
+        },
+        aiInsights: parsedInsights.aiInsights || [insights],
+        riskAssessment: parsedInsights.riskAssessment || {
+          cycleIrregularity: 'Continue tracking to assess',
+          anemiaRisk: 'Monitor for symptoms',
+          underlyingConditions: 'No immediate concerns',
+          overallRisk: 'Low'
+        },
+        recommendations: parsedInsights.recommendations || ['Continue tracking your cycle'],
+        medicalAlerts: parsedInsights.medicalAlerts || ['No immediate alerts'],
+        personalizedTips: parsedInsights.personalizedTips || ['Keep tracking for personalized insights']
+      };
+    } catch (error) {
+      // If JSON parsing fails, parse text response for specific sections
+      const textInsights = insights.toString();
+      
+      // Extract Cycle Insights (unique insights - predictions, trends, user journey)
+      const cycleInsights = this.extractCycleInsights(textInsights, insights);
+      
+      // Extract specific sections for Cycle Patterns
+      const flowAssessment = this.extractSection(textInsights, 'FLOW ASSESSMENT', 'Flow patterns analyzed');
+      const symptomEvaluation = this.extractSection(textInsights, 'SYMPTOM EVALUATION', 'Symptoms reviewed');
+      const actionItem = this.extractSection(textInsights, 'ACTION ITEM', 'Continue tracking for comprehensive insights');
+      const confidence = this.extractSection(textInsights, 'CONFIDENCE LEVEL', 'Moderate');
+      const personalizedTips = this.extractTips(textInsights, 'PERSONALIZED TIPS');
+      const gentleReminders = this.extractTips(textInsights, 'GENTLE REMINDERS');
+      
+      return {
+        quickCheck: {
+          // Remove cycleAnalysis - it duplicates aiInsights
+          flowAssessment: flowAssessment,
+          symptomEvaluation: symptomEvaluation,
+          actionItem: actionItem,
+          confidence: confidence
+        },
+        aiInsights: [cycleInsights], // Use extracted cycle insights, not full response
+        riskAssessment: {
+          cycleIrregularity: 'Continue tracking to assess',
+          anemiaRisk: 'Monitor for symptoms',
+          underlyingConditions: 'No immediate concerns',
+          overallRisk: 'Low'
+        },
+        recommendations: ['Continue tracking your cycle'],
+        medicalAlerts: ['No immediate alerts'],
+        personalizedTips: personalizedTips,
+        gentleReminders: gentleReminders
+      };
+    }
+  }
+
+  extractCycleInsights(text, fallback) {
+    // Extract the full Cycle Insights section with multiple paragraphs
+    const patterns = [
+      new RegExp(`\\*\\*CYCLE INSIGHTS\\*\\*[\\s\\S]*?([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i'),
+      new RegExp(`CYCLE INSIGHTS[:\-]\\s*([\\s\\S]*?)(?=\\n\\n|$)`, 'i')
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const insightsText = match[1].trim();
+        // Clean up the text and return meaningful content
+        if (insightsText.length > 50) {
+          return insightsText;
+        }
+      }
+    }
+    return fallback;
+  }
+
+  extractSection(text, sectionName, fallback) {
+    // Look for section with emoji + ** markers or regular headers
+    const patterns = [
+      new RegExp(`[📈🩸⚠️📋🎯]\\s*\\*\\*${sectionName}\\*\\*[\\s\\S]*?([^\\*\\n]+)`, 'i'),
+      new RegExp(`\\*\\*${sectionName}\\*\\*\\s*\\n([^\\*\\n]+)`, 'i'),
+      new RegExp(`${sectionName}[:\-]\\s*([^\\n]+)`, 'i')
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+    return fallback;
+  }
+
+  extractTips(text, sectionName) {
+    // Look for emoji + section headers or regular patterns
+    const patterns = [
+      new RegExp(`[💝🌸]\\s*\\*\\*${sectionName}\\*\\*[\\s\\S]*?([\\s\\S]*?)(?=\\n[📈🩸⚠️📋🎯💝🌸]|$)`, 'i'),
+      new RegExp(`\\*\\*${sectionName}\\*\\*\\s*\\n([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i'),
+      new RegExp(`${sectionName}[:\-]\\s*([\\s\\S]*?)(?=\\n\\n|$)`, 'i')
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const tipsText = match[1].trim();
+        // Extract numbered items or bullet points
+        const items = tipsText.split(/\n/).filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && (trimmed.match(/^\d+\./) || trimmed.match(/^[-•]/) || trimmed.match(/^>/));
+        }).map(line => line.replace(/^\d+\.\s*/, '').replace(/^[-•>]\s*/, '').trim());
+        
+        if (items.length > 0) {
+          return items.slice(0, 4);
+        }
+      }
+    }
+    
+    // Fallback based on section name with more specific content
+    if (sectionName.toLowerCase().includes('personalized')) {
+      return [
+        'Maintain an iron-rich diet (leafy greens, lentils, lean meat)',
+        'NSAIDs (e.g., ibuprofen) for dysmenorrhea if no contraindication',
+        'Heat therapy, rest, gentle movement (yoga)',
+        'Stress-reduction techniques'
+      ];
+    } else if (sectionName.toLowerCase().includes('gentle')) {
+      return [
+        'Keep logging your cycle details for accurate pattern detection',
+        'Consult a clinician promptly if bleeding soaks >1 pad/hour or you feel dizzy',
+        'Listen to your body and rest when needed'
+      ];
+    }
+    
+    return ['Keep tracking for personalized insights'];
   }
 
   analyzeCyclePattern(cycleData) {
@@ -952,6 +1123,219 @@ class AFABAIService extends AIServiceManager {
       longTermHealth: 'Focus on bone, heart, and cognitive health',
       medicalAlerts: [],
       managementTips: ['Maintain healthy lifestyle', 'Manage symptoms', 'Focus on long-term health']
+    };
+  }
+
+  // ===== CONDITION INSIGHTS =====
+  async generateConditionInsights(conditionData, userProfile) {
+    try {
+      const prompt = this.buildConditionPrompt(conditionData, userProfile);
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processConditionInsights(response);
+    } catch (error) {
+      console.error('Error generating condition insights:', error);
+      return this.getFallbackConditionInsights(conditionData);
+    }
+  }
+
+  buildConditionPrompt(conditionData, userProfile) {
+    const condition = conditionData.condition;
+    const symptoms = conditionData.symptoms || [];
+    const severity = conditionData.severity || 'mild';
+    const medications = conditionData.medications || [];
+    const lifestyle = conditionData.lifestyle || [];
+    const weight = conditionData.weight;
+    const bloodPressure = conditionData.bloodPressure;
+    const bloodSugar = conditionData.bloodSugar;
+
+    return `As a medical AI specializing in women's reproductive health conditions, analyze this ${condition} data and provide comprehensive insights in JSON format:
+
+CONDITION DATA:
+- Condition: ${condition}
+- Symptoms: ${symptoms.join(', ')}
+- Severity: ${severity}
+- Medications/Treatments: ${medications.join(', ')}
+- Lifestyle Modifications: ${lifestyle.join(', ')}
+- Weight: ${weight || 'Not provided'}
+- Blood Pressure: ${bloodPressure || 'Not provided'}
+- Blood Sugar: ${bloodSugar || 'Not provided'}
+
+USER PROFILE:
+- Age: ${userProfile.age}
+- Medical History: ${userProfile.medicalHistory?.join(', ') || 'Not provided'}
+- Chronic Conditions: ${userProfile.chronicConditions?.join(', ') || 'Not provided'}
+- Current Medications: ${userProfile.medications?.join(', ') || 'Not provided'}
+
+Please provide a comprehensive analysis in this EXACT JSON format:
+{
+  "insights": ["3-5 specific insights about the condition and symptoms"],
+  "patterns": "Analysis of condition patterns and trends",
+  "alerts": ["Any medical alerts or warning signs"],
+  "recommendations": ["5-7 personalized recommendations for management"],
+  "riskAssessment": "Assessment of condition risk factors and progression"
+}
+
+Focus on:
+1. Medical accuracy and evidence-based insights
+2. Personalized recommendations based on symptoms and severity
+3. When to seek medical attention
+4. Lifestyle modifications for condition management
+5. Treatment effectiveness evaluation
+6. Long-term health considerations
+
+Be supportive, medically accurate, and actionable.`;
+  }
+
+  processConditionInsights(response) {
+    try {
+      // Try to parse JSON response
+      const parsed = JSON.parse(response);
+      return {
+        insights: parsed.insights || [response],
+        patterns: parsed.patterns || 'Analyzing condition patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue current treatment plan'],
+        riskAssessment: parsed.riskAssessment || 'Evaluating condition risk factors...'
+      };
+    } catch (error) {
+      // If not JSON, return structured response
+      return {
+        insights: [response],
+        patterns: 'Analyzing condition patterns...',
+        alerts: [],
+        recommendations: ['Continue current treatment plan', 'Monitor symptoms regularly'],
+        riskAssessment: 'Evaluating condition risk factors...'
+      };
+    }
+  }
+
+  getFallbackConditionInsights(conditionData) {
+    const condition = conditionData.condition;
+    const symptoms = conditionData.symptoms || [];
+    const severity = conditionData.severity || 'mild';
+
+    return {
+      insights: [
+        `Based on your ${condition} data, continue monitoring your symptoms and follow your treatment plan.`,
+        `Your current symptom severity is ${severity} - this is important information for your healthcare provider.`,
+        `Tracking your symptoms regularly helps identify patterns and treatment effectiveness.`
+      ],
+      patterns: `Continue tracking your ${condition} symptoms to identify patterns and trends over time.`,
+      alerts: [],
+      recommendations: [
+        'Continue current treatment plan',
+        'Monitor symptoms regularly',
+        'Maintain healthy lifestyle',
+        'Keep scheduled appointments with healthcare provider',
+        'Track any changes in symptom severity'
+      ],
+      riskAssessment: `Regular monitoring of your ${condition} helps manage long-term health outcomes.`
+    };
+  }
+
+  // ===== BREAST HEALTH INSIGHTS =====
+  async generateBreastHealthInsights(breastData, userProfile) {
+    try {
+      const prompt = this.buildBreastHealthPrompt(breastData, userProfile);
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processBreastHealthInsights(response);
+    } catch (error) {
+      console.error('Error generating breast health insights:', error);
+      return this.getFallbackBreastHealthInsights(breastData);
+    }
+  }
+
+  buildBreastHealthPrompt(breastData, userProfile) {
+    const selfExamPerformed = breastData.selfExamPerformed;
+    const examFindings = breastData.examFindings || [];
+    const symptoms = breastData.symptoms || [];
+    const screeningType = breastData.screeningType;
+    const screeningResults = breastData.screeningResults;
+    const familyHistory = breastData.familyHistory || [];
+    const lifestyle = breastData.lifestyle || [];
+
+    return `As a medical AI specializing in breast health and cancer prevention, analyze this breast health data and provide comprehensive insights in JSON format:
+
+BREAST HEALTH DATA:
+- Self-Exam Performed: ${selfExamPerformed ? 'Yes' : 'No'}
+- Exam Findings: ${examFindings.join(', ')}
+- Symptoms: ${symptoms.join(', ')}
+- Screening Type: ${screeningType || 'Not performed'}
+- Screening Results: ${screeningResults || 'Not available'}
+- Family History: ${familyHistory.join(', ')}
+- Lifestyle Factors: ${lifestyle.join(', ')}
+
+USER PROFILE:
+- Age: ${userProfile.age}
+- Medical History: ${userProfile.medicalHistory?.join(', ') || 'Not provided'}
+- Chronic Conditions: ${userProfile.chronicConditions?.join(', ') || 'Not provided'}
+- Current Medications: ${userProfile.medications?.join(', ') || 'Not provided'}
+
+Please provide a comprehensive analysis in this EXACT JSON format:
+{
+  "insights": ["3-5 specific insights about breast health and risk factors"],
+  "patterns": "Analysis of breast health patterns and screening history",
+  "alerts": ["Any medical alerts or warning signs"],
+  "recommendations": ["5-7 personalized recommendations for breast health"],
+  "riskAssessment": "Assessment of breast cancer risk factors and prevention strategies"
+}
+
+Focus on:
+1. Medical accuracy and evidence-based insights
+2. Personalized screening recommendations based on age and risk factors
+3. Self-exam technique guidance and importance
+4. When to seek medical attention
+5. Lifestyle modifications for breast health
+6. Family history implications and genetic counseling needs
+7. Early detection strategies
+
+Be supportive, medically accurate, and actionable.`;
+  }
+
+  processBreastHealthInsights(response) {
+    try {
+      // Try to parse JSON response
+      const parsed = JSON.parse(response);
+      return {
+        insights: parsed.insights || [response],
+        patterns: parsed.patterns || 'Analyzing breast health patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue regular self-exams'],
+        riskAssessment: parsed.riskAssessment || 'Evaluating breast health risk factors...'
+      };
+    } catch (error) {
+      // If not JSON, return structured response
+      return {
+        insights: [response],
+        patterns: 'Analyzing breast health patterns...',
+        alerts: [],
+        recommendations: ['Continue regular self-exams', 'Follow screening guidelines'],
+        riskAssessment: 'Evaluating breast health risk factors...'
+      };
+    }
+  }
+
+  getFallbackBreastHealthInsights(breastData) {
+    const selfExamPerformed = breastData.selfExamPerformed;
+    const symptoms = breastData.symptoms || [];
+    const screeningType = breastData.screeningType;
+
+    return {
+      insights: [
+        `Based on your breast health data, continue regular self-exams and follow screening guidelines.`,
+        `Self-exam performed: ${selfExamPerformed ? 'Great job maintaining regular monitoring!' : 'Consider performing monthly self-exams.'}`,
+        `Tracking your breast health regularly helps with early detection and peace of mind.`
+      ],
+      patterns: `Continue tracking your breast health to identify any changes or patterns over time.`,
+      alerts: [],
+      recommendations: [
+        'Perform monthly self-exams',
+        'Follow age-appropriate screening guidelines',
+        'Maintain healthy lifestyle',
+        'Report any changes to healthcare provider',
+        'Keep up with regular check-ups'
+      ],
+      riskAssessment: `Regular monitoring and screening are key to maintaining breast health and early detection.`
     };
   }
 }
