@@ -399,14 +399,15 @@
 }
 
 .modal {
-  background: white;
-  color: #333;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: white;
   border-radius: 20px;
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .modal-header {
@@ -414,12 +415,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .modal-header h3 {
   margin: 0;
-  color: #333;
+  color: #ffffff;
   font-size: 1.5rem;
 }
 
@@ -428,7 +429,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   padding: 5px;
   border-radius: 50%;
   width: 30px;
@@ -436,10 +437,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .close-btn:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 /* Form Styles */
@@ -450,7 +453,7 @@
 .form-section {
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .form-section:last-of-type {
@@ -459,7 +462,7 @@
 
 .form-section h4 {
   margin: 0 0 15px 0;
-  color: #333;
+  color: #ffffff;
   font-size: 1.2rem;
   font-weight: 600;
 }
@@ -472,7 +475,7 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
 }
 
 .form-group input,
@@ -480,11 +483,13 @@
 .form-group textarea {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .form-group input:focus,
@@ -522,9 +527,9 @@
 }
 
 .cancel-btn {
-  background: #f0f0f0;
-  border: none;
-  color: #666;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
   padding: 12px 25px;
   border-radius: 8px;
   font-weight: 600;
@@ -533,7 +538,8 @@
 }
 
 .cancel-btn:hover {
-  background: #e0e0e0;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .submit-btn {
