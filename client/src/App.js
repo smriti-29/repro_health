@@ -22,6 +22,16 @@ import ConditionSpecific from './pages/ConditionSpecific';
 import BreastHealth from './pages/BreastHealth';
 import MentalHealth from './pages/MentalHealth';
 
+// AMAB (Male) Health Modules
+import GeneralHealthTracker from './pages/GeneralHealthTracker';
+import HormonalHealth from './pages/HormonalHealth';
+import FertilityPreconception from './pages/FertilityPreconception';
+import UrologyProstate from './pages/UrologyProstate';
+import MentalHealthStress from './pages/MentalHealthStress';
+import BoneMuscleHealth from './pages/BoneMuscleHealth';
+import PreventiveCare from './pages/PreventiveCare';
+import MedicationSupplements from './pages/MedicationSupplements';
+
 import './App.css';
 
 // Protected Route Component
@@ -73,7 +83,17 @@ const AppRoutes = () => {
               <Route path="/menopause-support" element={<ProtectedRoute><MenopauseSupport /></ProtectedRoute>} />
               <Route path="/condition-specific" element={<ProtectedRoute><ConditionSpecific /></ProtectedRoute>} />
               <Route path="/breast-health" element={<ProtectedRoute><BreastHealth /></ProtectedRoute>} />
-              <Route path="/mental-health" element={<ProtectedRoute><MentalHealth /></ProtectedRoute>} />
+              <Route path="/mental-health" element={<ProtectedRoute><MentalHealth /></ProtectedRoute} />
+              
+              {/* AMAB (Male) Health Module Routes */}
+              <Route path="/general-health-tracker" element={<ProtectedRoute><GeneralHealthTracker /></ProtectedRoute} />
+              <Route path="/hormonal-health" element={<ProtectedRoute><HormonalHealth /></ProtectedRoute} />
+              <Route path="/fertility-preconception" element={<ProtectedRoute><FertilityPreconception /></ProtectedRoute} />
+              <Route path="/urology-prostate" element={<ProtectedRoute><UrologyProstate /></ProtectedRoute} />
+              <Route path="/mental-health-stress" element={<ProtectedRoute><MentalHealthStress /></ProtectedRoute} />
+              <Route path="/bone-muscle-health" element={<ProtectedRoute><BoneMuscleHealth /></ProtectedRoute} />
+              <Route path="/preventive-care" element={<ProtectedRoute><PreventiveCare /></ProtectedRoute} />
+              <Route path="/medication-supplements" element={<ProtectedRoute><MedicationSupplements /></ProtectedRoute} />
             </Routes>
           </div>
         </Router>
