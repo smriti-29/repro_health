@@ -34,6 +34,7 @@ const CycleTracking = () => {
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
   const [riskAssessment, setRiskAssessment] = useState(null);
   const [gentleReminders, setGentleReminders] = useState([]);
+  const [selectedCycleInsights, setSelectedCycleInsights] = useState(null);
 
   // Essential Cycle Symptoms Only
   const availableSymptoms = [
@@ -169,6 +170,19 @@ const CycleTracking = () => {
           } else {
             setInsights(['AI analysis completed successfully!']);
           }
+
+          // Store AI insights with the cycle data
+          const cycleWithInsights = {
+            ...updatedData[updatedData.length - 1],
+            aiInsights: aiInsights,
+            insightsTimestamp: new Date().toISOString()
+          };
+          
+          // Update the cycle data with AI insights
+          const updatedCycleData = [...updatedData];
+          updatedCycleData[updatedCycleData.length - 1] = cycleWithInsights;
+          setCycleData(updatedCycleData);
+          localStorage.setItem('afabCycleData', JSON.stringify(updatedCycleData));
           
           // Personalized Recommendations - actionable medical advice
           if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
@@ -763,6 +777,15 @@ const CycleTracking = () => {
                     )}
                   </div>
                   <div className="history-actions">
+                    {cycle.aiInsights && (
+                      <button 
+                        className="view-insights-btn"
+                        onClick={() => setSelectedCycleInsights(cycle)}
+                        title="View AI Insights for this cycle"
+                      >
+                        🤖
+                      </button>
+                    )}
                     <button 
                       className="delete-btn"
                       onClick={() => deleteCycleLog(cycleData.length - 1 - index)}
@@ -773,6 +796,292 @@ const CycleTracking = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Interactive Dashboard - Show after 3+ consecutive cycles */}
+        {cycleData.length >= 3 && (
+          <div className="interactive-dashboard">
+            <h2>📊 Your Cycle Analytics</h2>
+            <p className="dashboard-subtitle">Insights from {cycleData.length} consecutive cycles</p>
+            
+            <div className="dashboard-grid">
+              {/* Cycle Length Distribution */}
+              <div className="dashboard-card">
+                <h3>📈 Cycle Length Trends</h3>
+                <div className="chart-container">
+                  <div className="cycle-length-chart">
+                    {cycleData.map((cycle, index) => {
+                      const avgLength = cycleData.reduce((sum, c) => sum + (c.cycleLength || 28), 0) / cycleData.length;
+                      const percentage = ((cycle.cycleLength || 28) / avgLength) * 100;
+                      return (
+                        <div key={index} className="cycle-bar">
+                          <div className="bar-label">Cycle {index + 1}</div>
+                          <div className="bar-container">
+                            <div 
+                              className="bar-fill"
+                              style={{ 
+                                width: `${Math.min(percentage, 150)}%`,
+                                backgroundColor: cycle.cycleLength > 35 ? '#ff6b9d' : cycle.cycleLength < 21 ? '#ff9800' : '#4CAF50'
+                              }}
+                            ></div>
+                            <span className="bar-value">{cycle.cycleLength || 28} days</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pain Level Trends */}
+              <div className="dashboard-card">
+                <h3>⚠️ Pain Level Trends</h3>
+                <div className="chart-container">
+                  <div className="pain-chart">
+                    {cycleData.map((cycle, index) => {
+                      const painLevel = cycle.pain || 0;
+                      const intensity = (painLevel / 10) * 100;
+                      return (
+                        <div key={index} className="pain-point">
+                          <div className="pain-label">Cycle {index + 1}</div>
+                          <div className="pain-bar">
+                            <div 
+                              className="pain-fill"
+                              style={{ 
+                                height: `${intensity}%`,
+                                backgroundColor: painLevel >= 7 ? '#ff4444' : painLevel >= 4 ? '#ff9800' : '#4CAF50'
+                              }}
+                            ></div>
+                            <span className="pain-value">{painLevel}/10</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Flow Intensity Patterns */}
+              <div className="dashboard-card">
+                <h3>🩸 Flow Intensity Patterns</h3>
+                <div className="flow-patterns">
+                  {cycleData.map((cycle, index) => {
+                    const flowColors = {
+                      'light': '#4CAF50',
+                      'medium': '#ff9800', 
+                      'heavy': '#ff4444'
+                    };
+                    return (
+                      <div key={index} className="flow-item">
+                        <div className="flow-cycle">Cycle {index + 1}</div>
+                        <div 
+                          className="flow-indicator"
+                          style={{ backgroundColor: flowColors[cycle.flowIntensity] || '#4CAF50' }}
+                        ></div>
+                        <div className="flow-label">{cycle.flowIntensity || 'medium'}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Symptom Frequency */}
+              <div className="dashboard-card">
+                <h3>🔍 Most Common Symptoms</h3>
+                <div className="symptom-frequency">
+                  {(() => {
+                    const symptomCount = {};
+                    cycleData.forEach(cycle => {
+                      if (cycle.symptoms) {
+                        cycle.symptoms.forEach(symptom => {
+                          symptomCount[symptom] = (symptomCount[symptom] || 0) + 1;
+                        });
+                      }
+                    });
+                    
+                    const sortedSymptoms = Object.entries(symptomCount)
+                      .sort(([,a], [,b]) => b - a)
+                      .slice(0, 5);
+                    
+                    return sortedSymptoms.map(([symptom, count]) => (
+                      <div key={symptom} className="symptom-item">
+                        <span className="symptom-name">{symptom}</span>
+                        <div className="symptom-bar">
+                          <div 
+                            className="symptom-fill"
+                            style={{ width: `${(count / cycleData.length) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="symptom-count">{count}/{cycleData.length}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Health Score */}
+              <div className="dashboard-card">
+                <h3>🌟 Overall Health Score</h3>
+                <div className="health-score">
+                  {(() => {
+                    const avgPain = cycleData.reduce((sum, c) => sum + (c.pain || 0), 0) / cycleData.length;
+                    const avgLength = cycleData.reduce((sum, c) => sum + (c.cycleLength || 28), 0) / cycleData.length;
+                    const lengthScore = avgLength >= 21 && avgLength <= 35 ? 100 : Math.max(0, 100 - Math.abs(avgLength - 28) * 2);
+                    const painScore = Math.max(0, 100 - avgPain * 10);
+                    const overallScore = Math.round((lengthScore + painScore) / 2);
+                    
+                    return (
+                      <div className="score-display">
+                        <div 
+                          className="score-circle"
+                          style={{ '--score-angle': `${(overallScore / 100) * 360}deg` }}
+                        >
+                          <div className="score-value">{overallScore}</div>
+                          <div className="score-label">/100</div>
+                        </div>
+                        <div className="score-description">
+                          {overallScore >= 80 ? 'Excellent' : overallScore >= 60 ? 'Good' : overallScore >= 40 ? 'Fair' : 'Needs Attention'}
+                        </div>
+                        <div className="score-breakdown">
+                          <div className="breakdown-item">
+                            <span>Cycle Length Score:</span>
+                            <span>{Math.round(lengthScore)}/100</span>
+                          </div>
+                          <div className="breakdown-item">
+                            <span>Pain Level Score:</span>
+                            <span>{Math.round(painScore)}/100</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Next Cycle Prediction */}
+              <div className="dashboard-card">
+                <h3>🔮 Next Cycle Prediction</h3>
+                <div className="prediction-content">
+                  {(() => {
+                    const avgLength = cycleData.reduce((sum, c) => sum + (c.cycleLength || 28), 0) / cycleData.length;
+                    const lastCycle = cycleData[cycleData.length - 1];
+                    const lastPeriodDate = new Date(lastCycle.timestamp);
+                    const nextPeriodDate = new Date(lastPeriodDate);
+                    nextPeriodDate.setDate(nextPeriodDate.getDate() + Math.round(avgLength));
+                    
+                    return (
+                      <div className="prediction-details">
+                        <div className="prediction-item">
+                          <span className="prediction-label">Expected Next Period:</span>
+                          <span className="prediction-value">{nextPeriodDate.toLocaleDateString()}</span>
+                        </div>
+                        <div className="prediction-item">
+                          <span className="prediction-label">Average Cycle Length:</span>
+                          <span className="prediction-value">{Math.round(avgLength)} days</span>
+                        </div>
+                        <div className="prediction-item">
+                          <span className="prediction-label">Confidence Level:</span>
+                          <span className="prediction-value">
+                            {cycleData.length >= 6 ? 'High' : cycleData.length >= 3 ? 'Moderate' : 'Low'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Historical AI Insights Modal */}
+        {selectedCycleInsights && (
+          <div className="insights-modal-overlay" onClick={() => setSelectedCycleInsights(null)}>
+            <div className="insights-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🤖 AI Insights - {new Date(selectedCycleInsights.timestamp).toLocaleDateString()}</h2>
+                <button 
+                  className="close-btn"
+                  onClick={() => setSelectedCycleInsights(null)}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="modal-content">
+                {/* Cycle Insights */}
+                {selectedCycleInsights.aiInsights?.aiInsights && (
+                  <div className="modal-section">
+                    <h3>📊 Cycle Insights</h3>
+                    <div className="insights-content">
+                      {Array.isArray(selectedCycleInsights.aiInsights.aiInsights) ? (
+                        selectedCycleInsights.aiInsights.aiInsights.map((insight, index) => (
+                          <p key={index} className="insight-text">{insight}</p>
+                        ))
+                      ) : (
+                        <p className="insight-text">{selectedCycleInsights.aiInsights.aiInsights}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cycle Patterns */}
+                {selectedCycleInsights.aiInsights?.quickCheck && (
+                  <div className="modal-section">
+                    <h3>📈 Cycle Patterns</h3>
+                    <div className="patterns-grid">
+                      <div className="pattern-item">
+                        <h4>🩸 Flow Assessment</h4>
+                        <p>{selectedCycleInsights.aiInsights.quickCheck.flowAssessment}</p>
+                      </div>
+                      <div className="pattern-item">
+                        <h4>⚠️ Symptom Evaluation</h4>
+                        <p>{selectedCycleInsights.aiInsights.quickCheck.symptomEvaluation}</p>
+                      </div>
+                      <div className="pattern-item">
+                        <h4>📋 Action Item</h4>
+                        <p>{selectedCycleInsights.aiInsights.quickCheck.actionItem}</p>
+                      </div>
+                      <div className="pattern-item">
+                        <h4>🎯 Confidence Level</h4>
+                        <p>{selectedCycleInsights.aiInsights.quickCheck.confidence}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Personalized Tips */}
+                {selectedCycleInsights.aiInsights?.personalizedTips && (
+                  <div className="modal-section">
+                    <h3>💝 Personalized Tips</h3>
+                    <div className="tips-list">
+                      {selectedCycleInsights.aiInsights.personalizedTips.map((tip, index) => (
+                        <div key={index} className="tip-item">
+                          <span className="tip-icon">✨</span>
+                          <span className="tip-text">{tip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gentle Reminders */}
+                {selectedCycleInsights.aiInsights?.gentleReminders && (
+                  <div className="modal-section">
+                    <h3>🌸 Gentle Reminders</h3>
+                    <div className="reminders-list">
+                      {selectedCycleInsights.aiInsights.gentleReminders.map((reminder, index) => (
+                        <div key={index} className="reminder-item">
+                          <span className="reminder-icon">🌸</span>
+                          <span className="reminder-text">{reminder}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
