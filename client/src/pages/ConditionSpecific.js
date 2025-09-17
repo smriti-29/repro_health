@@ -198,7 +198,7 @@ const ConditionSpecific = () => {
 
   // Load existing condition data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabConditionData');
+    const savedData = localStorage.getItem(`afabConditionData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setConditionData(parsed);
@@ -272,14 +272,20 @@ const ConditionSpecific = () => {
       };
 
       try {
-        // Force Ollama for demo (same as other modules)
-        aiService.service = aiService.fallbackService;
-        
-        const aiInsights = await aiService.generateConditionInsights(conditionEntry, userProfile);
+        // Use specialized AI methods based on condition type
+        let aiInsights;
+        if (conditionEntry.condition === 'PCOS') {
+          aiInsights = await aiService.generatePCOSInsights(conditionEntry, userProfile);
+        } else if (conditionEntry.condition === 'Endometriosis') {
+          aiInsights = await aiService.generateEndometriosisInsights(conditionEntry, userProfile);
+        } else {
+          // Fallback to generic method
+          aiInsights = await aiService.generateConditionInsights(conditionEntry, userProfile);
+        }
         
         // Parse comprehensive AI insights (same structure as other modules)
         if (aiInsights) {
-          setInsights(aiInsights.insights || aiInsights);
+          setInsights(aiInsights.aiInsights || aiInsights.insights || aiInsights);
           setConditionPatterns(aiInsights.patterns || 'Analyzing your condition patterns...');
           setHealthAlerts(aiInsights.alerts || []);
           setPersonalizedRecommendations(aiInsights.recommendations || []);

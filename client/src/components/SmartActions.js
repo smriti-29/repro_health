@@ -28,9 +28,9 @@ const SmartActions = ({ userProfile, onboardingData }) => {
     };
     
     // Store in localStorage for now (can be moved to backend later)
-    const existingLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
+    const existingLogs = JSON.parse(localStorage.getItem(`healthLogs_${user?.id || user?.email || 'anonymous'}`) || '[]');
     existingLogs.push(logEntry);
-    localStorage.setItem('healthLogs', JSON.stringify(existingLogs));
+    localStorage.setItem(`healthLogs_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(existingLogs));
     
     // Reset form
     setQuickLogData({

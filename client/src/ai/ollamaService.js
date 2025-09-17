@@ -4,7 +4,7 @@
 class OllamaService {
   constructor() {
     this.baseURL = 'http://localhost:11434/api';
-    this.model = 'llama3.1:8b'; // Free, local model
+    this.model = 'llava'; // Free, local model
     this.timeout = 45000; // 45 second timeout for slower models
     
     console.log('🤖 OllamaService initialized');
@@ -33,10 +33,6 @@ class OllamaService {
     try {
       console.log('🤖 Using Ollama for health insights...');
 
-      // Create timeout controller
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
       const response = await fetch(`${this.baseURL}/generate`, {
         method: 'POST',
         headers: {
@@ -44,18 +40,15 @@ class OllamaService {
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: `Analyze cycle data: ${prompt}. Provide 3 medical insights.`,
+          prompt: `Analyze fertility data: ${prompt}. Provide 3 medical insights.`,
           stream: false,
           options: {
             temperature: 0.7,
             top_p: 0.9,
-            max_tokens: 100
+            num_predict: 100
           }
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Ollama API error: ${response.status}`);
@@ -67,11 +60,8 @@ class OllamaService {
       const content = data.response || '';
       console.log('Ollama content:', content);
 
-      // Parse the response into individual insights
-      const insights = content.split('\n').filter(line => line.trim().length > 0);
-      console.log('Parsed insights:', insights);
-
-      return insights;
+      // Return the full response as a string for processing
+      return content;
     } catch (error) {
       console.error('❌ Error generating health insights:', error);
       throw error;

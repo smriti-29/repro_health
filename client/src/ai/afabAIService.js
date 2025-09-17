@@ -1,81 +1,12 @@
 // AFAB-SPECIFIC AI SERVICE
 // Specialized AI service for AFAB reproductive health insights
 
-import AIServiceManager from './aiServiceManager';
+import AIServiceManager from './aiServiceManager.js';
 
 class AFABAIService extends AIServiceManager {
   constructor() {
     super();
-    this.afabKnowledgeBase = this.initializeAFABKnowledgeBase();
-  }
-
-  // ===== AFAB KNOWLEDGE BASE =====
-  initializeAFABKnowledgeBase() {
-    return {
-      // Cycle-related insights
-      cycleInsights: {
-        regularCycles: {
-          description: "Regular cycles (21-35 days) indicate healthy reproductive function",
-          recommendations: ["Continue tracking", "Maintain healthy lifestyle", "Regular screenings"]
-        },
-        irregularCycles: {
-          description: "Irregular cycles may indicate hormonal imbalances or conditions like PCOS",
-          recommendations: ["Consult healthcare provider", "Track symptoms", "Consider hormone testing"]
-        },
-        heavyBleeding: {
-          description: "Heavy bleeding (soaking through pad/tampon every 2 hours) may indicate fibroids or other conditions",
-          recommendations: ["Track bleeding patterns", "Monitor iron levels", "Consult healthcare provider"]
-        },
-        severeCramps: {
-          description: "Severe cramps may indicate endometriosis or other conditions",
-          recommendations: ["Track pain levels", "Consider pain management", "Consult healthcare provider"]
-        }
-      },
-      
-      // Fertility insights
-      fertilityInsights: {
-        ovulationPrediction: {
-          description: "Ovulation typically occurs 14 days before next period",
-          recommendations: ["Track BBT", "Monitor cervical mucus", "Use ovulation tests"]
-        },
-        fertileWindow: {
-          description: "Fertile window is 5-6 days before and including ovulation day",
-          recommendations: ["Track cycle length", "Monitor symptoms", "Time intercourse appropriately"]
-        },
-        ttcOptimization: {
-          description: "Optimizing fertility involves lifestyle, timing, and health factors",
-          recommendations: ["Maintain healthy weight", "Avoid smoking/alcohol", "Manage stress", "Take prenatal vitamins"]
-        }
-      },
-      
-      // Pregnancy insights
-      pregnancyInsights: {
-        trimester1: {
-          description: "First trimester focuses on fetal development and maternal adaptation",
-          recommendations: ["Take prenatal vitamins", "Avoid harmful substances", "Manage nausea", "Get adequate rest"]
-        },
-        trimester2: {
-          description: "Second trimester is often the most comfortable with fetal movement",
-          recommendations: ["Monitor fetal movement", "Continue prenatal care", "Prepare for baby", "Maintain healthy diet"]
-        },
-        trimester3: {
-          description: "Third trimester prepares for delivery and monitors for complications",
-          recommendations: ["Track contractions", "Monitor blood pressure", "Prepare for delivery", "Watch for warning signs"]
-        }
-      },
-      
-      // Menopause insights
-      menopauseInsights: {
-        perimenopause: {
-          description: "Perimenopause is the transition period before menopause",
-          recommendations: ["Track symptoms", "Consider hormone therapy", "Maintain bone health", "Manage stress"]
-        },
-        menopause: {
-          description: "Menopause is confirmed after 12 months without periods",
-          recommendations: ["Focus on long-term health", "Prevent osteoporosis", "Maintain heart health", "Consider hormone therapy"]
-        }
-      }
-    };
+    console.log('🩺 AFAB AI Service initialized - Live AI insights only');
   }
 
   // ===== CYCLE ANALYSIS =====
@@ -96,81 +27,111 @@ class AFABAIService extends AIServiceManager {
     const cycleCount = cycleData.length;
     const age = userProfile.age || 25;
     
-    return `You are a medical-grade reproductive health AI assistant. Provide comprehensive, clinically accurate analysis.
+    // Calculate patterns from historical data
+    let avgCycleLength = 28;
+    let avgPain = 0;
+    let commonSymptoms = [];
+    
+    if (cycleCount > 1) {
+      avgCycleLength = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleCount);
+      avgPain = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleCount);
+      
+      // Analyze symptom patterns
+      const symptomCounts = {};
+      cycleData.forEach(cycle => {
+        if (cycle.symptoms) {
+          cycle.symptoms.forEach(symptom => {
+            symptomCounts[symptom] = (symptomCounts[symptom] || 0) + 1;
+          });
+        }
+      });
+      commonSymptoms = Object.entries(symptomCounts)
+        .filter(([_, count]) => count >= Math.ceil(cycleCount / 2))
+        .map(([symptom, count]) => `${symptom} (${count}/${cycleCount} cycles)`)
+        .slice(0, 3);
+    }
+    
+        return `You are an advanced AI assistant specializing in reproductive and women's health, with expertise in menstrual cycle analysis. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
 
-PATIENT PROFILE:
-- Age: ${age} years old
+IMPORTANT: Do not introduce yourself as any specific doctor or use any doctor names. Start directly with the analysis content.
+
+PATIENT CONTEXT:
+- Age: ${age} years
 - Medical History: ${userProfile.conditions?.reproductive?.join(', ') || 'None reported'}
-- Family History: ${userProfile.familyHistory?.womensConditions?.join(', ') || 'None reported'}
-- Lifestyle: ${userProfile.lifestyle?.exercise?.frequency || 'Moderate'} exercise, ${userProfile.lifestyle?.stress?.level || 'Moderate'} stress
+- Lifestyle: ${userProfile.lifestyle?.exercise?.frequency || 'Moderate'} activity, ${userProfile.lifestyle?.stress?.level || 'Moderate'} stress
 
-CYCLE DATA:
+CURRENT CYCLE DATA:
 - Cycle Length: ${latestCycle.cycleLength} days
-- Period Length: ${latestCycle.periodLength || 'Not specified'} days
-- Flow Intensity: ${latestCycle.flowIntensity}
+- Flow: ${latestCycle.flowIntensity} intensity
 - Pain Level: ${latestCycle.pain}/10
-- Symptoms: ${latestCycle.symptoms?.join(', ') || 'None reported'}
+- Symptoms: ${latestCycle.symptoms?.join(', ') || 'None'}
 - Bleeding Pattern: ${latestCycle.bleedingPattern || 'Normal'}
-- Clots: ${latestCycle.clots || 'None'}
-- Cycles Tracked: ${cycleCount}
 
-Provide a comprehensive health analysis with these specific sections:
+COMPREHENSIVE HEALTH ASSESSMENT:
+- Stress Level: ${latestCycle.stressLevel || 5}/10
+- Sleep Quality: ${latestCycle.sleepQuality || 5}/10
+- Exercise Frequency: ${latestCycle.exerciseFrequency || 'moderate'}
+- Diet Quality: ${latestCycle.dietQuality || 'good'}
+- Current Medications: ${latestCycle.medicationUse || 'None'}
+- Weight: ${latestCycle.weight || 'Not provided'} lbs
+- Family History: ${latestCycle.familyHistory?.join(', ') || 'None reported'}
 
-**CYCLE INSIGHTS** (Compassionate medical summary - ~120 words)
-Write a caring, medical summary that tells the user's story. Requirements:
-- Medically accurate, evidence-based
-- Respectful, empathetic, supportive
-- Clear and concise (~120 words)
-- Non-repetitive (do NOT restate details already shown in Flow, Symptom, or Tips cards)
+HISTORICAL PATTERNS (${cycleCount} cycles tracked):
+- Average Cycle Length: ${avgCycleLength} days
+- Average Pain Level: ${avgPain}/10
+- Recurring Symptoms: ${commonSymptoms.join(', ') || 'None identified'}
 
-Structure:
-1. Opening line: acknowledge the cycle and set a caring tone
-2. Integrative summary: what this cycle reveals (medical terms allowed, define briefly if needed)
-3. Reflection on impact / importance
-4. Gentle guidance: what to focus on next (tracking, evaluation, self-care)
-5. Closing line: reassurance or encouragement
+Generate comprehensive insights following this EXACT structure:
 
-Tone: calm, reassuring, human. Avoid alarmist language, but don't minimize real risks.
+        🩺 **CLINICAL SUMMARY**
+        Provide 1-2 sentences in plain language describing the current cycle status and key observations. Write like a healthcare professional explaining to a patient.
 
-Example format:
-"This cycle reflects how much your body has navigated—[cycle length] days with [medical term] ([definition]) and episodes of [symptom description]. Together, these signs suggest [medical insight]. [Impact/importance]. The next step is simple but meaningful: [gentle guidance]. Your careful attention now can bring clarity, protect your long-term health, and help you feel more in tune with your body."
+        📊 **INTELLIGENT PATTERN RECOGNITION & CONTEXT**
+        Compare current cycle with past data, highlighting trends, changes, and patterns. Reference historical context and how this cycle fits into the broader pattern. Include specific bullet points with data analysis:
+        - Cycle length trends: "Your cycles have been [X] days, which is [normal/irregular]"
+        - Symptom patterns: "You consistently report [specific symptoms] during [phase]"
+        - Pain level analysis: "Pain has [increased/decreased/remained stable] from [X]/10 to [Y]/10"
+        - Flow pattern insights: "Your flow intensity shows [pattern] which may indicate [medical insight]"
+        - Lifestyle correlation: "Higher stress levels correlate with [specific cycle changes]"
+        Use both narrative and bullet points for clarity.
 
-Output: Markdown-friendly text only, no JSON.
+        🔍 **POSSIBLE CAUSES / MEDICAL REASONING**
+        Explain likely contributors using accurate but user-friendly medical terms. Consider hormonal factors, lifestyle influences, stress, nutrition, and other relevant factors. Make it educational but accessible.
 
-**FLOW ASSESSMENT** (For Cycle Patterns section)
-Brief statement of bleeding pattern using medical term + quick plain-English definition.
-• E.g., "Menorrhagia (heavy menstrual bleeding) lasting 7 days may increase anemia risk."
+        🔗 **CROSS-MODULE CONNECTIONS**
+        Link relevant factors from fertility, mental health, sleep, stress, and other health areas that may be influencing this cycle. Show how one area of health influences another.
 
-**SYMPTOM EVALUATION** (For Cycle Patterns section)
-Concise review of key symptoms with severity. Use correct term if available:
-• Dysmenorrhea (severe menstrual pain) rated ${latestCycle.pain}/10  
-• Associated fatigue, nausea, intermittent hot flashes  
-Add short comment if constellation warrants review.
+        ⚠️ **HEALTH IMPACT & RISKS**
+        Explain how current cycle patterns may affect daily life, fertility, long-term reproductive health, and overall wellbeing. Be specific about potential implications.
 
-**ACTION ITEM** (For Cycle Patterns section)
-Clear, user-friendly next step(s):
-• Track at least three cycles  
-• Schedule gynecologic evaluation if pain/bleeding persists
+        🎯 **CONFIDENCE LEVEL**
+        Rate as High/Medium/Low with specific reasoning based on data completeness, pattern consistency, and any uncertainties. Explain what would increase confidence.
 
-**CONFIDENCE LEVEL** (For Cycle Patterns section)
-Reflect model certainty in plain text:
-• "Moderate confidence – only one cycle logged; trends may change with more data."
+        💡 **INTELLIGENT PERSONALIZED ACTION ITEMS**
+        Based on the user's specific symptoms, family history, and cycle patterns, provide 3-5 evidence-based, practical, prioritized next steps. For example:
+        - If heavy bleeding: "Use hot water bag for 15-20 minutes, rest more, increase iron intake"
+        - If PCOS family history: "Consider tracking blood sugar, maintain regular exercise"
+        - If high stress: "Practice deep breathing, consider meditation apps"
+        Make each recommendation specific to their actual data.
+        
+        🌟 **CONTEXTUAL PERSONALIZED TIP**
+        Based on their specific symptoms, family history, and current cycle data, offer one targeted piece of advice. For example:
+        - If they have heavy bleeding + PCOS family history: "Given your heavy flow and family history of PCOS, consider discussing iron levels with your doctor"
+        - If they have high stress + irregular cycles: "Your stress levels may be affecting cycle regularity - try stress management techniques"
+        Make it feel like personalized medical advice from a caring healthcare professional.
 
-**PERSONALIZED TIPS** (For Personalized Tips section)
-3–4 actionable, medically sound suggestions:
-• Maintain an iron-rich diet (leafy greens, lentils, lean meat)  
-• NSAIDs (e.g., ibuprofen) for dysmenorrhea if no contraindication  
-• Heat therapy, rest, gentle movement (yoga)  
-• Stress-reduction techniques
+        🌸 **INTELLIGENT CONTEXTUAL REMINDERS**
+        Based on the user's specific symptoms and patterns, provide 3-4 contextual reminders. For example:
+        - If heavy bleeding: "Rest more during heavy flow days, use hot water bag for cramps, monitor for signs of anemia"
+        - If high pain levels: "Consider over-the-counter pain relief, heat therapy, gentle stretching"
+        - If irregular cycles: "Continue tracking for pattern recognition, consider stress management"
+        - If family history of conditions: "Regular check-ups recommended given family history"
+        Make each reminder specific to their actual symptoms and data.
+        
+        ⚖️ **MEDICAL DISCLAIMER**
+        Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional consultation when needed.
 
-**GENTLE REMINDERS** (For Gentle Reminders section)
-Supportive nudges, not alarms:
-• "Keep logging your cycle details for accurate pattern detection."  
-• "Consult a clinician promptly if bleeding soaks >1 pad/hour or you feel dizzy."
-
-Formatting:
-- Use clear sentences or bullets, no jargon without definition
-- ≤40 words per tile unless a critical alert exists`;
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
   }
 
   processCycleInsights(insights, cycleData, userProfile) {
@@ -187,12 +148,7 @@ Formatting:
           confidence: parsedInsights.quickCheck?.confidence || 'Moderate'
         },
         aiInsights: parsedInsights.aiInsights || [insights],
-        riskAssessment: parsedInsights.riskAssessment || {
-          cycleIrregularity: 'Continue tracking to assess',
-          anemiaRisk: 'Monitor for symptoms',
-          underlyingConditions: 'No immediate concerns',
-          overallRisk: 'Low'
-        },
+        riskAssessment: parsedInsights.riskAssessment || 'Continue tracking to assess cycle patterns and overall health',
         recommendations: parsedInsights.recommendations || ['Continue tracking your cycle'],
         medicalAlerts: parsedInsights.medicalAlerts || ['No immediate alerts'],
         personalizedTips: parsedInsights.personalizedTips || ['Keep tracking for personalized insights']
@@ -221,12 +177,7 @@ Formatting:
           confidence: confidence
         },
         aiInsights: [cycleInsights], // Use extracted cycle insights, not full response
-        riskAssessment: {
-          cycleIrregularity: 'Continue tracking to assess',
-          anemiaRisk: 'Monitor for symptoms',
-          underlyingConditions: 'No immediate concerns',
-          overallRisk: 'Low'
-        },
+        riskAssessment: 'Continue tracking to assess cycle patterns and overall health',
         recommendations: ['Continue tracking your cycle'],
         medicalAlerts: ['No immediate alerts'],
         personalizedTips: personalizedTips,
@@ -443,27 +394,52 @@ Formatting:
   }
 
   getFallbackCycleInsights(cycleData, userProfile) {
+    const latestCycle = cycleData[cycleData.length - 1];
+    const cycleCount = cycleData.length;
+    
     return {
-      cycleAnalysis: {
-        pattern: 'Unable to analyze - continue tracking',
-        regularity: 'Continue monitoring cycle patterns',
-        symptoms: ['Continue tracking symptoms for pattern recognition'],
-        recommendations: ['Maintain healthy lifestyle', 'Continue tracking', 'Consult healthcare provider if concerned']
+      quickCheck: {
+        flowAssessment: `${latestCycle.flowIntensity} flow documented - continue monitoring patterns`,
+        symptomEvaluation: `Pain level ${latestCycle.pain}/10 with ${latestCycle.symptoms?.length || 0} symptoms tracked`,
+        actionItem: 'Continue tracking cycles for pattern analysis',
+        confidence: `Limited - based on ${cycleCount} cycle(s) logged`
       },
-      aiInsights: 'AI service temporarily unavailable - using fallback insights',
-      medicalAlerts: [],
-      personalizedTips: ['Continue tracking your cycle', 'Maintain healthy lifestyle', 'Consult healthcare provider if needed']
+      aiInsights: [`Your ${latestCycle.cycleLength}-day cycle with ${latestCycle.flowIntensity} flow has been documented. Continue tracking to build a comprehensive health profile that will enable more personalized insights.`],
+      personalizedTips: [
+        'Track your cycle consistently for better pattern recognition',
+        'Note any changes in flow, pain, or symptoms',
+        'Maintain a healthy lifestyle with balanced nutrition',
+        'Consult healthcare provider for persistent concerns'
+      ],
+      gentleReminders: [
+        'Every cycle you track builds valuable health data',
+        'Your body\'s patterns are unique and worth understanding',
+        'Consistent tracking leads to better health insights'
+      ]
     };
   }
+
 
   // ===== FERTILITY ANALYSIS =====
   async generateFertilityInsights(fertilityData, userProfile) {
     const prompt = this.buildFertilityPrompt(fertilityData, userProfile);
     try {
-      const insights = await this.generateHealthInsights(prompt);
+      console.log('🚀 FERTILITY: Starting AI service call...');
+      console.log('🔍 FERTILITY: Service status:', this.getServiceStatus());
+      console.log('🔍 FERTILITY: Prompt length:', prompt.length);
+      
+      // Use the parent class's executeWithFallback method for seamless fallback (SAME AS CYCLE TRACKING)
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      
+      console.log('✅ FERTILITY: AI service returned insights:', insights);
+      console.log('🔍 FERTILITY: Insights type:', typeof insights);
+      console.log('🔍 FERTILITY: Insights length:', insights?.length);
+      console.log('🔍 FERTILITY: Raw insights content:', insights);
+      
       return this.processFertilityInsights(insights, fertilityData, userProfile);
     } catch (error) {
-      console.error('Error generating fertility insights:', error);
+      console.error('❌ FERTILITY: Error generating fertility insights:', error);
+      console.error('❌ FERTILITY: Error details:', error.message);
       return this.getFallbackFertilityInsights(fertilityData, userProfile);
     }
   }
@@ -573,115 +549,179 @@ Formatting:
       `;
     }
     
-    return `
-    You are a compassionate fertility specialist providing comprehensive fertility analysis. Generate a detailed, medically-informed fertility assessment in the following EXACT structure:
+    return `You are an advanced AI assistant specializing in reproductive health and fertility analysis, with expertise in fertility awareness methods, conception optimization, and natural family planning. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
 
-    **FERTILITY INSIGHTS** (Compassionate medical summary - ~120 words):
-    - Opening line acknowledging the user's fertility journey
-    - Integrative summary of current fertility status based on recent data
-    - Reflection on fertility patterns and health factors
-    - Gentle guidance on fertility optimization
-    - Closing line with encouragement and support
-    Tone: Calm, reassuring, human, non-alarmist, supportive
+IMPORTANT: Do not introduce yourself as any specific doctor or use any doctor names. Start directly with the analysis content.
 
-    **OVULATION ASSESSMENT** (Ovulation timing and prediction):
-    - Current ovulation status: ${bbtTrend.includes('rising') ? 'Likely imminent' : bbtTrend.includes('declining') ? 'Post-ovulation' : 'Uncertain'}
-    - Fertility window analysis: ${mucusPattern.includes('egg-white') ? 'Peak fertility window' : mucusPattern.includes('watery') ? 'Approaching fertile window' : 'Non-fertile phase'}
-    - Ovulation prediction accuracy: ${testResults.includes('LH surge') ? 'High - LH surge confirmed' : 'Moderate - based on BBT and mucus patterns'}
-    ${trackingMode === 'advanced' ? '- Advanced cervical analysis: Position and texture changes' : '- Limited to BBT and ovulation test data'}
+PATIENT CONTEXT:
+- Age: ${age} years
+- Medical History: ${conditions.join(', ') || 'None reported'}
+- Family History: ${familyHistory.join(', ') || 'None reported'}
+- Tracking Mode: ${trackingMode} (${trackingMode === 'advanced' ? 'Full fertility indicators' : 'Basic indicators only'})
 
-    **FERTILITY EVALUATION** (Overall fertility health):
-    - Age-related fertility factors: ${age < 30 ? 'Peak fertility age' : age < 35 ? 'Good fertility age' : age < 40 ? 'Declining fertility age' : 'Advanced maternal age'}
-    - Health condition impacts: ${conditions.length > 0 ? conditions.join(', ') : 'No known reproductive conditions'}
-    - Cycle regularity assessment: Based on ${fertilityData.length} entries
-    ${trackingMode === 'advanced' ? '- Comprehensive cervical mucus and position analysis' : '- Basic fertility indicators only'}
+FERTILITY GOAL & CONTEXT:
+- Primary Goal: ${latestEntry?.fertilityGoal || 'Not specified'}
+- Conception Timeline: ${latestEntry?.conceptionTimeline || 'Not specified'}
+- Previous Pregnancies: ${latestEntry?.previousPregnancies || 0}
+- Previous Miscarriages: ${latestEntry?.previousMiscarriages || 0}
+- Fertility Treatments: ${latestEntry?.fertilityTreatments?.join(', ') || 'None'}
+- Contraception Method: ${latestEntry?.contraceptionPreference || 'None'}
 
-    **ACTION ITEM** (Specific next steps):
-    - Immediate actionable recommendations based on current data
-    - Testing or monitoring suggestions
-    - Lifestyle modifications
-    ${trackingMode === 'advanced' ? '- Advanced tracking recommendations' : '- Consider upgrading to advanced tracking for cervical mucus and position monitoring'}
+CURRENT FERTILITY DATA:
+${dataSummary}
 
-    **CONFIDENCE LEVEL** (Assessment reliability):
-    - Confidence: ${confidencePercent}% (${confidenceLevel} confidence)
-    - Data quality assessment: ${confidenceFactors.length >= 3 ? 'Excellent' : confidenceFactors.length >= 2 ? 'Good' : 'Limited'}
-    - Recommendations for improvement: ${confidenceFactors.length < 3 ? 'Continue tracking for better accuracy' : 'Maintain current tracking routine'}
-    ${trackingMode === 'advanced' ? '- High confidence due to comprehensive cervical tracking data' : '- Moderate confidence - cervical mucus tracking unavailable in beginner mode'}
+ANALYSIS SUMMARY:
+- BBT Pattern: ${bbtTrend}
+${trackingMode === 'advanced' ? `- Cervical Mucus: ${mucusPattern}` : ''}
+- LH Testing: ${testResults}
+- Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
+- Assessment Confidence: ${confidenceLevel} (${confidencePercent}%)
 
-    **PERSONALIZED TIPS** (Fertility optimization):
-    1. [Specific fertility tip based on ${trackingMode} data and current patterns]
-    2. [Lifestyle recommendation based on age and health]
-    3. [Timing or tracking suggestion based on current phase]
-    4. [Health optimization tip]
-    ${trackingMode === 'advanced' ? '5. [Cervical mucus and position monitoring tip]' : '5. [Consider advanced tracking for cervical mucus monitoring]'}
+Provide comprehensive fertility analysis in these EXACT sections with emojis, tailored to the user's specific fertility goal:
 
-    **GENTLE REMINDERS** (Daily fertility support):
-    1. [Encouraging daily reminder]
-    2. [Supportive tracking tip]
-    3. [Wellness reminder]
-    4. [Positive affirmation]
-    ${trackingMode === 'advanced' ? '5. [Cervical mucus observation reminder]' : '5. [Consider learning advanced tracking methods]'}
+🩺 **CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current fertility status and key observations. Write like a healthcare professional explaining to a patient.
 
-    User Profile: Age ${age}, Conditions: ${conditions.join(', ') || 'None'}, Family History: ${familyHistory.join(', ') || 'None'}
-    ${dataSummary}
-    `;
+📊 **INTELLIGENT PATTERN RECOGNITION & CONTEXT**
+Compare current fertility data with past entries, highlighting trends, changes, and patterns. Reference historical context and how this entry fits into the broader fertility pattern. Include specific bullet points with data analysis:
+- BBT trends: "Your temperature has [risen/fallen/remained stable] from [X]°F to [Y]°F"
+- Mucus patterns: "Your cervical mucus shows [pattern] which indicates [fertility status]"
+- Ovulation timing: "Based on your data, ovulation likely occurred [timing]"
+- Cycle regularity: "Your cycles have been [regular/irregular] with [X] day variation"
+- Fertility window: "Your fertile window appears to be [timing] based on [indicators]"
+Use both narrative and bullet points for clarity.
+
+🔍 **POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors using accurate but user-friendly medical terms. Consider hormonal factors, cycle phase, lifestyle influences, and other relevant factors. Make it educational but accessible.
+
+🔗 **CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, health monitoring, and other health areas that may be influencing fertility. Show how one area of health influences another.
+
+⚠️ **FERTILITY IMPACT & OPTIMIZATION**
+Explain how current fertility patterns may affect conception chances, cycle health, and overall reproductive wellbeing. Be specific about potential implications and optimization strategies.
+
+🎯 **CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, pattern consistency, and any uncertainties. Explain what would increase confidence.
+
+💡 **INTELLIGENT PERSONALIZED ACTION ITEMS**
+Based on the user's specific fertility data, age, and goals, provide 3-5 evidence-based, practical, prioritized next steps. Tailor recommendations to their fertility goal:
+
+FOR TRYING TO CONCEIVE (TTC):
+- "Try intercourse on [specific dates] based on your fertile window"
+- "Your peak fertility window is [dates] - optimal timing for conception"
+- "Consider tracking additional indicators for maximum conception chances"
+- "Based on your timeline, consider [specific medical advice]"
+
+FOR NATURAL FAMILY PLANNING (NFP):
+- "Your safe period begins [date] and continues until [date]"
+- "Avoid intercourse during fertile window: [dates]"
+- "Your BBT rise indicates ovulation occurred - safe period begins in 3 days"
+- "Consider backup contraception during uncertain periods"
+
+FOR HEALTH MONITORING:
+- "Your BBT pattern suggests [health status] - consider discussing with healthcare provider"
+- "Track consistently to detect any concerning changes early"
+- "Your cycle patterns indicate [health insights]"
+- "Consider lifestyle modifications based on your patterns"
+
+FOR CYCLE AWARENESS:
+- "Continue tracking to better understand your unique patterns"
+- "Your cycle shows [specific characteristics]"
+- "Consider tracking additional indicators for comprehensive awareness"
+- "Your patterns suggest [cycle insights]"
+
+Make each recommendation specific to their actual data and goals.
+
+🌟 **CONTEXTUAL PERSONALIZED TIP**
+Based on their specific fertility data, age, and goals, offer one targeted piece of advice. For example:
+- If peak fertility detected: "Your egg-white mucus and BBT rise confirm peak fertility - optimal timing for conception"
+- If post-ovulation: "Your BBT rise indicates ovulation occurred - safe period begins in 3 days"
+- If irregular patterns: "Your cycle variation may benefit from stress management and consistent tracking"
+Make it feel like personalized medical advice from a caring healthcare professional.
+
+🌸 **INTELLIGENT CONTEXTUAL REMINDERS**
+Based on the user's specific fertility data and goals, provide 3-4 contextual reminders. For example:
+- If trying to conceive: "Continue tracking for optimal timing, consider prenatal vitamins, maintain healthy lifestyle"
+- If using NFP: "Track consistently for maximum effectiveness, consider backup methods during uncertain periods"
+- If monitoring health: "Regular tracking helps detect changes early, discuss patterns with healthcare provider"
+- If irregular cycles: "Consistent tracking improves pattern recognition, consider lifestyle factors"
+Make each reminder specific to their actual data and goals.
+
+⚖️ **MEDICAL DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on tracking data, not medical diagnosis. Encourage professional consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
   }
 
   processFertilityInsights(insights, fertilityData, userProfile) {
-    // Extract structured content from AI response
-    const fertilityInsights = this.extractFertilityInsights(insights);
-    const ovulationAssessment = this.extractSection(insights, 'OVULATION ASSESSMENT');
-    const fertilityEvaluation = this.extractSection(insights, 'FERTILITY EVALUATION');
-    const actionItem = this.extractSection(insights, 'ACTION ITEM');
-    const confidenceLevel = this.extractSection(insights, 'CONFIDENCE LEVEL');
-    const personalizedTips = this.extractTips(insights, 'PERSONALIZED TIPS');
-    const gentleReminders = this.extractTips(insights, 'GENTLE REMINDERS');
-
-    return {
-      // Main AI insights - compassionate medical summary
-      aiInsights: fertilityInsights,
+    try {
+      // Try to parse JSON response from AI (SAME AS CYCLE TRACKING)
+      const parsedInsights = JSON.parse(insights);
       
-      // Quick check structure (same as cycle tracking)
-      quickCheck: {
-        ovulationAssessment: ovulationAssessment || 'Continue tracking ovulation patterns for better assessment',
-        fertilityEvaluation: fertilityEvaluation || 'Continue monitoring fertility indicators',
-        actionItem: actionItem || 'Maintain consistent tracking and healthy lifestyle',
-        confidence: confidenceLevel || 'Medium confidence - continue tracking for better assessment'
-      },
+      return {
+        quickCheck: {
+          ovulationAssessment: parsedInsights.quickCheck?.ovulationAssessment || 'Ovulation patterns analyzed',
+          fertilityEvaluation: parsedInsights.quickCheck?.fertilityEvaluation || 'Fertility indicators evaluated',
+          actionItem: parsedInsights.quickCheck?.actionItem || 'Continue tracking for comprehensive insights',
+          confidence: parsedInsights.quickCheck?.confidence || 'Moderate'
+        },
+        aiInsights: parsedInsights.aiInsights || [insights],
+        riskAssessment: parsedInsights.riskAssessment || 'Continue tracking to assess fertility patterns and overall health',
+        recommendations: parsedInsights.recommendations || ['Continue tracking your fertility'],
+        medicalAlerts: parsedInsights.medicalAlerts || ['No immediate alerts'],
+        personalizedTips: parsedInsights.personalizedTips || ['Keep tracking for personalized insights'],
+        gentleReminders: parsedInsights.gentleReminders || ['Continue tracking fertility indicators for better insights']
+      };
+    } catch (error) {
+      // If JSON parsing fails, parse text response for specific sections (SAME AS CYCLE TRACKING)
+      const textInsights = insights.toString();
       
-      // Personalized recommendations
-      personalizedTips: personalizedTips.length > 0 ? personalizedTips : [
-        'Take prenatal vitamins with folic acid daily',
-        'Track basal body temperature for ovulation detection',
-        'Monitor cervical mucus changes throughout cycle',
-        'Maintain healthy weight and regular exercise',
-        'Consider ovulation predictor kits for timing'
-      ],
+      // Extract Fertility Insights (unique insights - predictions, trends, user journey)
+      const fertilityInsights = this.extractFertilityInsights(textInsights, insights);
       
-      // Gentle reminders
-      gentleReminders: gentleReminders.length > 0 ? gentleReminders : [
-        'Remember to take your prenatal vitamins today',
-        'Track your BBT at the same time each morning',
-        'Stay hydrated and maintain a balanced diet',
-        'Practice stress management techniques',
-        'Keep track of your fertility signs daily'
-      ],
+      // Extract specific sections for Fertility Patterns
+      const ovulationAssessment = this.extractSection(textInsights, 'OVULATION ASSESSMENT', 'Ovulation patterns analyzed');
+      const fertilityEvaluation = this.extractSection(textInsights, 'FERTILITY EVALUATION', 'Fertility indicators evaluated');
+      const actionItem = this.extractSection(textInsights, 'ACTION ITEM', 'Continue tracking for comprehensive insights');
+      const confidence = this.extractSection(textInsights, 'CONFIDENCE LEVEL', 'Moderate');
+      const personalizedTips = this.extractTips(textInsights, 'PERSONALIZED TIPS');
+      const gentleReminders = this.extractTips(textInsights, 'GENTLE REMINDERS');
       
-      // Additional fertility-specific data
-      ovulationPrediction: this.predictOvulation(fertilityData),
-      conceptionTimeline: this.estimateConceptionTimeline(userProfile),
-      medicalAlerts: this.generateFertilityAlerts(fertilityData, userProfile)
-    };
+      return {
+        quickCheck: {
+          ovulationAssessment: ovulationAssessment,
+          fertilityEvaluation: fertilityEvaluation,
+          actionItem: actionItem,
+          confidence: confidence
+        },
+        aiInsights: [fertilityInsights], // Use extracted fertility insights, not full response
+        riskAssessment: 'Continue tracking to assess fertility patterns and overall health',
+        recommendations: ['Continue tracking your fertility'],
+        medicalAlerts: ['No immediate alerts'],
+        personalizedTips: personalizedTips,
+        gentleReminders: gentleReminders
+      };
+    }
   }
 
-  extractFertilityInsights(insights) {
-    const fertilitySection = this.extractSection(insights, 'FERTILITY INSIGHTS');
-    if (fertilitySection) {
-      return fertilitySection;
-    }
+  extractFertilityInsights(text, fallback) {
+    // Extract the full Fertility Insights section with multiple paragraphs (SAME AS CYCLE TRACKING)
+    const patterns = [
+      new RegExp(`\\*\\*FERTILITY INSIGHTS\\*\\*[\\s\\S]*?([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i'),
+      new RegExp(`FERTILITY INSIGHTS[:\-]\\s*([\\s\\S]*?)(?=\\n\\n|$)`, 'i')
+    ];
     
-    // Fallback compassionate fertility summary
-    return "Your fertility journey is unique and personal. Based on your current tracking data, your reproductive health shows positive indicators. Continue monitoring your cycle patterns, maintain a healthy lifestyle, and stay connected with your healthcare provider. Remember, fertility is influenced by many factors, and consistent tracking helps provide valuable insights for your reproductive health journey.";
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const insightsText = match[1].trim();
+        // Clean up the text and return meaningful content
+        if (insightsText.length > 50) {
+          return insightsText;
+        }
+      }
+    }
+    return fallback;
   }
 
   assessAgeFertility(age) {
@@ -814,17 +854,29 @@ Formatting:
   }
 
   getFallbackFertilityInsights(fertilityData, userProfile) {
+    const latestEntry = fertilityData[fertilityData.length - 1];
+    const age = userProfile.age || 25;
+    const trackingMode = latestEntry?.trackingMode || 'beginner';
+    
     return {
-      fertilityAssessment: {
-        ageFactor: 'Continue tracking for better assessment',
-        healthFactors: ['Continue monitoring health factors'],
-        cycleFactors: 'Continue tracking cycle patterns',
-        recommendations: ['Maintain healthy lifestyle', 'Continue tracking', 'Consider fertility evaluation if needed']
+      quickCheck: {
+        ovulationAssessment: `${trackingMode === 'advanced' ? 'Advanced' : 'Basic'} fertility tracking active - continue monitoring`,
+        fertilityEvaluation: `Age ${age} fertility tracking with ${fertilityData.length} entries logged`,
+        actionItem: `Continue ${trackingMode} tracking for comprehensive fertility insights`,
+        confidence: `Moderate - based on ${fertilityData.length} fertility entries`
       },
-      aiInsights: 'AI service temporarily unavailable - using fallback insights',
-      ovulationPrediction: 'Unable to predict - continue tracking',
-      conceptionTimeline: 'Continue trying and tracking',
-      medicalAlerts: []
+      aiInsights: [`Your fertility journey is being carefully tracked with ${fertilityData.length} entries in ${trackingMode} mode. Continue monitoring your indicators to build a comprehensive fertility profile that will enable personalized insights and timing guidance.`],
+      personalizedTips: [
+        `Maintain consistent ${trackingMode} tracking for pattern recognition`,
+        age < 35 ? 'Optimal fertility age - focus on healthy lifestyle' : 'Consider fertility evaluation if trying to conceive',
+        trackingMode === 'advanced' ? 'Monitor cervical mucus changes throughout cycle' : 'Consider upgrading to advanced tracking for better insights',
+        'Track BBT daily for ovulation confirmation'
+      ],
+      gentleReminders: [
+        'Your fertility data builds valuable insights over time',
+        'Every day of tracking contributes to understanding your patterns',
+        'Be patient with your body and the tracking process'
+      ]
     };
   }
 
@@ -832,7 +884,7 @@ Formatting:
   async generatePregnancyInsights(pregnancyData, userProfile) {
     const prompt = this.buildPregnancyPrompt(pregnancyData, userProfile);
     try {
-      const insights = await this.generateHealthInsights(prompt);
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
       return this.processPregnancyInsights(insights, pregnancyData, userProfile);
     } catch (error) {
       console.error('Error generating pregnancy insights:', error);
@@ -845,36 +897,56 @@ Formatting:
     const conditions = userProfile.conditions?.reproductive || [];
     const familyHistory = userProfile.familyHistory?.womensConditions || [];
     
-    return `
-    AFAB Pregnancy Analysis Request:
-    
-    User Profile:
-    - Age: ${age} years old
-    - Medical Conditions: ${conditions.join(', ') || 'None reported'}
-    - Family History: ${familyHistory.join(', ') || 'None reported'}
-    - Former smoker: ${userProfile.tobaccoUse || 'No'}
-    
-    Pregnancy Data:
-    - Due Date: ${pregnancyData.dueDate || 'Unknown'}
-    - Trimester: ${pregnancyData.trimester || 'Unknown'}
-    - Pregnancy Type: ${pregnancyData.pregnancyType || 'Unknown'}
-    - Complications: ${pregnancyData.complications?.join(', ') || 'None reported'}
-    
-    Current Symptoms:
-    - Nausea: ${pregnancyData.symptoms?.nausea || 'Not reported'}
-    - Fatigue: ${pregnancyData.symptoms?.fatigue || 'Not reported'}
-    - Mood: ${pregnancyData.symptoms?.mood || 'Not reported'}
-    - Sleep: ${pregnancyData.symptoms?.sleep || 'Not reported'}
-    
-    Please provide:
-    1. Trimester-specific insights and recommendations
-    2. Symptom management strategies
-    3. Risk assessment based on age and health factors
-    4. Prenatal care recommendations
-    5. Warning signs to watch for
-    
-    Focus on evidence-based pregnancy insights and personalized recommendations.
-    `;
+    return `You are a reproductive and women's health AI assistant specializing in pregnancy tracking and prenatal care. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age} years old
+- Medical Conditions: ${conditions.join(', ') || 'None reported'}
+- Family History: ${familyHistory.join(', ') || 'None reported'}
+- Former smoker: ${userProfile.tobaccoUse || 'No'}
+
+CURRENT PREGNANCY DATA:
+- Due Date: ${pregnancyData.dueDate || 'Unknown'}
+- Trimester: ${pregnancyData.trimester || 'Unknown'}
+- Pregnancy Type: ${pregnancyData.pregnancyType || 'Unknown'}
+- Complications: ${pregnancyData.complications?.join(', ') || 'None reported'}
+
+CURRENT SYMPTOMS:
+- Nausea: ${pregnancyData.symptoms?.nausea || 'Not reported'}
+- Fatigue: ${pregnancyData.symptoms?.fatigue || 'Not reported'}
+- Mood: ${pregnancyData.symptoms?.mood || 'Not reported'}
+- Sleep: ${pregnancyData.symptoms?.sleep || 'Not reported'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current pregnancy status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current pregnancy data with typical patterns for this trimester, highlighting what's normal, what's notable, and how this pregnancy is progressing. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current symptoms and pregnancy status using accurate but user-friendly medical terms. Consider hormonal changes, fetal development stage, maternal adaptations, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, mental health, sleep, nutrition, and other health areas that may be influencing this pregnancy. Show how overall health affects pregnancy.
+
+**HEALTH IMPACT & RISKS**
+Explain how current pregnancy patterns may affect daily life, fetal development, delivery preparation, and long-term maternal health. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this pregnancy stage and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, pregnancy-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional prenatal care and consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
   }
 
   processPregnancyInsights(insights, pregnancyData, userProfile) {
@@ -1082,7 +1154,7 @@ Formatting:
   async generateMenopauseInsights(menopauseData, userProfile) {
     const prompt = this.buildMenopausePrompt(menopauseData, userProfile);
     try {
-      const insights = await this.generateHealthInsights(prompt);
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
       return this.processMenopauseInsights(insights, menopauseData, userProfile);
     } catch (error) {
       console.error('Error generating menopause insights:', error);
@@ -1095,35 +1167,55 @@ Formatting:
     const conditions = userProfile.conditions?.reproductive || [];
     const familyHistory = userProfile.familyHistory?.womensConditions || [];
     
-    return `
-    AFAB Menopause Analysis Request:
-    
-    User Profile:
-    - Age: ${age} years old
-    - Medical Conditions: ${conditions.join(', ') || 'None reported'}
-    - Family History: ${familyHistory.join(', ') || 'None reported'}
-    - Former smoker: ${userProfile.tobaccoUse || 'No'}
-    
-    Menopause Data:
-    - Menopause Type: ${menopauseData.menopauseType || 'Unknown'}
-    - Is In Menopause: ${menopauseData.isInMenopause ? 'Yes' : 'No'}
-    - Hormone Therapy: ${menopauseData.hormoneTherapy?.isOnHRT ? 'Yes' : 'No'}
-    
-    Current Symptoms:
-    - Hot Flashes: ${menopauseData.symptoms?.hotFlashes || 'Not reported'}
-    - Night Sweats: ${menopauseData.symptoms?.nightSweats || 'Not reported'}
-    - Mood Changes: ${menopauseData.symptoms?.moodChanges || 'Not reported'}
-    - Sleep Disruption: ${menopauseData.symptoms?.sleepDisruption || 'Not reported'}
-    
-    Please provide:
-    1. Menopause stage assessment and insights
-    2. Symptom management strategies
-    3. Hormone therapy considerations
-    4. Long-term health recommendations
-    5. Bone and heart health focus
-    
-    Focus on evidence-based menopause insights and personalized recommendations.
-    `;
+    return `You are a reproductive and women's health AI assistant specializing in menopause and perimenopause care. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age} years old
+- Medical Conditions: ${conditions.join(', ') || 'None reported'}
+- Family History: ${familyHistory.join(', ') || 'None reported'}
+- Former smoker: ${userProfile.tobaccoUse || 'No'}
+
+CURRENT MENOPAUSE DATA:
+- Menopause Type: ${menopauseData.menopauseType || 'Unknown'}
+- Is In Menopause: ${menopauseData.isInMenopause ? 'Yes' : 'No'}
+- Hormone Therapy: ${menopauseData.hormoneTherapy?.isOnHRT ? 'Yes' : 'No'}
+
+CURRENT SYMPTOMS:
+- Hot Flashes: ${menopauseData.symptoms?.hotFlashes || 'Not reported'}
+- Night Sweats: ${menopauseData.symptoms?.nightSweats || 'Not reported'}
+- Mood Changes: ${menopauseData.symptoms?.moodChanges || 'Not reported'}
+- Sleep Disruption: ${menopauseData.symptoms?.sleepDisruption || 'Not reported'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current menopause status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current menopause data with typical patterns for this stage, highlighting what's normal, what's notable, and how this menopause transition is progressing. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current menopause symptoms and status using accurate but user-friendly medical terms. Consider hormonal changes, age factors, lifestyle influences, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, mental health, sleep, bone health, and other health areas that may be influencing menopause. Show how one area of health affects another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current menopause patterns may affect daily life, bone health, heart health, sleep, and long-term wellbeing. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this menopause stage and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, menopause-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional menopause care and consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
   }
 
   processMenopauseInsights(insights, menopauseData, userProfile) {
@@ -1501,6 +1593,499 @@ Be supportive, medically accurate, and actionable.`;
         'Keep up with regular check-ups'
       ],
       riskAssessment: `Regular monitoring and screening are key to maintaining breast health and early detection.`
+    };
+  }
+
+  // ===== MENTAL HEALTH ANALYSIS =====
+  async generateMentalHealthInsights(mentalHealthData, userProfile) {
+    const prompt = this.buildMentalHealthPrompt(mentalHealthData, userProfile);
+    try {
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processMentalHealthInsights(insights, mentalHealthData, userProfile);
+    } catch (error) {
+      console.error('Error generating mental health insights:', error);
+      return this.getFallbackMentalHealthInsights(mentalHealthData, userProfile);
+    }
+  }
+
+  buildMentalHealthPrompt(mentalHealthData, userProfile) {
+    const age = userProfile.age;
+    const conditions = userProfile.conditions?.mental || [];
+    const medications = userProfile.medications || [];
+    
+    return `You are a reproductive and women's health AI assistant specializing in mental health and wellness. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age}
+- Mental Health Conditions: ${conditions.join(', ') || 'None reported'}
+- Current Medications: ${medications.join(', ') || 'None'}
+- Lifestyle: ${userProfile.lifestyle?.exerciseFrequency || 'Not specified'}
+
+CURRENT MENTAL HEALTH DATA:
+- Date: ${mentalHealthData.date}
+- Mood: ${mentalHealthData.mood}
+- Anxiety Level: ${mentalHealthData.anxiety}/10
+- Depression Level: ${mentalHealthData.depression}/10
+- Stress Level: ${mentalHealthData.stress}/10
+- Sleep Quality: ${mentalHealthData.sleep}/10
+- Energy Level: ${mentalHealthData.energy}/10
+- Symptoms: ${mentalHealthData.symptoms?.join(', ') || 'None reported'}
+- Triggers: ${mentalHealthData.triggers?.join(', ') || 'None identified'}
+- Coping Strategies: ${mentalHealthData.copingStrategies?.join(', ') || 'None used'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current mental health status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current mental health data with typical patterns, highlighting trends, changes, and how current state fits into broader mental health patterns. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current mental health status using accurate but user-friendly medical terms. Consider hormonal factors, stress, sleep, lifestyle influences, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, pregnancy, sleep, stress, and other health areas that may be influencing mental health. Show how one area of health influences another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current mental health patterns may affect daily life, relationships, work, physical health, and long-term wellbeing. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this mental health state and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, mental health-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional mental health consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+  }
+
+  processMentalHealthInsights(response, mentalHealthData, userProfile) {
+    try {
+      // Try to parse JSON response
+      const parsed = JSON.parse(response);
+      return {
+        aiInsights: parsed.aiInsights || [response],
+        patterns: parsed.patterns || 'Analyzing mental health patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue monitoring your mental health'],
+        riskAssessment: parsed.riskAssessment || 'Mental health monitoring active'
+      };
+    } catch (error) {
+      console.error('Error parsing mental health insights:', error);
+      return {
+        aiInsights: [response],
+        patterns: 'Mental health analysis completed',
+        alerts: [],
+        recommendations: ['Continue monitoring your mental health'],
+        riskAssessment: 'Mental health monitoring active'
+      };
+    }
+  }
+
+  getFallbackMentalHealthInsights(mentalHealthData, userProfile) {
+    return {
+      aiInsights: ['Mental health tracking is important for overall wellness', 'Continue monitoring your mood and stress levels', 'Consider professional support if symptoms persist'],
+      patterns: 'Mental health patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Practice stress management techniques', 'Maintain regular sleep schedule', 'Stay connected with support network'],
+      riskAssessment: 'Mental health monitoring active'
+    };
+  }
+
+  // ===== SEXUAL HEALTH ANALYSIS =====
+  async generateSexualHealthInsights(sexualHealthData, userProfile) {
+    const prompt = this.buildSexualHealthPrompt(sexualHealthData, userProfile);
+    try {
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processSexualHealthInsights(insights, sexualHealthData, userProfile);
+    } catch (error) {
+      console.error('Error generating sexual health insights:', error);
+      return this.getFallbackSexualHealthInsights(sexualHealthData, userProfile);
+    }
+  }
+
+  buildSexualHealthPrompt(sexualHealthData, userProfile) {
+    const age = userProfile.age;
+    const conditions = userProfile.conditions?.reproductive || [];
+    
+    return `You are a reproductive and women's health AI assistant specializing in sexual health and wellness. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age}
+- Reproductive Conditions: ${conditions.join(', ') || 'None reported'}
+
+CURRENT SEXUAL HEALTH DATA:
+- Date: ${sexualHealthData.date}
+- Symptoms: ${sexualHealthData.symptoms?.join(', ') || 'None reported'}
+- STI Screening: ${sexualHealthData.stiScreening || 'Not performed'}
+- Contraception: ${sexualHealthData.contraception || 'Not specified'}
+- Concerns: ${sexualHealthData.concerns || 'None reported'}
+- Notes: ${sexualHealthData.notes || 'None'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current sexual health status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current sexual health data with typical patterns, highlighting trends, changes, and how current state fits into broader sexual health patterns. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current sexual health status using accurate but user-friendly medical terms. Consider hormonal factors, reproductive health, lifestyle influences, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, pregnancy, mental health, and other health areas that may be influencing sexual health. Show how one area of health influences another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current sexual health patterns may affect daily life, relationships, reproductive health, and long-term wellbeing. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this sexual health state and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, sexual health-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional sexual health consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+  }
+
+  processSexualHealthInsights(response, sexualHealthData, userProfile) {
+    try {
+      // Try to parse JSON response
+      const parsed = JSON.parse(response);
+      return {
+        aiInsights: parsed.aiInsights || [response],
+        patterns: parsed.patterns || 'Analyzing sexual health patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue monitoring your sexual health'],
+        riskAssessment: parsed.riskAssessment || 'Sexual health monitoring active'
+      };
+    } catch (error) {
+      console.error('Error parsing sexual health insights:', error);
+      return {
+        aiInsights: [response],
+        patterns: 'Sexual health analysis completed',
+        alerts: [],
+        recommendations: ['Continue monitoring your sexual health'],
+        riskAssessment: 'Sexual health monitoring active'
+      };
+    }
+  }
+
+  getFallbackSexualHealthInsights(sexualHealthData, userProfile) {
+    return {
+      aiInsights: ['Sexual health is an important part of overall wellness', 'Regular STI screening is recommended', 'Open communication with partners is key'],
+      patterns: 'Sexual health patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Practice safe sex', 'Get regular STI screenings', 'Communicate openly with partners', 'Use appropriate contraception'],
+      riskAssessment: 'Sexual health monitoring active'
+    };
+  }
+
+  // ===== DASHBOARD INSIGHTS ANALYSIS =====
+  async generateDashboardInsights(dashboardData, userProfile) {
+    const prompt = this.buildDashboardPrompt(dashboardData, userProfile);
+    try {
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processDashboardInsights(insights, dashboardData, userProfile);
+    } catch (error) {
+      console.error('Error generating dashboard insights:', error);
+      return this.getFallbackDashboardInsights(dashboardData, userProfile);
+    }
+  }
+
+  buildDashboardPrompt(dashboardData, userProfile) {
+    const age = userProfile.age;
+    const conditions = userProfile.conditions?.reproductive || [];
+    const mentalHealth = userProfile.conditions?.mental || [];
+    const lifestyle = userProfile.lifestyle || {};
+    
+    return `You are a reproductive and women's health AI assistant providing comprehensive dashboard insights. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age} years old
+- Reproductive Conditions: ${conditions.join(', ') || 'None reported'}
+- Mental Health: ${mentalHealth.join(', ') || 'None reported'}
+- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Stress ${lifestyle.stressLevel || 'Not specified'}
+
+COMPREHENSIVE HEALTH DATA:
+- Health Logs: ${dashboardData.healthLogs?.length || 0} entries
+- Recent Activity: ${dashboardData.recentLogs?.map(log => `${log.type}: ${log.mood || 'N/A'}`).join(', ') || 'None'}
+- Goals: ${dashboardData.healthGoals?.join(', ') || 'General wellness'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the overall health status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current health data with typical patterns, highlighting trends, changes, and how current state fits into broader health patterns. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current health status using accurate but user-friendly medical terms. Consider lifestyle factors, age, conditions, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from all health modules (cycle, fertility, pregnancy, mental health, etc.) that may be influencing overall health. Show how one area of health affects another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current health patterns may affect daily life, long-term wellbeing, and specific health outcomes. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, tracking consistency, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this user's overall health situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, health-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional healthcare consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+  }
+
+  processDashboardInsights(response, dashboardData, userProfile) {
+    try {
+      // Try to parse JSON response
+      const parsed = JSON.parse(response);
+      return {
+        aiInsights: parsed.aiInsights || [response],
+        patterns: parsed.patterns || 'Analyzing overall health patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue monitoring your health'],
+        riskAssessment: parsed.riskAssessment || 'Health monitoring active'
+      };
+    } catch (error) {
+      console.error('Error parsing dashboard insights:', error);
+      return {
+        aiInsights: [response],
+        patterns: 'Dashboard health analysis completed',
+        alerts: [],
+        recommendations: ['Continue monitoring your health'],
+        riskAssessment: 'Health monitoring active'
+      };
+    }
+  }
+
+  getFallbackDashboardInsights(dashboardData, userProfile) {
+    return {
+      aiInsights: ['Comprehensive health tracking is important for overall wellness', 'Continue monitoring all health aspects', 'Maintain regular healthcare checkups'],
+      patterns: 'Overall health patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Track health regularly', 'Maintain healthy lifestyle', 'Stay connected with healthcare providers', 'Monitor all health modules'],
+      riskAssessment: 'Comprehensive health monitoring active'
+    };
+  }
+
+  // ===== PCOS ANALYSIS =====
+  async generatePCOSInsights(pcosData, userProfile) {
+    const prompt = this.buildPCOSPrompt(pcosData, userProfile);
+    try {
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processPCOSInsights(insights, pcosData, userProfile);
+    } catch (error) {
+      console.error('Error generating PCOS insights:', error);
+      return this.getFallbackPCOSInsights(pcosData, userProfile);
+    }
+  }
+
+  buildPCOSPrompt(pcosData, userProfile) {
+    const age = userProfile.age;
+    const conditions = userProfile.conditions?.reproductive || [];
+    const familyHistory = userProfile.familyHistory?.womensConditions || [];
+    
+    return `You are a reproductive and women's health AI assistant specializing in PCOS (Polycystic Ovary Syndrome) management. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age} years old
+- Reproductive Conditions: ${conditions.join(', ') || 'None reported'}
+- Family History: ${familyHistory.join(', ') || 'None reported'}
+- Lifestyle: Exercise ${userProfile.lifestyle?.exerciseFrequency || 'Not specified'}, Diet ${userProfile.lifestyle?.diet || 'Not specified'}, Stress ${userProfile.lifestyle?.stressLevel || 'Not specified'}
+
+CURRENT PCOS DATA:
+- Condition: ${pcosData.condition || 'PCOS'}
+- Severity: ${pcosData.severity || 'Not specified'}
+- Weight: ${pcosData.weight || 'Not tracked'} lbs
+- Blood Pressure: ${pcosData.bloodPressure || 'Not measured'}
+- Glucose: ${pcosData.glucose || 'Not measured'} mg/dL
+- Symptoms Count: ${pcosData.symptoms?.length || 0}
+
+CURRENT SYMPTOMS:
+- Symptoms: ${pcosData.symptoms?.join(', ') || 'None reported'}
+- Severity Level: ${pcosData.severity || 'Not specified'}
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current PCOS status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current PCOS data with typical patterns for this condition, highlighting what's normal, what's notable, and how this PCOS management is progressing. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current PCOS symptoms and status using accurate but user-friendly medical terms. Consider hormonal factors, insulin resistance, lifestyle influences, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, fertility, mental health, weight management, and other health areas that may be influencing PCOS. Show how one area of health affects another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current PCOS patterns may affect daily life, fertility, metabolic health, and long-term wellbeing. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this PCOS stage and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, PCOS-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional PCOS care and consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+  }
+
+  processPCOSInsights(response, pcosData, userProfile) {
+    try {
+      const parsed = JSON.parse(response);
+      return {
+        aiInsights: parsed.aiInsights || [response],
+        patterns: parsed.patterns || 'Analyzing PCOS patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue PCOS management'],
+        riskAssessment: parsed.riskAssessment || 'PCOS monitoring active'
+      };
+    } catch (error) {
+      console.error('Error parsing PCOS insights:', error);
+      return {
+        aiInsights: [response],
+        patterns: 'PCOS analysis completed',
+        alerts: [],
+        recommendations: ['Continue PCOS management'],
+        riskAssessment: 'PCOS monitoring active'
+      };
+    }
+  }
+
+  getFallbackPCOSInsights(pcosData, userProfile) {
+    return {
+      aiInsights: ['PCOS management requires consistent monitoring and lifestyle modifications', 'Regular tracking helps identify patterns and treatment effectiveness', 'Work closely with your healthcare provider for optimal PCOS care'],
+      patterns: 'PCOS patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Monitor symptoms regularly', 'Maintain healthy lifestyle', 'Follow treatment plan', 'Track metabolic markers'],
+      riskAssessment: 'PCOS monitoring active'
+    };
+  }
+
+  // ===== ENDOMETRIOSIS ANALYSIS =====
+  async generateEndometriosisInsights(endometriosisData, userProfile) {
+    const prompt = this.buildEndometriosisPrompt(endometriosisData, userProfile);
+    try {
+      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.processEndometriosisInsights(insights, endometriosisData, userProfile);
+    } catch (error) {
+      console.error('Error generating endometriosis insights:', error);
+      return this.getFallbackEndometriosisInsights(endometriosisData, userProfile);
+    }
+  }
+
+  buildEndometriosisPrompt(endometriosisData, userProfile) {
+    const age = userProfile.age;
+    const conditions = userProfile.conditions?.reproductive || [];
+    const familyHistory = userProfile.familyHistory?.womensConditions || [];
+    
+    return `You are a reproductive and women's health AI assistant specializing in endometriosis management. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+
+PATIENT CONTEXT:
+- Age: ${age} years old
+- Reproductive Conditions: ${conditions.join(', ') || 'None reported'}
+- Family History: ${familyHistory.join(', ') || 'None reported'}
+- Lifestyle: Exercise ${userProfile.lifestyle?.exerciseFrequency || 'Not specified'}, Diet ${userProfile.lifestyle?.diet || 'Not specified'}, Stress ${userProfile.lifestyle?.stressLevel || 'Not specified'}
+
+CURRENT ENDOMETRIOSIS DATA:
+- Condition: ${endometriosisData.condition || 'Endometriosis'}
+- Severity: ${endometriosisData.severity || 'Not specified'}
+- Pain Level: ${endometriosisData.painLevel || 'Not specified'}/10
+- Symptoms Count: ${endometriosisData.symptoms?.length || 0}
+
+CURRENT SYMPTOMS:
+- Symptoms: ${endometriosisData.symptoms?.join(', ') || 'None reported'}
+- Pain Severity: ${endometriosisData.painLevel || 'Not specified'}/10
+
+Generate comprehensive insights following this EXACT structure:
+
+**CLINICAL SUMMARY**
+Provide 1-2 sentences in plain language describing the current endometriosis status and key observations. Write like a doctor explaining to a patient.
+
+**PATTERN RECOGNITION & CONTEXT**
+Compare current endometriosis data with typical patterns for this condition, highlighting what's normal, what's notable, and how this endometriosis management is progressing. Use narrative form, not bullet points.
+
+**POSSIBLE CAUSES / MEDICAL REASONING**
+Explain likely contributors to current endometriosis symptoms and status using accurate but user-friendly medical terms. Consider hormonal factors, inflammation, lifestyle influences, and other relevant factors.
+
+**CROSS-MODULE CONNECTIONS**
+Link relevant factors from cycle tracking, fertility, pain management, mental health, and other health areas that may be influencing endometriosis. Show how one area of health affects another.
+
+**HEALTH IMPACT & RISKS**
+Explain how current endometriosis patterns may affect daily life, fertility, pain levels, and long-term wellbeing. Be specific about potential implications.
+
+**CONFIDENCE LEVEL**
+Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+
+**PERSONALIZED ACTION ITEMS**
+Provide 3-5 evidence-based, practical, prioritized next steps specific to this endometriosis stage and user's situation. Make them actionable and specific.
+
+**PERSONALIZED TIP**
+Offer one supportive, endometriosis-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+
+**GENERAL REMINDER / DISCLAIMER**
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional endometriosis care and consultation when needed.
+
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+  }
+
+  processEndometriosisInsights(response, endometriosisData, userProfile) {
+    try {
+      const parsed = JSON.parse(response);
+      return {
+        aiInsights: parsed.aiInsights || [response],
+        patterns: parsed.patterns || 'Analyzing endometriosis patterns...',
+        alerts: parsed.alerts || [],
+        recommendations: parsed.recommendations || ['Continue endometriosis management'],
+        riskAssessment: parsed.riskAssessment || 'Endometriosis monitoring active'
+      };
+    } catch (error) {
+      console.error('Error parsing endometriosis insights:', error);
+      return {
+        aiInsights: [response],
+        patterns: 'Endometriosis analysis completed',
+        alerts: [],
+        recommendations: ['Continue endometriosis management'],
+        riskAssessment: 'Endometriosis monitoring active'
+      };
+    }
+  }
+
+  getFallbackEndometriosisInsights(endometriosisData, userProfile) {
+    return {
+      aiInsights: ['Endometriosis management requires comprehensive pain and symptom tracking', 'Regular monitoring helps identify triggers and treatment effectiveness', 'Work closely with your healthcare provider for optimal endometriosis care'],
+      patterns: 'Endometriosis patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Track pain patterns regularly', 'Monitor symptom triggers', 'Follow treatment plan', 'Maintain pain management strategies'],
+      riskAssessment: 'Endometriosis monitoring active'
     };
   }
 }

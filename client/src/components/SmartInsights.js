@@ -44,15 +44,16 @@ const SmartInsights = ({ userProfile, onboardingData, localHealthData }) => {
       // Generate AI insights using the reasoning engine (local only)
       const aiInsights = await aiReasoningEngine.generateDashboardInsights(combinedData);
 
-      // Try AI LLM insights with fallback
+      // SINGLE AI CALL to reduce quota usage
       let aiInsightsLLM, aiAlertsLLM, aiRemindersLLM, aiTipsLLM;
       
       try {
-        aiInsightsLLM = await generateAIInsights(combinedData);
-        aiAlertsLLM = await generateAIAlerts(combinedData);
-        aiRemindersLLM = await generateAIReminders(combinedData);
-        aiTipsLLM = await generateAITips(combinedData);
-        console.log('✅ AI LLM insights generated successfully');
+        const comprehensiveInsights = await generateComprehensiveInsights(combinedData);
+        aiInsightsLLM = comprehensiveInsights.insights;
+        aiAlertsLLM = comprehensiveInsights.alerts;
+        aiRemindersLLM = comprehensiveInsights.reminders;
+        aiTipsLLM = comprehensiveInsights.tips;
+        console.log('✅ AI LLM insights generated successfully with single call');
       } catch (aiError) {
         console.warn('⚠️ AI LLM insights failed, using fallback:', aiError.message);
         aiInsightsLLM = generateFallbackInsights(combinedData);
@@ -134,148 +135,69 @@ const SmartInsights = ({ userProfile, onboardingData, localHealthData }) => {
   // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
 
 
-  // Generate AI insights using LLM
-  const generateAIInsights = async (userData) => {
-    try {
-      const age = calculateAge(userData?.dateOfBirth);
-      const gender = userData?.genderIdentity;
-      const conditions = userData?.chronicConditions || [];
-      const lifestyle = userData?.lifestyle || {};
-      const recentLogs = userData?.healthLogs || [];
-
-      const prompt = `Generate 5 personalized health insights for this user profile. Be medically accurate, inclusive, and actionable.
-
-User Profile:
-- Age: ${age} years
-- Gender Identity: ${gender || 'Not specified'}
-- Chronic Conditions: ${conditions.join(', ') || 'None'}
-- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}, Alcohol ${lifestyle.alcoholUse || 'Not specified'}
-- Recent Health Logs: ${recentLogs.length} entries
-
-Generate insights that:
-1. Combine multiple factors (age + conditions + lifestyle + recent logs)
-2. Are medically relevant and evidence-based
-3. Include specific actionable recommendations
-4. Are inclusive for all gender identities
-5. Address the user's specific health profile
-
-Format each insight as: "🔴/🟡/🟢 [Title]: [Specific recommendation with actionable steps]"
-
-Return exactly 5 insights, one per line:`;
-
-      const response = await aiServiceManager.generateHealthInsights(prompt);
-      return response.slice(0, 5);
-    } catch (error) {
-      console.error('Error generating AI insights:', error);
-      return ['Unable to generate AI insights at this time.'];
-    }
-  };
-
-  // Generate AI alerts using LLM
-  const generateAIAlerts = async (userData) => {
-    try {
-      const age = calculateAge(userData?.dateOfBirth);
-      const gender = userData?.genderIdentity;
-      const conditions = userData?.chronicConditions || [];
-      const lifestyle = userData?.lifestyle || {};
-      const recentLogs = userData?.healthLogs || [];
-
-      const prompt = `Generate 5 urgent health alerts for this user profile. Focus on high-priority medical concerns.
-
-User Profile:
-- Age: ${age} years
-- Gender Identity: ${gender || 'Not specified'}
-- Chronic Conditions: ${conditions.join(', ') || 'None'}
-- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}, Alcohol ${lifestyle.alcoholUse || 'Not specified'}
-- Recent Health Logs: ${recentLogs.length} entries
-
-Generate alerts that:
-1. Identify urgent medical concerns requiring immediate attention
-2. Are based on user's specific health profile and recent logs
-3. Include specific actionable steps
-4. Use appropriate urgency levels (🚨 HIGH PRIORITY, ⚠️ MEDIUM PRIORITY, 💊 CONDITION ALERT, 🔍 SCREENING ALERT)
-
-Return exactly 5 alerts, one per line:`;
-
-      const response = await aiServiceManager.generateHealthAlerts(prompt);
-      return response.slice(0, 5);
-    } catch (error) {
-      console.error('Error generating AI alerts:', error);
-      return ['Unable to generate AI alerts at this time.'];
-    }
-  };
-
-  // Generate AI reminders using LLM
-  const generateAIReminders = async (userData) => {
+  // SINGLE comprehensive AI call to reduce quota usage
+  const generateComprehensiveInsights = async (userData) => {
     try {
       const age = calculateAge(userData?.dateOfBirth);
       const gender = userData?.genderIdentity;
       const conditions = userData?.chronicConditions || [];
       const lifestyle = userData?.lifestyle || {};
       const medications = userData?.currentMedications || [];
+      const recentLogs = userData?.healthLogs || [];
 
-      const prompt = `Generate 5 personalized health reminders for this user profile. Focus on screenings, appointments, and health monitoring.
+      const prompt = `Generate a comprehensive health analysis for this user profile. Return your response in the following JSON format:
 
+{
+  "insights": ["insight1", "insight2", "insight3", "insight4", "insight5"],
+  "alerts": ["alert1", "alert2", "alert3"],
+  "reminders": ["reminder1", "reminder2", "reminder3"],
+  "tips": ["tip1", "tip2", "tip3"]
+}
+        
 User Profile:
 - Age: ${age} years
 - Gender Identity: ${gender || 'Not specified'}
 - Chronic Conditions: ${conditions.join(', ') || 'None'}
 - Current Medications: ${medications.join(', ') || 'None'}
-- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}
-
-Generate reminders that:
-1. Are age-appropriate and gender-inclusive
-2. Include specific screening recommendations
-3. Address chronic condition monitoring
-4. Include lifestyle modification reminders
-5. Are actionable with specific timeframes
-
-Format each reminder as: "📅 [Specific reminder with timeframe]"
-
-Return exactly 5 reminders, one per line:`;
-
-      const response = await aiServiceManager.generateHealthReminders(prompt);
-      return response.slice(0, 5);
-    } catch (error) {
-      console.error('Error generating AI reminders:', error);
-      return ['Unable to generate AI reminders at this time.'];
-    }
-  };
-
-  // Generate AI tips using LLM
-  const generateAITips = async (userData) => {
-    try {
-      const age = calculateAge(userData?.dateOfBirth);
-      const gender = userData?.genderIdentity;
-      const conditions = userData?.chronicConditions || [];
-      const lifestyle = userData?.lifestyle || {};
-      const recentLogs = userData?.healthLogs || [];
-
-      const prompt = `Generate 5 personalized health tips for this user profile. Focus on practical, evidence-based recommendations.
-
-User Profile:
-- Age: ${age} years
-- Gender Identity: ${gender || 'Not specified'}
-- Chronic Conditions: ${conditions.join(', ') || 'None'}
-- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Sleep ${lifestyle.sleepQuality || 'Not specified'}, Stress ${lifestyle.stressLevel || 'Not specified'}
+- Lifestyle: Exercise ${lifestyle.exerciseFrequency || 'Not specified'}, Diet ${lifestyle.diet || 'Not specified'}, Smoking ${lifestyle.tobaccoUse || 'No'}, Alcohol ${lifestyle.alcoholUse || 'Not specified'}
 - Recent Health Logs: ${recentLogs.length} entries
 
-Generate tips that:
-1. Address the user's specific conditions and lifestyle
-2. Include practical, actionable steps
-3. Are evidence-based and medically sound
-4. Are inclusive for all gender identities
-5. Focus on prevention and management
+Requirements:
+1. INSIGHTS: 5 actionable, evidence-based recommendations combining age + conditions + lifestyle + gender + recent logs
+2. ALERTS: 3 urgent health concerns requiring immediate attention (use 🚨 HIGH PRIORITY, ⚠️ MEDIUM PRIORITY, 💊 CONDITION ALERT, 🔍 SCREENING ALERT)
+3. REMINDERS: 3 personalized reminders for appointments, medications, screenings, or lifestyle changes
+4. TIPS: 3 practical health tips specific to this user's profile
 
-Format each tip as: "💡 [Specific tip with actionable steps]"
+Be medically accurate, inclusive for all gender identities, and provide specific actionable steps.`;
 
-Return exactly 5 tips, one per line:`;
-
-      const response = await aiServiceManager.generateHealthTips(prompt);
-      return response.slice(0, 5);
+      const response = await aiServiceManager.generateHealthInsights(prompt);
+      
+      if (response && response.length > 0) {
+        try {
+          // Try to parse as JSON first
+          const parsed = JSON.parse(response);
+          return {
+            insights: parsed.insights || [response],
+            alerts: parsed.alerts || ['No urgent alerts at this time'],
+            reminders: parsed.reminders || ['No reminders at this time'],
+            tips: parsed.tips || ['No tips available']
+          };
+        } catch (parseError) {
+          // If not JSON, split the response into sections
+          const lines = response.split('\n').filter(line => line.trim());
+          return {
+            insights: lines.slice(0, 5).filter(line => line.trim()),
+            alerts: lines.slice(5, 8).filter(line => line.trim()),
+            reminders: lines.slice(8, 11).filter(line => line.trim()),
+            tips: lines.slice(11, 14).filter(line => line.trim())
+          };
+        }
+      } else {
+        throw new Error('AI returned empty response');
+      }
     } catch (error) {
-      console.error('Error generating AI tips:', error);
-      return ['Unable to generate AI tips at this time.'];
+      console.error('Error generating comprehensive AI insights:', error);
+      throw error;
     }
   };
 

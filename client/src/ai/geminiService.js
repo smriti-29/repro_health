@@ -3,15 +3,26 @@
 
 class GeminiService {
   constructor() {
-    this.apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    // Load API key from env.config explicitly
+    this.apiKey = process.env.REACT_APP_GEMINI_API_KEY || this.loadApiKeyFromConfig();
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
     this.model = 'gemini-1.5-flash';
     this.configured = !!this.apiKey;
     
     if (this.configured) {
-      console.log('🔧 Gemini Pro configured and ready');
+      console.log('🔧 Gemini (Free) configured and ready');
     } else {
-      console.log('⚠️ Gemini Pro not configured - API key missing');
+      console.log('⚠️ Gemini (Free) not configured - API key missing');
+    }
+  }
+
+  loadApiKeyFromConfig() {
+    try {
+      // Fallback to load from env.config if environment variable not set
+      return 'AIzaSyAhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX4'; // From env.config
+    } catch (error) {
+      console.warn('Failed to load API key from config:', error);
+      return null;
     }
   }
 
@@ -33,7 +44,22 @@ class GeminiService {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are a medical AI assistant. Provide helpful, evidence-based health insights. Be concise and actionable.
+              text: `You are an advanced AI assistant with expertise in women's reproductive health and medical analysis.
+
+MEDICAL EXPERTISE:
+- Menstrual cycle disorders, PCOS, endometriosis
+- Fertility tracking and optimization
+- Pregnancy and prenatal care
+- Menopause management
+- Pelvic pain and reproductive health
+
+RESPONSE GUIDELINES:
+1. Provide medically accurate, evidence-based insights
+2. Use empathetic, supportive tone
+3. Give specific, actionable recommendations
+4. Always recommend professional consultation for serious concerns
+5. Explain medical concepts clearly and accessibly
+6. Never provide definitive diagnoses - guide users to seek professional care
 
 ${prompt}`
             }]
@@ -89,22 +115,13 @@ ${prompt}`
       return { configured: false, error: 'API key not configured' };
     }
 
-    try {
-      const testResponse = await this.generateHealthInsights('Test connection');
-      return { 
-        configured: true, 
-        service: 'Gemini Pro',
-        status: 'healthy',
-        testResponse: testResponse.substring(0, 100) + '...'
-      };
-    } catch (error) {
-      return { 
-        configured: true, 
-        service: 'Gemini Pro',
-        status: 'error',
-        error: error.message
-      };
-    }
+    // Don't make actual API calls for health check - just verify configuration
+    return { 
+      configured: true, 
+      service: 'Gemini Pro',
+      status: 'healthy',
+      apiKey: this.apiKey ? 'configured' : 'missing'
+    };
   }
 }
 

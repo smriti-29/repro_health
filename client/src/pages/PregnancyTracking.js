@@ -74,6 +74,19 @@ const PregnancyTracking = () => {
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
   const [riskAssessment, setRiskAssessment] = useState(null);
 
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   // MEDICAL-GRADE Pregnancy symptoms (what doctors actually track)
   const availableSymptoms = [
     // First Trimester (Weeks 1-12)
@@ -163,7 +176,7 @@ const PregnancyTracking = () => {
 
   // Load existing pregnancy data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabPregnancyData');
+    const savedData = localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setPregnancyData(parsed);
@@ -177,6 +190,32 @@ const PregnancyTracking = () => {
       }
     }
   }, []);
+
+  // COMMON SENSE LOGIC: Prevent impossible states
+  const checkPregnancyCycleConsistency = () => {
+    const cycleData = JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+    const pregnancyData = JSON.parse(localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+    
+    if (cycleData.length > 0 && pregnancyData.length > 0) {
+      const latestCycle = cycleData[cycleData.length - 1];
+      const latestPregnancy = pregnancyData[pregnancyData.length - 1];
+      
+      // If last cycle was recent (within 3 months) but pregnancy is in 3rd trimester, this is impossible
+      if (latestCycle && latestPregnancy) {
+        const cycleDate = new Date(latestCycle.date);
+        const pregnancyDate = new Date(latestPregnancy.date);
+        const monthsDiff = (pregnancyDate - cycleDate) / (1000 * 60 * 60 * 24 * 30);
+        
+        if (monthsDiff < 6 && latestPregnancy.trimester === 'Third') {
+          console.warn('🚨 COMMON SENSE ALERT: Impossible state detected - recent cycle but 3rd trimester pregnancy');
+          // Clear inconsistent pregnancy data
+          localStorage.removeItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
+          setPregnancyData([]);
+          alert('Data inconsistency detected. Pregnancy data cleared to maintain accuracy.');
+        }
+      }
+    }
+  };
 
   const calculatePregnancyProgress = (dueDate) => {
     const due = new Date(dueDate);
@@ -219,6 +258,40 @@ const PregnancyTracking = () => {
     setIsLoading(true);
     
     try {
+      // COMMON SENSE LOGIC: Check for existing pregnancy
+      const existingPregnancies = pregnancyData.filter(p => {
+        const pregnancyDate = new Date(p.timestamp);
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        return pregnancyDate > sixMonthsAgo;
+      });
+      
+      if (existingPregnancies.length > 0) {
+        const latestPregnancy = existingPregnancies[0];
+        const pregnancyAge = latestPregnancy.trimester || 1;
+        
+        if (pregnancyAge >= 2) {
+          alert(`You already have an active pregnancy logged (Trimester ${pregnancyAge}). Please complete your current pregnancy tracking before logging a new one.`);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // COMMON SENSE LOGIC: Check for recent cycle data that conflicts with pregnancy
+      const cycleData = JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const recentCycles = cycleData.filter(c => {
+        const cycleDate = new Date(c.cycleStartDate || c.lastPeriod);
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        return cycleDate > threeMonthsAgo;
+      });
+      
+      if (recentCycles.length > 0 && pregnancyForm.trimester >= 2) {
+        alert(`You have recent menstrual cycle data logged. A pregnancy in Trimester ${pregnancyForm.trimester} would not be consistent with recent cycles. Please verify your pregnancy details.`);
+        setIsLoading(false);
+        return;
+      }
+      
       const pregnancyEntry = {
         ...pregnancyForm,
         timestamp: new Date().toISOString(),
@@ -229,22 +302,20 @@ const PregnancyTracking = () => {
       // Save to localStorage
       const updatedData = [...pregnancyData, pregnancyEntry];
       setPregnancyData(updatedData);
-      localStorage.setItem('afabPregnancyData', JSON.stringify(updatedData));
+      localStorage.setItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
       
       // Calculate pregnancy progress
       if (pregnancyEntry.dueDate) {
         calculatePregnancyProgress(pregnancyEntry.dueDate);
       }
       
-      // FORCE OLLAMA FOR DEMO - Remove this after demo
-      console.log('🚀 FORCING OLLAMA FOR PREGNANCY DEMO...');
-      aiService.service = aiService.fallbackService;
-      aiService.quotaExceeded = true;
+      // Use AI service naturally (Gemini primary, Ollama fallback)
+      console.log('🚀 Using AI service for pregnancy insights...');
       
       // Generate MEDICAL-GRADE AI pregnancy insights
       const userProfile = {
         ...user,
-        age: user.age || 25,
+        age: calculateAge(user?.dateOfBirth),
         conditions: { reproductive: [] },
         familyHistory: { womensConditions: [] },
         lifestyle: { exercise: { frequency: 'Moderate' }, stress: { level: 'Moderate' } },
@@ -265,20 +336,22 @@ const PregnancyTracking = () => {
       // Set all the comprehensive AI pregnancy insights (SAME STRUCTURE AS CYCLE TRACKING)
       if (aiInsights) {
         // AI Insights - detailed medical analysis
-        setInsights(aiInsights.pregnancyInsights || ['AI pregnancy analysis completed successfully!']);
+        setInsights(aiInsights.aiInsights || aiInsights.pregnancyInsights || ['AI pregnancy analysis completed successfully!']);
         
         // Personalized Recommendations - actionable medical advice
-        setPersonalizedRecommendations(aiInsights.recommendations ? aiInsights.recommendations.join(' • ') : 'AI recommendations generated!');
+        const recommendations = aiInsights.pregnancyAssessment?.recommendations || aiInsights.recommendations;
+        setPersonalizedRecommendations(recommendations ? (Array.isArray(recommendations) ? recommendations.join(' • ') : recommendations) : 'AI recommendations generated!');
         
         // Pregnancy Patterns - comprehensive pattern analysis
-        const patternText = aiInsights.pregnancyAnalysis ? 
-          `${aiInsights.pregnancyAnalysis.trimester} • ${aiInsights.pregnancyAnalysis.symptoms} • ${aiInsights.pregnancyAnalysis.progress}` :
+        const pregnancyAssessment = aiInsights.pregnancyAssessment;
+        const patternText = pregnancyAssessment ? 
+          `${pregnancyAssessment.trimester} • Risk Level: ${pregnancyAssessment.riskLevel} • Symptoms: ${pregnancyAssessment.symptoms}` :
           'AI pregnancy pattern analysis completed!';
         setPregnancyPatterns(patternText);
         
         // Risk Assessment - medical-grade risk evaluation
-        const riskText = aiInsights.riskAssessment ?
-          `Pregnancy Risk: ${aiInsights.riskAssessment.overallRisk} • Complications: ${aiInsights.riskAssessment.complications} • Monitoring: ${aiInsights.riskAssessment.monitoring}` :
+        const riskText = pregnancyAssessment?.riskLevel || aiInsights.riskAssessment ?
+          `Pregnancy Risk: ${pregnancyAssessment?.riskLevel || aiInsights.riskAssessment?.overallRisk} • Monitoring: Active` :
           'AI pregnancy risk assessment completed!';
         setRiskAssessment(riskText);
         

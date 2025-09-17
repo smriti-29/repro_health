@@ -10,24 +10,36 @@ class AIServiceManager {
     this.primaryService = new GeminiService();
     this.fallbackService = new OllamaService();
     
-    // FIXED: Use Gemini as primary with proper rate limiting
-    this.service = this.primaryService.isConfigured() ? this.primaryService : this.fallbackService;
-    this.quotaExceeded = false; // Reset quota status
-    this.requestCount = 0;
-    this.maxRequestsPerHour = 10; // Conservative limit to prevent quota exhaustion
-    this.requestTimeout = 45000; // 45 second timeout for Ollama
+    // Always use Gemini as primary - it's properly configured now
+    this.service = this.primaryService;
+    
+    console.log('🔧 Primary service configured:', this.primaryService.isConfigured());
+    console.log('🔧 Fallback service configured:', this.fallbackService.isConfigured());
+    console.log('🔧 Active service:', this.service.constructor.name);
+          this.quotaExceeded = false;
+          this.requestCount = 0;
+          this.maxRequestsPerHour = 1500; // Gemini daily limit
+          this.requestTimeout = 30000; // 30 second timeout for reliable Gemini responses
     this.lastRequestTime = 0;
     this.requestHistory = [];
     
-    console.log('🤖 AI Service Manager initialized');
-    console.log('🔧 Primary provider: Gemini Pro (Google)');
-    console.log('🔧 Fallback provider: Ollama (Local, Free)');
+    console.log('🤖 AI Service Manager initialized - Gemini 1.5 Flash Primary');
+    console.log('🔧 Primary provider: Gemini 1.5 Flash (Google)');
+    console.log('🔧 Fallback provider: Ollama + LLaVA (Local)');
     console.log('🔧 Active service:', this.service.constructor.name);
     console.log('🔧 Service configured:', this.service.isConfigured());
-    console.log('⏱️ Rate limit: 10 requests per hour (conservative)');
+          console.log('⏱️ Rate limit: 1500 requests per day (Gemini daily limit)');
   }
 
   // ===== HELPER METHOD FOR FALLBACK LOGIC =====
+  
+  // Reset quota (for testing/demo purposes)
+  resetQuota() {
+    this.quotaExceeded = false;
+    this.requestCount = 0;
+    this.requestHistory = [];
+    console.log('🔄 AI quota reset - Gemini ready for new requests');
+  }
   
   // Check if we can make a request based on rate limiting
   canMakeRequest() {
@@ -47,47 +59,85 @@ class AIServiceManager {
   }
 
   async executeWithFallback(methodName, prompt) {
-    // FIXED: Enable AI calls with proper rate limiting
-    console.log(`🤖 Making AI request to ${this.service.constructor.name}`);
+    console.log(`🚀 Gemini 1.5 Flash AI request: ${methodName}`);
+    console.log(`🔍 Service configured: ${this.service.isConfigured()}`);
+    console.log(`🔍 Can make request: ${this.canMakeRequest()}`);
+    
+    // Check rate limiting
+    if (!this.canMakeRequest()) {
+      console.warn('🚫 Rate limit exceeded, trying fallback');
+      return await this.tryFallback(methodName, prompt, 'Rate limit exceeded');
+    }
+    
+    // Record this request
+    this.requestHistory.push(Date.now());
     
     try {
-      return await this.service[methodName](prompt);
-    } catch (error) {
-      console.warn(`⚠️ Service failed for ${methodName}:`, error.message);
+      console.log(`🚀 Calling Gemini 1.5 Flash...`);
+      // Use Gemini with optimized timeout
+      const result = await Promise.race([
+        this.service[methodName](prompt),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), this.requestTimeout)
+        )
+      ]);
       
-      // Check if it's a quota/rate limit error or service overload
+      console.log(`✅ Gemini 1.5 Flash success`);
+      console.log(`🔍 Result length: ${result?.length} chars`);
+      return result;
+    } catch (error) {
+      console.warn(`⚠️ Gemini failed: ${error.message}`);
+      
+      // Only fallback on total failure (500 errors, network issues)
       if (error.message.includes('QUOTA_EXCEEDED') || 
           error.message.includes('429') || 
+          error.message.includes('500') ||
           error.message.includes('503') ||
-          error.message.includes('overloaded') ||
-          error.message.includes('quota') || 
-          error.message.includes('exceeded') ||
-          error.message.includes('rate limit') ||
-          error.message.includes('RESOURCE_EXHAUSTED')) {
+          error.message.includes('network') ||
+          error.message.includes('timeout')) {
         
-        console.warn('🚫 Quota/rate limit exceeded, switching to fallback');
-        this.quotaExceeded = true;
-        
-        try {
-          return await this.fallbackService[methodName](prompt);
-        } catch (fallbackError) {
-          console.error('❌ Both services failed:', fallbackError.message);
-          throw new Error(`AI services unavailable. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
-        }
+        console.warn('🔄 Total failure detected, trying Ollama + LLaVA fallback');
+        return await this.tryFallback(methodName, prompt, error.message);
       }
       
-      // For other errors, try fallback if we're using primary service
-      if (this.service === this.primaryService) {
-        console.warn('🔄 Trying fallback service due to primary service error');
-        try {
-          return await this.fallbackService[methodName](prompt);
-        } catch (fallbackError) {
-          console.error('❌ Both services failed:', fallbackError.message);
-          throw new Error(`AI services unavailable. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
-        }
-      }
-      
+      // For other errors, throw immediately
       throw error;
+    }
+  }
+
+  async tryFallback(methodName, prompt, primaryError) {
+    try {
+      console.log(`🔄 Starting Ollama + LLaVA fallback...`);
+      
+      // Ensure Ollama is running
+      await this.ensureOllamaRunning();
+      
+      const fallbackResult = await Promise.race([
+        this.fallbackService[methodName](prompt),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Fallback timeout')), 10000) // 10s for Ollama
+        )
+      ]);
+      
+      console.log(`✅ Ollama + LLaVA fallback success`);
+      return fallbackResult;
+    } catch (fallbackError) {
+      console.error('❌ Both services failed');
+      throw new Error(`AI services unavailable. Gemini: ${primaryError}, Ollama: ${fallbackError.message}`);
+    }
+  }
+
+  async ensureOllamaRunning() {
+    try {
+      // Check if Ollama is running, if not, start LLaVA
+      const response = await fetch('http://localhost:11434/api/tags');
+      if (!response.ok) {
+        console.log('🔧 Starting Ollama + LLaVA...');
+        // This would ideally trigger: ollama run llava
+        // For now, we'll just proceed and let it fail gracefully
+      }
+    } catch (error) {
+      console.warn('⚠️ Ollama not accessible:', error.message);
     }
   }
 

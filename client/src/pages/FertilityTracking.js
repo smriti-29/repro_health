@@ -13,6 +13,14 @@ const FertilityTracking = () => {
   const [fertilityForm, setFertilityForm] = useState({
     date: new Date().toISOString().split('T')[0],
     
+    // FERTILITY GOAL DETECTION (CRITICAL)
+    fertilityGoal: '', // 'ttc', 'nfp', 'health_monitoring', 'cycle_awareness'
+    conceptionTimeline: '', // 'immediately', 'within_6_months', 'within_1_year', 'future', 'not_applicable'
+    previousPregnancies: 0, // number of previous pregnancies
+    previousMiscarriages: 0, // number of previous miscarriages
+    fertilityTreatments: [], // array of fertility treatments tried
+    contraceptionPreference: 'none', // 'none', 'condom', 'withdrawal', 'other'
+    
     // Basal Body Temperature (BBT) - Critical for ovulation detection
     bbt: '',
     bbtTime: '',
@@ -61,6 +69,16 @@ const FertilityTracking = () => {
     smoking: 'none', // none, light, moderate, heavy
     caffeine: 0, // cups per day
     
+    // Comprehensive Health Assessment (New)
+    weight: '',
+    bloodPressure: '',
+    stressLevel: 5, // 1-10 scale
+    sleepQuality: 5, // 1-10 scale
+    exerciseFrequency: 'moderate', // none, light, moderate, intense
+    dietQuality: 'good', // poor, fair, good, excellent
+    medicationUse: [],
+    familyHistory: [],
+    
     // Symptoms & Observations
     symptoms: [],
     notes: '',
@@ -72,17 +90,31 @@ const FertilityTracking = () => {
     expectedPeriod: ''
   });
 
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   // MEDICAL-GRADE Fertility data and insights
   const [fertilityData, setFertilityData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // AI-Powered Fertility Intelligence (same structure as cycle tracking)
-  const [fertilityInsights, setFertilityInsights] = useState(null);
-  const [fertilityPatterns, setFertilityPatterns] = useState(null);
-  const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
-  const [riskAssessment, setRiskAssessment] = useState(null);
-  const [gentleReminders, setGentleReminders] = useState([]);
+  // AI-Powered Fertility Intelligence (using saved data like cycle tracking)
   const [selectedFertilityInsights, setSelectedFertilityInsights] = useState(null);
+  
+  // 3-Cycle Analysis Feature (like Cycle Tracking)
+  const [threeCycleAnalysis, setThreeCycleAnalysis] = useState(null);
+  const [showThreeCycleAnalysis, setShowThreeCycleAnalysis] = useState(false);
+  const [savedThreeCycleAnalysis, setSavedThreeCycleAnalysis] = useState(null);
+  const [selectedThreeCycleAnalysis, setSelectedThreeCycleAnalysis] = useState(null);
   
   // Dual-Mode Interface State
   const [trackingMode, setTrackingMode] = useState('beginner'); // 'beginner' or 'advanced'
@@ -127,9 +159,40 @@ const FertilityTracking = () => {
     'Nausea'
   ];
 
+  // Family History Options (Medical-Grade)
+  const familyHistoryOptions = [
+    'PCOS', 'Endometriosis', 'Fibroids', 'Ovarian cysts',
+    'Irregular periods', 'Heavy periods', 'Early menopause',
+    'Breast cancer', 'Ovarian cancer', 'Diabetes', 'Thyroid disorders',
+    'Infertility', 'Miscarriage', 'Genetic conditions'
+  ];
+
+  // Fertility Goal Options (CRITICAL)
+  const fertilityGoalOptions = [
+    { value: 'ttc', label: 'Trying to Conceive', description: 'Actively trying to get pregnant' },
+    { value: 'nfp', label: 'Natural Family Planning', description: 'Avoiding pregnancy naturally' },
+    { value: 'health_monitoring', label: 'Health Monitoring', description: 'Tracking for health awareness' },
+    { value: 'cycle_awareness', label: 'Cycle Awareness', description: 'Understanding your cycle patterns' }
+  ];
+
+  // Conception Timeline Options
+  const conceptionTimelineOptions = [
+    { value: 'immediately', label: 'Immediately', description: 'Trying to conceive right now' },
+    { value: 'within_6_months', label: 'Within 6 months', description: 'Planning to conceive soon' },
+    { value: 'within_1_year', label: 'Within 1 year', description: 'Planning to conceive this year' },
+    { value: 'future', label: 'Future planning', description: 'Planning for future conception' },
+    { value: 'not_applicable', label: 'Not applicable', description: 'Not trying to conceive' }
+  ];
+
+  // Fertility Treatment Options
+  const fertilityTreatmentOptions = [
+    'Clomid', 'Letrozole', 'IUI', 'IVF', 'ICSI', 'Donor eggs', 'Surrogacy',
+    'Fertility acupuncture', 'Fertility massage', 'Other treatments'
+  ];
+
   // Load existing fertility data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabFertilityData');
+    const savedData = localStorage.getItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setFertilityData(parsed);
@@ -138,11 +201,40 @@ const FertilityTracking = () => {
       const predictions = calculateFertilityPredictions(parsed);
       setFertilityPredictions(predictions);
     }
+    
+    // Load saved 3-cycle analysis
+    const savedAnalysis = localStorage.getItem(`afabFertilityThreeCycleAnalysis_${user?.id || user?.email || 'anonymous'}`);
+    if (savedAnalysis) {
+      try {
+        const parsedAnalysis = JSON.parse(savedAnalysis);
+        setSavedThreeCycleAnalysis(parsedAnalysis);
+      } catch (error) {
+        console.error('Error loading 3-cycle fertility analysis:', error);
+      }
+    }
   }, []);
+
+  const handleFamilyHistoryToggle = (condition) => {
+    setFertilityForm(prev => ({
+      ...prev,
+      familyHistory: prev.familyHistory.includes(condition)
+        ? prev.familyHistory.filter(c => c !== condition)
+        : [...prev.familyHistory, condition]
+    }));
+  };
+
+  const handleFertilityTreatmentToggle = (treatment) => {
+    setFertilityForm(prev => ({
+      ...prev,
+      fertilityTreatments: prev.fertilityTreatments.includes(treatment)
+        ? prev.fertilityTreatments.filter(t => t !== treatment)
+        : [...prev.fertilityTreatments, treatment]
+    }));
+  };
 
   const calculateFertilityPredictions = (data) => {
     // Get cycle data for prediction
-    const cycleData = localStorage.getItem('afabCycleData');
+    const cycleData = localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`);
     if (!cycleData) return null;
     
     const cycles = JSON.parse(cycleData);
@@ -219,12 +311,108 @@ const FertilityTracking = () => {
     setShowAdvancedOnboarding(false);
   };
 
+  // 3-Cycle Analysis Function (like Cycle Tracking)
+  const generateThreeCycleAnalysis = async () => {
+    if (fertilityData.length < 3) {
+      alert('Please log at least 3 fertility entries to get comprehensive analysis!');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const recentEntries = fertilityData.slice(-3); // Get last 3 entries
+      
+      const analysisPrompt = `As an AI healthcare assistant, provide comprehensive 3-cycle fertility analysis:
+
+RECENT 3 FERTILITY ENTRIES:
+${recentEntries.map((entry, index) => `
+Entry ${index + 1}:
+- Date: ${entry.date}
+- Fertility Goal: ${entry.fertilityGoal || 'Not specified'}
+- Conception Timeline: ${entry.conceptionTimeline || 'Not specified'}
+- Previous Pregnancies: ${entry.previousPregnancies || 0}
+- Previous Miscarriages: ${entry.previousMiscarriages || 0}
+- Fertility Treatments: ${entry.fertilityTreatments?.join(', ') || 'None'}
+- BBT: ${entry.bbt}°F
+- Mucus: ${entry.cervicalMucus} (${entry.mucusAmount}, ${entry.mucusStretch}cm stretch)
+- Cervical Position: ${entry.cervicalPosition} (${entry.cervicalTexture}, ${entry.cervicalOpenness})
+- Ovulation Test: ${entry.ovulationTest}
+- Libido: ${entry.libido}/10
+- Symptoms: ${entry.symptoms?.join(', ') || 'None'}
+- Stress: ${entry.stressLevel || 5}/10
+- Sleep: ${entry.sleepQuality || 5}/10
+- Family History: ${entry.familyHistory?.join(', ') || 'None'}
+- Tracking Mode: ${entry.trackingMode || 'beginner'}
+`).join('')}
+
+Provide comprehensive fertility analysis including:
+1. **INTELLIGENT FERTILITY PATTERN ANALYSIS**: 
+   - BBT pattern trends and ovulation detection
+   - Cervical mucus consistency and fertility indicators
+   - Cervical position and texture changes
+   - Ovulation test result patterns
+   - Cycle regularity and timing
+
+2. **PERSONALIZED FERTILITY INSIGHTS**: 
+   - What your specific patterns reveal about your fertility
+   - How your family history affects your fertility
+   - Lifestyle factors impacting your fertility
+   - Conception optimization strategies
+
+3. **CONTEXTUAL FERTILITY ASSESSMENT**: 
+   - Any concerning patterns based on your specific data
+   - Fertility window accuracy and timing
+   - Red flags to watch for
+   - When to seek medical consultation
+
+4. **INTELLIGENT FERTILITY RECOMMENDATIONS**: 
+   - Specific actions based on your 3-entry data
+   - Lifestyle changes tailored to your fertility patterns
+   - Medical considerations based on your family history
+   - Conception timing optimization
+
+5. **PREDICTIVE FERTILITY INSIGHTS**: 
+   - What to expect in upcoming cycles based on your patterns
+   - Optimal timing for conception attempts
+   - Fertility window predictions
+   - Cycle awareness improvements
+
+6. **PERSONALIZED MEDICAL GUIDANCE**: 
+   - When to consult fertility specialist based on your specific patterns
+   - What to discuss with your healthcare provider
+   - Fertility optimization strategies
+
+Format as detailed medical analysis with clear sections and bullet points. Make it feel like a comprehensive fertility consultation.`;
+
+      const analysis = await aiService.generateHealthInsights(analysisPrompt);
+      
+      // Save 3-cycle analysis to localStorage
+      const analysisData = {
+        analysis: analysis,
+        timestamp: new Date().toISOString(),
+        entriesAnalyzed: recentEntries.length,
+        entryDates: recentEntries.map(entry => entry.date)
+      };
+      setSavedThreeCycleAnalysis(analysisData);
+      const storageKey = `afabFertilityThreeCycleAnalysis_${user?.id || user?.email || 'anonymous'}`;
+      localStorage.setItem(storageKey, JSON.stringify(analysisData));
+      
+      // Show the analysis in modal
+      setSelectedThreeCycleAnalysis(analysisData);
+    } catch (error) {
+      console.error('Error generating 3-cycle fertility analysis:', error);
+      alert('Error generating analysis. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Delete fertility entry
   const deleteFertilityEntry = (index) => {
     if (window.confirm('Are you sure you want to delete this fertility entry?')) {
       const updatedData = fertilityData.filter((_, i) => i !== index);
       setFertilityData(updatedData);
-      localStorage.setItem('afabFertilityData', JSON.stringify(updatedData));
+      localStorage.setItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
       
       // Recalculate predictions
       const predictions = calculateFertilityPredictions(updatedData);
@@ -236,12 +424,9 @@ const FertilityTracking = () => {
   const clearAllFertilityHistory = () => {
     if (window.confirm('Are you sure you want to delete ALL fertility history? This cannot be undone.')) {
       setFertilityData([]);
-      localStorage.removeItem('afabFertilityData');
+      localStorage.removeItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`);
       setFertilityPredictions(null);
-      setFertilityInsights(null);
-      setFertilityPatterns(null);
-      setPersonalizedRecommendations(null);
-      setGentleReminders([]);
+      // AI insights are now stored with each entry
     }
   };
 
@@ -251,7 +436,7 @@ const FertilityTracking = () => {
     
     try {
       // Calculate cycle day and fertility metrics
-      const cycleData = localStorage.getItem('afabCycleData');
+      const cycleData = localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`);
       let cycleDay = 1;
       let daysSincePeriod = 0;
       
@@ -279,7 +464,7 @@ const FertilityTracking = () => {
       // Save to localStorage
       const updatedData = [...fertilityData, fertilityEntry];
       setFertilityData(updatedData);
-      localStorage.setItem('afabFertilityData', JSON.stringify(updatedData));
+      localStorage.setItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
       
       // Recalculate fertility predictions
       const predictions = calculateFertilityPredictions(updatedData);
@@ -291,7 +476,7 @@ const FertilityTracking = () => {
       try {
         const userProfile = {
           ...user,
-          age: user.age || 25,
+          age: calculateAge(user?.dateOfBirth),
           conditions: { reproductive: [] },
           familyHistory: { womensConditions: [] },
           lifestyle: { exercise: { frequency: 'Moderate' }, stress: { level: 'Moderate' } },
@@ -299,6 +484,10 @@ const FertilityTracking = () => {
         };
         
         console.log('🤖 Calling AI service for fertility analysis (Gemini → Ollama fallback)...');
+        console.log('🔍 AI Service status:', aiService.getServiceStatus ? aiService.getServiceStatus() : 'No status method');
+        console.log('🔍 User profile:', userProfile);
+        console.log('🔍 Fertility data length:', updatedData.length);
+        console.log('🔍 Latest fertility entry:', updatedData[updatedData.length - 1]);
         
         const aiInsights = await Promise.race([
           aiService.generateFertilityInsights(updatedData, userProfile),
@@ -308,22 +497,24 @@ const FertilityTracking = () => {
         ]);
         
         console.log('✅ REAL AI Fertility Insights received:', aiInsights);
+        console.log('🔍 AI Insights type:', typeof aiInsights);
+        console.log('🔍 AI Insights keys:', aiInsights ? Object.keys(aiInsights) : 'No keys');
+        console.log('🔍 AI Insights content:', JSON.stringify(aiInsights, null, 2));
         
         // Set all the comprehensive AI fertility insights (same structure as cycle tracking)
         if (aiInsights) {
           // AI Insights - detailed medical analysis
-          if (aiInsights.aiInsights && Array.isArray(aiInsights.aiInsights)) {
-            setFertilityInsights(aiInsights.aiInsights);
-          } else if (typeof aiInsights === 'string') {
-            setFertilityInsights([aiInsights]);
-          } else {
-            setFertilityInsights(['AI fertility analysis completed successfully!']);
-          }
+          // AI insights are now saved directly to the fertility entry
 
-          // Store AI insights with the fertility data
+          // Store AI insights with the fertility data (same as Cycle Tracking)
           const fertilityWithInsights = {
             ...updatedData[updatedData.length - 1],
             aiInsights: aiInsights,
+            fertilityInsights: aiInsights?.aiInsights || null,
+            fertilityPatterns: aiInsights?.quickCheck || null,
+            personalizedRecommendations: aiInsights?.recommendations || null,
+            riskAssessment: aiInsights?.riskAssessment || null,
+            gentleReminders: aiInsights?.gentleReminders || null,
             insightsTimestamp: new Date().toISOString()
           };
           
@@ -331,60 +522,33 @@ const FertilityTracking = () => {
           const updatedFertilityData = [...updatedData];
           updatedFertilityData[updatedFertilityData.length - 1] = fertilityWithInsights;
           setFertilityData(updatedFertilityData);
-          localStorage.setItem('afabFertilityData', JSON.stringify(updatedFertilityData));
+          localStorage.setItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedFertilityData));
           
-          // Personalized Recommendations - actionable medical advice
-          if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
-            setPersonalizedRecommendations(aiInsights.personalizedTips);
-          } else if (aiInsights.recommendations && Array.isArray(aiInsights.recommendations)) {
-            setPersonalizedRecommendations(aiInsights.recommendations);
-          } else {
-            setPersonalizedRecommendations(['Continue tracking fertility indicators for better insights']);
-          }
-
-          // Gentle Reminders - supportive daily tips
-          if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
-            setGentleReminders(aiInsights.gentleReminders);
-          } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
-            setGentleReminders(aiInsights.medicalAlerts);
-          } else {
-            setGentleReminders(['Continue your fertility tracking journey with confidence']);
-          }
-
-          // Risk Assessment
-          if (aiInsights.riskAssessment) {
-            setRiskAssessment(aiInsights.riskAssessment);
-          } else {
-            setRiskAssessment('Continue monitoring fertility health indicators');
-          }
-
-          // Set fertility patterns (same structure as cycle patterns)
-          if (aiInsights.quickCheck) {
-            setFertilityPatterns(aiInsights.quickCheck);
-          } else {
-            setFertilityPatterns({
-              ovulationAssessment: 'Continue tracking ovulation patterns',
-              fertilityEvaluation: 'Continue monitoring fertility indicators',
-              actionItem: 'Maintain consistent tracking and healthy lifestyle',
-              confidence: 'Medium confidence - continue tracking for better assessment'
-            });
-          }
+          // All AI insights are now saved with the fertility entry
         }
         
       } catch (error) {
         console.error('❌ All AI services failed:', error);
         
-        // Set fallback insights on error
-        setFertilityInsights(['AI services temporarily unavailable. Please try again in a moment.']);
-        setRiskAssessment('AI risk assessment unavailable - please retry.');
+        // AI insights are now stored with each entry, no fallback needed
       }
       
       // Calculate advanced fertility analytics
       calculateAdvancedFertilityAnalytics(updatedData);
       
-      // Reset form for next entry
+      // Reset form for next entry (keep goal data, reset daily data)
       setFertilityForm({
         date: new Date().toISOString().split('T')[0],
+        
+        // Keep fertility goal data (don't reset)
+        fertilityGoal: fertilityForm.fertilityGoal,
+        conceptionTimeline: fertilityForm.conceptionTimeline,
+        previousPregnancies: fertilityForm.previousPregnancies,
+        previousMiscarriages: fertilityForm.previousMiscarriages,
+        fertilityTreatments: fertilityForm.fertilityTreatments,
+        contraceptionPreference: fertilityForm.contraceptionPreference,
+        
+        // Reset daily tracking data
         bbt: '',
         bbtTime: '',
         bbtMethod: 'oral',
@@ -417,6 +581,14 @@ const FertilityTracking = () => {
         alcohol: 'none',
         smoking: 'none',
         caffeine: 0,
+        weight: '',
+        bloodPressure: '',
+        stressLevel: 5,
+        sleepQuality: 5,
+        exerciseFrequency: 'moderate',
+        dietQuality: 'good',
+        medicationUse: [],
+        familyHistory: [],
         symptoms: [],
         notes: '',
         cycleDay: 1,
@@ -429,10 +601,10 @@ const FertilityTracking = () => {
       
     } catch (error) {
       console.error('❌ All AI services failed:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
       
-      // Only show error message - no fallback data
-      setFertilityInsights(['AI services temporarily unavailable. Please try again in a moment.']);
-      setRiskAssessment('AI risk assessment unavailable - please retry.');
+      // AI insights are now stored with each entry, no fallback needed
     } finally {
       setIsLoading(false);
     }
@@ -582,6 +754,31 @@ const FertilityTracking = () => {
                 Last entry: {new Date(fertilityData[fertilityData.length - 1].timestamp).toLocaleDateString()}
               </small>
             )}
+            {fertilityData.length >= 3 && (
+              <div className="analysis-buttons">
+                <button 
+                  className="three-cycle-btn"
+                  onClick={generateThreeCycleAnalysis}
+                  disabled={isLoading}
+                >
+                  {isLoading ? '⏳ Analyzing...' : '🔬 Get 3-Entry Analysis'}
+                </button>
+                {savedThreeCycleAnalysis ? (
+                  <button 
+                    className="view-saved-analysis-btn"
+                    onClick={() => {
+                      setSelectedThreeCycleAnalysis(savedThreeCycleAnalysis);
+                    }}
+                  >
+                    📋 View Saved Analysis
+                  </button>
+                ) : (
+                  <div className="no-saved-analysis">
+                    <small>No saved analysis yet</small>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -619,6 +816,115 @@ const FertilityTracking = () => {
           </div>
 
           <form onSubmit={handleFertilityLog} className="fertility-form">
+            {/* FERTILITY GOAL DETECTION - CRITICAL SECTION */}
+            <div className="fertility-goal-section">
+              <h3>🎯 Your Fertility Goal</h3>
+              <p className="section-description">This helps AI provide personalized, medically accurate guidance</p>
+              
+              <div className="form-group">
+                <label>What is your primary fertility goal? *</label>
+                <div className="goal-options">
+                  {fertilityGoalOptions.map(goal => (
+                    <label key={goal.value} className="goal-option">
+                      <input
+                        type="radio"
+                        name="fertilityGoal"
+                        value={goal.value}
+                        checked={fertilityForm.fertilityGoal === goal.value}
+                        onChange={(e) => setFertilityForm({...fertilityForm, fertilityGoal: e.target.value})}
+                        required
+                      />
+                      <div className="goal-content">
+                        <div className="goal-label">{goal.label}</div>
+                        <div className="goal-description">{goal.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Conception Timeline - Show only for TTC users */}
+              {fertilityForm.fertilityGoal === 'ttc' && (
+                <div className="form-group">
+                  <label>When are you planning to conceive? *</label>
+                  <div className="timeline-options">
+                    {conceptionTimelineOptions.map(timeline => (
+                      <label key={timeline.value} className="timeline-option">
+                        <input
+                          type="radio"
+                          name="conceptionTimeline"
+                          value={timeline.value}
+                          checked={fertilityForm.conceptionTimeline === timeline.value}
+                          onChange={(e) => setFertilityForm({...fertilityForm, conceptionTimeline: e.target.value})}
+                          required
+                        />
+                        <div className="timeline-content">
+                          <div className="timeline-label">{timeline.label}</div>
+                          <div className="timeline-description">{timeline.description}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Previous Pregnancy History */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Previous Pregnancies</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={fertilityForm.previousPregnancies}
+                    onChange={(e) => setFertilityForm({...fertilityForm, previousPregnancies: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Previous Miscarriages</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={fertilityForm.previousMiscarriages}
+                    onChange={(e) => setFertilityForm({...fertilityForm, previousMiscarriages: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Fertility Treatments */}
+              <div className="form-group">
+                <label>Fertility Treatments (Select all that apply)</label>
+                <div className="treatment-grid">
+                  {fertilityTreatmentOptions.map(treatment => (
+                    <label key={treatment} className="treatment-option">
+                      <input
+                        type="checkbox"
+                        checked={fertilityForm.fertilityTreatments.includes(treatment)}
+                        onChange={() => handleFertilityTreatmentToggle(treatment)}
+                      />
+                      <span className="treatment-label">{treatment}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contraception Preference */}
+              <div className="form-group">
+                <label>Current Contraception Method</label>
+                <select
+                  value={fertilityForm.contraceptionPreference}
+                  onChange={(e) => setFertilityForm({...fertilityForm, contraceptionPreference: e.target.value})}
+                >
+                  <option value="none">None</option>
+                  <option value="condom">Condom</option>
+                  <option value="withdrawal">Withdrawal method</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
             {/* Common Fields - Always Visible */}
             <div className="form-row">
               <div className="form-group">
@@ -837,6 +1143,90 @@ const FertilityTracking = () => {
               </>
             )}
 
+            {/* Comprehensive Health Assessment */}
+            <div className="comprehensive-health-section">
+              <h3>🏥 Comprehensive Health Assessment</h3>
+              <p className="section-description">Help AI provide more personalized fertility insights</p>
+              
+              <div className="health-metrics-section">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Weight (lbs)</label>
+                    <input
+                      type="number"
+                      value={fertilityForm.weight}
+                      onChange={(e) => setFertilityForm({...fertilityForm, weight: e.target.value})}
+                      placeholder="e.g., 140"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Blood Pressure</label>
+                    <input
+                      type="text"
+                      value={fertilityForm.bloodPressure}
+                      onChange={(e) => setFertilityForm({...fertilityForm, bloodPressure: e.target.value})}
+                      placeholder="e.g., 120/80"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="lifestyle-section">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Stress Level: {fertilityForm.stressLevel}/10</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={fertilityForm.stressLevel}
+                      onChange={(e) => setFertilityForm({...fertilityForm, stressLevel: parseInt(e.target.value)})}
+                      className="stress-slider"
+                    />
+                    <div className="slider-labels">
+                      <span>Low</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Sleep Quality: {fertilityForm.sleepQuality}/10</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={fertilityForm.sleepQuality}
+                      onChange={(e) => setFertilityForm({...fertilityForm, sleepQuality: parseInt(e.target.value)})}
+                      className="sleep-slider"
+                    />
+                    <div className="slider-labels">
+                      <span>Poor</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="medical-info-section">
+                <div className="form-group">
+                  <label>Family History (Select all that apply)</label>
+                  <div className="family-history-grid">
+                    {familyHistoryOptions.map(condition => (
+                      <label key={condition} className="family-history-option">
+                        <input
+                          type="checkbox"
+                          checked={fertilityForm.familyHistory.includes(condition)}
+                          onChange={() => handleFamilyHistoryToggle(condition)}
+                        />
+                        <span className="condition-label">{condition}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Common Fields - Always Visible */}
             <div className="form-group">
               <label>
@@ -877,83 +1267,67 @@ const FertilityTracking = () => {
           </form>
         </div>
 
-        {/* AI Insights - Same structure as Cycle Tracking */}
-        {fertilityInsights && (
+        {/* AI Insights - Display from Latest Entry (Like Cycle Tracking) */}
+        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].fertilityInsights && (
           <div className="insights-section">
-            <h2>✨ Your Fertility Insights</h2>
+            <div className="insights-header">
+              <h2>✨ AI-Powered Fertility Analysis</h2>
+            </div>
             <div className="insights-content">
-              {Array.isArray(fertilityInsights) ? fertilityInsights.map((insight, index) => (
-                <p key={index} className="insight-text">{insight}</p>
-              )) : (
-                <p className="insight-text">{fertilityInsights}</p>
-              )}
+              {Array.isArray(fertilityData[fertilityData.length - 1].fertilityInsights) ? 
+                fertilityData[fertilityData.length - 1].fertilityInsights.map((insight, index) => (
+                  <div key={index} className="insight-card">
+                    <p className="insight-text">{insight}</p>
+                  </div>
+                )) : (
+                  <div className="insight-card">
+                    <p className="insight-text">{fertilityData[fertilityData.length - 1].fertilityInsights}</p>
+                  </div>
+                )}
             </div>
           </div>
         )}
 
-        {/* Fertility Patterns - Same structure as Cycle Patterns */}
-        {fertilityPatterns && (
-          <div className="patterns-section">
-            <h2>📈 Fertility Patterns</h2>
-            <div className="pattern-cards">
-              <div className="pattern-card">
-                <div className="pattern-header">
-                  <div className="pattern-icon">🥚</div>
-                  <h3>Ovulation Assessment</h3>
-                </div>
-                <p className="pattern-text">{fertilityPatterns.ovulationAssessment}</p>
-              </div>
-              <div className="pattern-card">
-                <div className="pattern-header">
-                  <div className="pattern-icon">🌱</div>
-                  <h3>Fertility Evaluation</h3>
-                </div>
-                <p className="pattern-text">{fertilityPatterns.fertilityEvaluation}</p>
-              </div>
-              <div className="pattern-card">
-                <div className="pattern-header">
-                  <div className="pattern-icon">📋</div>
-                  <h3>Action Item</h3>
-                </div>
-                <p className="pattern-text">{fertilityPatterns.actionItem}</p>
-              </div>
-              <div className="pattern-card">
-                <div className="pattern-header">
-                  <div className="pattern-icon">🎯</div>
-                  <h3>Confidence Level</h3>
-                </div>
-                <p className="pattern-text">{fertilityPatterns.confidence}</p>
+        {/* Fertility Health Assessment - Display from Latest Entry */}
+        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].riskAssessment && (
+          <div className="health-assessment-section">
+            <h2>🌺 Your Fertility Health</h2>
+            <div className="health-content">
+              <div className="health-card">
+                <div className="health-icon">🩺</div>
+                <div className="health-text">{fertilityData[fertilityData.length - 1].riskAssessment}</div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Personalized Tips - Same structure as Cycle Tracking */}
-        {personalizedRecommendations && (
+        {/* Personalized Tips - Display from Latest Entry */}
+        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].personalizedRecommendations && (
           <div className="recommendations-section">
             <h2>💝 Personalized Tips</h2>
             <div className="recommendations-content">
-              {Array.isArray(personalizedRecommendations) ? personalizedRecommendations.map((tip, index) => (
-                <div key={index} className="recommendation-item">
-                  <span className="rec-icon">✨</span>
-                  <span className="rec-text">{tip}</span>
-                </div>
-              )) : (
-                <div className="recommendation-item">
-                  <span className="rec-icon">✨</span>
-                  <span className="rec-text">{personalizedRecommendations}</span>
-                </div>
-              )}
+              {Array.isArray(fertilityData[fertilityData.length - 1].personalizedRecommendations) ? 
+                fertilityData[fertilityData.length - 1].personalizedRecommendations.map((tip, index) => (
+                  <div key={index} className="recommendation-item">
+                    <span className="rec-icon">✨</span>
+                    <span className="rec-text">{tip}</span>
+                  </div>
+                )) : (
+                  <div className="recommendation-item">
+                    <span className="rec-icon">✨</span>
+                    <span className="rec-text">{fertilityData[fertilityData.length - 1].personalizedRecommendations}</span>
+                  </div>
+                )}
             </div>
           </div>
         )}
 
-        {/* Gentle Reminders - Same structure as Cycle Tracking */}
-        {gentleReminders.length > 0 && (
+        {/* Gentle Reminders - Display from Latest Entry */}
+        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].gentleReminders && fertilityData[fertilityData.length - 1].gentleReminders.length > 0 && (
           <div className="gentle-reminders-section">
             <h2>🌸 Gentle Reminders</h2>
             <div className="reminders-content">
-              {gentleReminders.map((reminder, index) => (
+              {fertilityData[fertilityData.length - 1].gentleReminders.map((reminder, index) => (
                 <div key={index} className="reminder-item">
                   <span className="reminder-icon">🌸</span>
                   <span className="reminder-text">{reminder}</span>
@@ -1068,6 +1442,43 @@ const FertilityTracking = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* 3-Cycle Analysis Modal */}
+        {selectedThreeCycleAnalysis && (
+          <div className="insights-modal-overlay" onClick={() => setSelectedThreeCycleAnalysis(null)}>
+            <div className="insights-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🔬 Comprehensive 3-Entry Fertility Analysis</h2>
+                <button 
+                  className="close-btn"
+                  onClick={() => setSelectedThreeCycleAnalysis(null)}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="modal-content">
+                <div className="modal-section">
+                  <div className="analysis-badge">
+                    <span className="analysis-icon">🤖</span>
+                    <span>AI In-Depth Fertility Analysis</span>
+                    <span className="analysis-date">
+                      Generated: {new Date(selectedThreeCycleAnalysis.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="analysis-text">
+                    {selectedThreeCycleAnalysis.analysis.split('\n').map((paragraph, index) => (
+                      paragraph.trim() && (
+                        <p key={index} className="analysis-paragraph">
+                          {paragraph}
+                        </p>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1271,51 +1682,57 @@ const FertilityTracking = () => {
                 )}
 
                 {/* Fertility Patterns */}
-                {selectedFertilityInsights.aiInsights?.quickCheck && (
+                {selectedFertilityInsights.fertilityPatterns && (
                   <div className="modal-section">
                     <h3>📈 Fertility Patterns</h3>
                     <div className="patterns-grid">
                       <div className="pattern-item">
                         <h4>🥚 Ovulation Assessment</h4>
-                        <p>{selectedFertilityInsights.aiInsights.quickCheck.ovulationAssessment}</p>
+                        <p>{selectedFertilityInsights.fertilityPatterns.ovulationAssessment}</p>
                       </div>
                       <div className="pattern-item">
                         <h4>🌱 Fertility Evaluation</h4>
-                        <p>{selectedFertilityInsights.aiInsights.quickCheck.fertilityEvaluation}</p>
+                        <p>{selectedFertilityInsights.fertilityPatterns.fertilityEvaluation}</p>
                       </div>
                       <div className="pattern-item">
                         <h4>📋 Action Item</h4>
-                        <p>{selectedFertilityInsights.aiInsights.quickCheck.actionItem}</p>
+                        <p>{selectedFertilityInsights.fertilityPatterns.actionItem}</p>
                       </div>
                       <div className="pattern-item">
                         <h4>🎯 Confidence Level</h4>
-                        <p>{selectedFertilityInsights.aiInsights.quickCheck.confidence}</p>
+                        <p>{selectedFertilityInsights.fertilityPatterns.confidence}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Personalized Tips */}
-                {selectedFertilityInsights.aiInsights?.personalizedTips && (
+                {selectedFertilityInsights.personalizedRecommendations && (
                   <div className="modal-section">
                     <h3>💝 Personalized Tips</h3>
                     <div className="tips-list">
-                      {selectedFertilityInsights.aiInsights.personalizedTips.map((tip, index) => (
-                        <div key={index} className="tip-item">
-                          <span className="tip-icon">✨</span>
-                          <span className="tip-text">{tip}</span>
-                        </div>
-                      ))}
+                      {Array.isArray(selectedFertilityInsights.personalizedRecommendations) ? 
+                        selectedFertilityInsights.personalizedRecommendations.map((tip, index) => (
+                          <div key={index} className="tip-item">
+                            <span className="tip-icon">✨</span>
+                            <span className="tip-text">{tip}</span>
+                          </div>
+                        )) : (
+                          <div className="tip-item">
+                            <span className="tip-icon">✨</span>
+                            <span className="tip-text">{selectedFertilityInsights.personalizedRecommendations}</span>
+                          </div>
+                        )}
                     </div>
                   </div>
                 )}
 
                 {/* Gentle Reminders */}
-                {selectedFertilityInsights.aiInsights?.gentleReminders && (
+                {selectedFertilityInsights.gentleReminders && selectedFertilityInsights.gentleReminders.length > 0 && (
                   <div className="modal-section">
                     <h3>🌸 Gentle Reminders</h3>
                     <div className="reminders-list">
-                      {selectedFertilityInsights.aiInsights.gentleReminders.map((reminder, index) => (
+                      {selectedFertilityInsights.gentleReminders.map((reminder, index) => (
                         <div key={index} className="reminder-item">
                           <span className="reminder-icon">🌸</span>
                           <span className="reminder-text">{reminder}</span>

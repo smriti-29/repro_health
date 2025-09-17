@@ -28,13 +28,13 @@ const MedicalDashboard = () => {
     setIsLoading(true);
     try {
       // Aggregate all AFAB data
-      const cycleData = JSON.parse(localStorage.getItem('afabCycleData') || '[]');
-      const fertilityData = JSON.parse(localStorage.getItem('afabFertilityData') || '[]');
-      const pregnancyData = JSON.parse(localStorage.getItem('afabPregnancyData') || '[]');
-      const menopauseData = JSON.parse(localStorage.getItem('afabMenopauseData') || '[]');
-      const conditionData = JSON.parse(localStorage.getItem('afabConditionData') || '[]');
-      const breastHealthData = JSON.parse(localStorage.getItem('afabBreastHealthData') || '[]');
-      const mentalHealthData = JSON.parse(localStorage.getItem('afabMentalHealthData') || '[]');
+      const cycleData = JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const fertilityData = JSON.parse(localStorage.getItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const pregnancyData = JSON.parse(localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const menopauseData = JSON.parse(localStorage.getItem(`afabMenopauseData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const conditionData = JSON.parse(localStorage.getItem(`afabConditionData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const breastHealthData = JSON.parse(localStorage.getItem(`afabBreastHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]');
+      const mentalHealthData = JSON.parse(localStorage.getItem(`afabMentalHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]');
 
       const prompt = `As a board-certified gynecologist and reproductive health specialist, provide a comprehensive medical assessment:
 
@@ -75,9 +75,9 @@ Format as a clinical report suitable for healthcare providers.`;
 
 PATIENT: ${JSON.stringify(user)}
 HEALTH DATA: ${JSON.stringify({
-        cycleData: JSON.parse(localStorage.getItem('afabCycleData') || '[]'),
-        familyHistory: JSON.parse(localStorage.getItem('afabBreastHealthData') || '[]'),
-        conditions: JSON.parse(localStorage.getItem('afabConditionData') || '[]')
+        cycleData: JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        familyHistory: JSON.parse(localStorage.getItem(`afabBreastHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        conditions: JSON.parse(localStorage.getItem(`afabConditionData_${user?.id || user?.email || 'anonymous'}`) || '[]')
       })}
 
 Assess risks for:
@@ -100,13 +100,13 @@ Provide risk scores (Low/Medium/High) with clinical reasoning.`;
   const checkClinicalAlerts = async () => {
     try {
       const allData = {
-        cycle: JSON.parse(localStorage.getItem('afabCycleData') || '[]'),
-        fertility: JSON.parse(localStorage.getItem('afabFertilityData') || '[]'),
-        pregnancy: JSON.parse(localStorage.getItem('afabPregnancyData') || '[]'),
-        menopause: JSON.parse(localStorage.getItem('afabMenopauseData') || '[]'),
-        conditions: JSON.parse(localStorage.getItem('afabConditionData') || '[]'),
-        breast: JSON.parse(localStorage.getItem('afabBreastHealthData') || '[]'),
-        mental: JSON.parse(localStorage.getItem('afabMentalHealthData') || '[]')
+        cycle: JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        fertility: JSON.parse(localStorage.getItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        pregnancy: JSON.parse(localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        menopause: JSON.parse(localStorage.getItem(`afabMenopauseData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        conditions: JSON.parse(localStorage.getItem(`afabConditionData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        breast: JSON.parse(localStorage.getItem(`afabBreastHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+        mental: JSON.parse(localStorage.getItem(`afabMentalHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]')
       };
 
       const prompt = `As a clinical decision support system, identify URGENT medical alerts from this data:
@@ -204,13 +204,13 @@ Format as clinical alerts with severity levels (CRITICAL/HIGH/MEDIUM).`;
           <div className="profile-card">
             <h3>📈 Data Points</h3>
             <p>Total health entries: {Object.values({
-              cycle: JSON.parse(localStorage.getItem('afabCycleData') || '[]'),
-              fertility: JSON.parse(localStorage.getItem('afabFertilityData') || '[]'),
-              pregnancy: JSON.parse(localStorage.getItem('afabPregnancyData') || '[]'),
-              menopause: JSON.parse(localStorage.getItem('afabMenopauseData') || '[]'),
-              conditions: JSON.parse(localStorage.getItem('afabConditionData') || '[]'),
-              breast: JSON.parse(localStorage.getItem('afabBreastHealthData') || '[]'),
-              mental: JSON.parse(localStorage.getItem('afabMentalHealthData') || '[]')
+              cycle: JSON.parse(localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              fertility: JSON.parse(localStorage.getItem(`afabFertilityData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              pregnancy: JSON.parse(localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              menopause: JSON.parse(localStorage.getItem(`afabMenopauseData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              conditions: JSON.parse(localStorage.getItem(`afabConditionData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              breast: JSON.parse(localStorage.getItem(`afabBreastHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]'),
+              mental: JSON.parse(localStorage.getItem(`afabMentalHealthData_${user?.id || user?.email || 'anonymous'}`) || '[]')
             }).reduce((total, data) => total + data.length, 0)}</p>
           </div>
           

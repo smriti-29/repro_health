@@ -8,6 +8,19 @@ const SexualHealth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [aiService] = useState(() => new AFABAIService());
+
+  // Helper function to calculate age
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return 25; // Default age if not provided
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
   
   // Sexual health tracking form state
   const [sexualHealthForm, setSexualHealthForm] = useState({
@@ -52,7 +65,7 @@ const SexualHealth = () => {
 
   // Load existing sexual health data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabSexualHealthData');
+    const savedData = localStorage.getItem(`afabSexualHealthData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setSexualHealthData(parsed);
@@ -115,8 +128,34 @@ Please provide:
 
 Be medical, accurate, and supportive. Include specific screening schedules and risk factors.`;
 
-      const aiInsights = await aiService.generateHealthInsights(prompt);
-      setInsights(aiInsights);
+      // Create user profile for AI analysis
+      const userProfile = {
+        ...user,
+        age: calculateAge(user?.dateOfBirth),
+        conditions: { reproductive: [] }
+      };
+
+      const aiInsights = await aiService.generateSexualHealthInsights(sexualHealthForm, userProfile);
+      
+      // Set all the comprehensive AI sexual health insights (SAME STRUCTURE AS CYCLE TRACKING)
+      if (aiInsights) {
+        // AI Insights - detailed medical analysis
+        setInsights(aiInsights.aiInsights || ['AI sexual health analysis completed successfully!']);
+        
+        // Store AI insights with the sexual health data
+        const sexualHealthWithInsights = {
+          ...sexualHealthForm,
+          aiInsights: aiInsights,
+          insightsTimestamp: new Date().toISOString()
+        };
+        
+        // Update the sexual health data with AI insights
+        const updatedSexualHealthData = [...sexualHealthData, sexualHealthWithInsights];
+        setSexualHealthData(updatedSexualHealthData);
+        localStorage.setItem(`afabSexualHealthData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedSexualHealthData));
+        
+        console.log('🎉 REAL AI sexual health insights displayed successfully!');
+      }
       
       // Reset form for next entry
       setSexualHealthForm({

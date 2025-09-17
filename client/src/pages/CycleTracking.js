@@ -18,7 +18,16 @@ const CycleTracking = () => {
     symptoms: [],
     bleedingPattern: 'normal',
     clots: 'none',
-    notes: ''
+    notes: '',
+    // Comprehensive health assessment (no duplicates)
+    stressLevel: 5,
+    sleepQuality: 5,
+    exerciseFrequency: 'moderate',
+    dietQuality: 'good',
+    medicationUse: '',
+    familyHistory: [],
+    weight: '',
+    bloodPressure: ''
   });
 
   // AI-Powered Cycle Intelligence
@@ -35,6 +44,29 @@ const CycleTracking = () => {
   const [riskAssessment, setRiskAssessment] = useState(null);
   const [gentleReminders, setGentleReminders] = useState([]);
   const [selectedCycleInsights, setSelectedCycleInsights] = useState(null);
+  
+  // Real-time AI Guidance
+  const [aiGuidance, setAiGuidance] = useState(null);
+  const [showGuidance, setShowGuidance] = useState(false);
+  
+  // 3-Cycle Analysis Feature
+  const [threeCycleAnalysis, setThreeCycleAnalysis] = useState(null);
+  const [showThreeCycleAnalysis, setShowThreeCycleAnalysis] = useState(false);
+  const [savedThreeCycleAnalysis, setSavedThreeCycleAnalysis] = useState(null);
+  const [selectedThreeCycleAnalysis, setSelectedThreeCycleAnalysis] = useState(null);
+
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   // Essential Cycle Symptoms Only
   const availableSymptoms = [
@@ -60,9 +92,16 @@ const CycleTracking = () => {
     'Insomnia', 'Energy changes'
   ];
 
+  // Family History Options for Medical Assessment
+  const familyHistoryOptions = [
+    'PCOS', 'Endometriosis', 'Fibroids', 'Ovarian cysts',
+    'Irregular periods', 'Heavy periods', 'Early menopause',
+    'Breast cancer', 'Ovarian cancer', 'Diabetes', 'Thyroid disorders'
+  ];
+
   // Load existing cycle data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabCycleData');
+    const savedData = localStorage.getItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setCycleData(parsed);
@@ -73,6 +112,21 @@ const CycleTracking = () => {
         calculateCyclePredictions(latest);
       }
     }
+    
+    // Load saved 3-cycle analysis
+    const savedAnalysis = localStorage.getItem(`afabThreeCycleAnalysis_${user?.id || user?.email || 'anonymous'}`);
+    console.log('🔍 Checking for saved 3-cycle analysis:', savedAnalysis);
+    if (savedAnalysis) {
+      try {
+        const parsedAnalysis = JSON.parse(savedAnalysis);
+        console.log('✅ Loaded saved 3-cycle analysis:', parsedAnalysis);
+        setSavedThreeCycleAnalysis(parsedAnalysis);
+      } catch (error) {
+        console.error('Error loading 3-cycle analysis:', error);
+      }
+    } else {
+      console.log('❌ No saved 3-cycle analysis found');
+    }
   }, []);
 
   const handleSymptomToggle = (symptom) => {
@@ -82,6 +136,128 @@ const CycleTracking = () => {
         ? prev.symptoms.filter(s => s !== symptom)
         : [...prev.symptoms, symptom]
     }));
+  };
+
+  const handleFamilyHistoryToggle = (condition) => {
+    setCycleForm(prev => ({
+      ...prev,
+      familyHistory: prev.familyHistory.includes(condition)
+        ? prev.familyHistory.filter(c => c !== condition)
+        : [...prev.familyHistory, condition]
+    }));
+  };
+
+  // Real-time AI Guidance based on form data
+  const generateRealTimeGuidance = async (formData) => {
+    try {
+      const guidancePrompt = `As an AI healthcare assistant, provide real-time medical guidance based on current form data:
+
+CURRENT FORM DATA:
+- Pain Level: ${formData.pain}/10
+- Flow: ${formData.flowIntensity}
+- Symptoms: ${formData.symptoms?.join(', ') || 'None'}
+- Stress Level: ${formData.stressLevel}/10
+- Sleep Quality: ${formData.sleepQuality}/10
+- Family History: ${formData.familyHistory?.join(', ') || 'None'}
+
+Provide a brief, supportive medical insight (2-3 sentences) that:
+1. Acknowledges what the user has shared
+2. Provides relevant medical context
+3. Offers encouragement or gentle guidance
+4. Feels like talking to a caring doctor
+
+Keep it conversational and supportive.`;
+
+      const guidance = await aiService.generateHealthInsights(guidancePrompt);
+      setAiGuidance(guidance);
+      setShowGuidance(true);
+    } catch (error) {
+      console.log('Real-time guidance unavailable');
+    }
+  };
+
+  // 3-Cycle Analysis Function
+  const generateThreeCycleAnalysis = async () => {
+    if (cycleData.length < 3) {
+      alert('Please log at least 3 cycles to get comprehensive analysis!');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const recentCycles = cycleData.slice(-3); // Get last 3 cycles
+      
+      const analysisPrompt = `As an AI healthcare assistant, provide comprehensive 3-cycle analysis:
+
+RECENT 3 CYCLES DATA:
+${recentCycles.map((cycle, index) => `
+Cycle ${index + 1}:
+- Date: ${cycle.lastPeriod}
+- Length: ${cycle.cycleLength} days
+- Flow: ${cycle.flowIntensity}
+- Pain: ${cycle.pain}/10
+- Symptoms: ${cycle.symptoms?.join(', ') || 'None'}
+- Stress: ${cycle.stressLevel || 5}/10
+- Sleep: ${cycle.sleepQuality || 5}/10
+- Family History: ${cycle.familyHistory?.join(', ') || 'None'}
+`).join('')}
+
+Provide comprehensive analysis including:
+1. **INTELLIGENT PATTERN ANALYSIS**: 
+   - Cycle length trends and variations
+   - Symptom consistency and changes
+   - Pain level progression
+   - Flow intensity patterns
+   - Lifestyle factor correlations
+
+2. **PERSONALIZED HEALTH INSIGHTS**: 
+   - What your specific patterns reveal about your reproductive health
+   - How your family history affects your cycles
+   - Lifestyle factors impacting your cycles
+
+3. **CONTEXTUAL RISK ASSESSMENT**: 
+   - Any concerning patterns based on your specific data
+   - Improvements or worsening trends
+   - Red flags to watch for
+
+4. **INTELLIGENT RECOMMENDATIONS**: 
+   - Specific actions based on your 3-cycle data
+   - Lifestyle changes tailored to your patterns
+   - Medical considerations based on your family history
+
+5. **PREDICTIVE INSIGHTS**: 
+   - What to expect in upcoming cycles based on your patterns
+   - Seasonal or lifestyle factors to consider
+
+6. **PERSONALIZED MEDICAL GUIDANCE**: 
+   - When to consult healthcare provider based on your specific patterns
+   - What to discuss with your doctor
+
+Format as detailed medical analysis with clear sections and bullet points. Make it feel like a comprehensive medical consultation.`;
+
+      const analysis = await aiService.generateHealthInsights(analysisPrompt);
+      
+      // Save 3-cycle analysis to localStorage
+      const analysisData = {
+        analysis: analysis,
+        timestamp: new Date().toISOString(),
+        cyclesAnalyzed: recentCycles.length,
+        cycleDates: recentCycles.map(cycle => cycle.lastPeriod)
+      };
+      console.log('💾 Saving 3-cycle analysis:', analysisData);
+      setSavedThreeCycleAnalysis(analysisData);
+      const storageKey = `afabThreeCycleAnalysis_${user?.id || user?.email || 'anonymous'}`;
+      localStorage.setItem(storageKey, JSON.stringify(analysisData));
+      console.log('✅ 3-cycle analysis saved to localStorage with key:', storageKey);
+      
+      // Show the analysis in modal
+      setSelectedThreeCycleAnalysis(analysisData);
+    } catch (error) {
+      console.error('Error generating 3-cycle analysis:', error);
+      alert('Error generating analysis. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const calculateCyclePredictions = (latestCycle) => {
@@ -130,7 +306,7 @@ const CycleTracking = () => {
       // Save to localStorage
       const updatedData = [...cycleData, cycleEntry];
       setCycleData(updatedData);
-      localStorage.setItem('afabCycleData', JSON.stringify(updatedData));
+      localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
       
       // Calculate predictions
       calculateCyclePredictions(cycleEntry);
@@ -141,22 +317,17 @@ const CycleTracking = () => {
       try {
         const userProfile = {
           ...user,
-          age: user.age || 25,
+          age: calculateAge(user?.dateOfBirth),
           conditions: { reproductive: [] },
           familyHistory: { womensConditions: [] },
           lifestyle: { exercise: { frequency: 'Moderate' }, stress: { level: 'Moderate' } },
           tobaccoUse: 'No'
         };
         
-        console.log('🤖 Calling AI service (Gemini → Ollama fallback)...');
+        console.log('🤖 Calling AI service (Gemini Primary)...');
         
-        // Call the AI service - it will automatically fallback from Gemini to Ollama
-        const aiInsights = await Promise.race([
-          aiService.generateCycleInsights(updatedData, userProfile),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI request timeout after 25 seconds')), 25000)
-          )
-        ]);
+        // Call the AI service - Gemini first, Ollama only if Gemini fails
+        const aiInsights = await aiService.generateCycleInsights(updatedData, userProfile);
         
         console.log('✅ REAL AI Insights received:', aiInsights);
         
@@ -164,7 +335,7 @@ const CycleTracking = () => {
         if (aiInsights) {
           // AI Insights - detailed medical analysis
           if (aiInsights.aiInsights && Array.isArray(aiInsights.aiInsights)) {
-            setInsights(aiInsights.aiInsights);
+            setInsights([...aiInsights.aiInsights]); // Force re-render
           } else if (typeof aiInsights === 'string') {
             setInsights([aiInsights]);
           } else {
@@ -182,13 +353,13 @@ const CycleTracking = () => {
           const updatedCycleData = [...updatedData];
           updatedCycleData[updatedCycleData.length - 1] = cycleWithInsights;
           setCycleData(updatedCycleData);
-          localStorage.setItem('afabCycleData', JSON.stringify(updatedCycleData));
+          localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedCycleData));
           
           // Personalized Recommendations - actionable medical advice
           if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
-            setPersonalizedRecommendations(aiInsights.personalizedTips);
+            setPersonalizedRecommendations([...aiInsights.personalizedTips]); // Force re-render
           } else if (aiInsights.recommendations && Array.isArray(aiInsights.recommendations)) {
-            setPersonalizedRecommendations(aiInsights.recommendations);
+            setPersonalizedRecommendations([...aiInsights.recommendations]); // Force re-render
           } else {
             setPersonalizedRecommendations(['AI recommendations generated!']);
           }
@@ -217,9 +388,9 @@ const CycleTracking = () => {
           
           // Gentle Reminders - supportive daily tips
           if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
-            setGentleReminders(aiInsights.gentleReminders);
+            setGentleReminders([...aiInsights.gentleReminders]); // Force re-render
           } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
-            setGentleReminders(aiInsights.medicalAlerts);
+            setGentleReminders([...aiInsights.medicalAlerts]); // Force re-render
           } else {
             setGentleReminders(['Continue tracking your cycle for better insights', 'Stay hydrated and maintain a balanced diet', 'Listen to your body and rest when needed']);
           }
@@ -250,7 +421,16 @@ const CycleTracking = () => {
         symptoms: [],
         bleedingPattern: 'normal',
         clots: 'none',
-        notes: ''
+        notes: '',
+        // Reset comprehensive health assessment
+        stressLevel: 5,
+        sleepQuality: 5,
+        exerciseFrequency: 'moderate',
+        dietQuality: 'good',
+        medicationUse: '',
+        familyHistory: [],
+        weight: '',
+        bloodPressure: ''
       });
       
     } catch (error) {
@@ -274,7 +454,7 @@ const CycleTracking = () => {
     if (window.confirm('Are you sure you want to delete this cycle log?')) {
       const updatedData = cycleData.filter((_, i) => i !== index);
       setCycleData(updatedData);
-      localStorage.setItem('afabCycleData', JSON.stringify(updatedData));
+      localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
       
       // Recalculate predictions if we have data left
       if (updatedData.length > 0) {
@@ -427,108 +607,178 @@ const CycleTracking = () => {
               </div>
             </div>
 
-            {/* AI-Enhanced Medical Tracking Section */}
-            <div className="ai-enhanced-section">
-              <h3>🤖 AI-Enhanced Cycle Tracking</h3>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Weight (lbs)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={cycleForm.weight}
-                    onChange={(e) => setCycleForm({...cycleForm, weight: e.target.value})}
-                    placeholder="e.g., 150.5"
-                  />
+            {/* Comprehensive Health Assessment - All in One */}
+            <div className="comprehensive-health-section">
+              <h3>🏥 Complete Health Assessment</h3>
+              
+              {/* Real-time AI Guidance */}
+              {showGuidance && aiGuidance && (
+                <div className="ai-guidance-section">
+                  <div className="guidance-header">
+                    <h4>💬 AI Real-time Guidance</h4>
+                    <button 
+                      className="close-guidance-btn"
+                      onClick={() => setShowGuidance(false)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="guidance-content">
+                    <p className="guidance-text">{aiGuidance}</p>
+                  </div>
                 </div>
-                
+              )}
+
+              <div className="guidance-trigger">
+                <button 
+                  type="button"
+                  className="get-guidance-btn"
+                  onClick={() => generateRealTimeGuidance(cycleForm)}
+                >
+                  💡 Get Real-time Medical Guidance
+                </button>
+              </div>
+
+              {/* Physical Health Metrics */}
+              <div className="health-metrics-section">
+                <h4>📊 Physical Health Metrics</h4>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Weight (lbs)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={cycleForm.weight}
+                      onChange={(e) => setCycleForm({...cycleForm, weight: e.target.value})}
+                      placeholder="e.g., 150.5"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Blood Pressure</label>
+                    <input
+                      type="text"
+                      value={cycleForm.bloodPressure}
+                      onChange={(e) => setCycleForm({...cycleForm, bloodPressure: e.target.value})}
+                      placeholder="e.g., 120/80"
+                    />
+                    <small>Systolic/Diastolic</small>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lifestyle & Wellness */}
+              <div className="lifestyle-section">
+                <h4>🌱 Lifestyle & Wellness</h4>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Stress Level: {cycleForm.stressLevel}/10</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={cycleForm.stressLevel}
+                      onChange={(e) => setCycleForm({...cycleForm, stressLevel: parseInt(e.target.value)})}
+                      className="stress-slider"
+                    />
+                    <div className="slider-labels">
+                      <span>Low Stress</span>
+                      <span>High Stress</span>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Sleep Quality: {cycleForm.sleepQuality}/10</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={cycleForm.sleepQuality}
+                      onChange={(e) => setCycleForm({...cycleForm, sleepQuality: parseInt(e.target.value)})}
+                      className="sleep-slider"
+                    />
+                    <div className="slider-labels">
+                      <span>Poor Sleep</span>
+                      <span>Excellent Sleep</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Exercise Frequency</label>
+                    <select
+                      value={cycleForm.exerciseFrequency}
+                      onChange={(e) => setCycleForm({...cycleForm, exerciseFrequency: e.target.value})}
+                    >
+                      <option value="none">No Exercise</option>
+                      <option value="light">Light (1-2x/week)</option>
+                      <option value="moderate">Moderate (3-4x/week)</option>
+                      <option value="intense">Intense (5-6x/week)</option>
+                      <option value="daily">Daily Exercise</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Diet Quality</label>
+                    <select
+                      value={cycleForm.dietQuality}
+                      onChange={(e) => setCycleForm({...cycleForm, dietQuality: e.target.value})}
+                    >
+                      <option value="poor">Poor (Fast food, processed)</option>
+                      <option value="fair">Fair (Mixed diet)</option>
+                      <option value="good">Good (Balanced, home-cooked)</option>
+                      <option value="excellent">Excellent (Whole foods, organic)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Medical Information */}
+              <div className="medical-info-section">
+                <h4>💊 Medical Information</h4>
                 <div className="form-group">
-                  <label>Blood Pressure</label>
+                  <label>Current Medications</label>
                   <input
                     type="text"
-                    value={cycleForm.bloodPressure}
-                    onChange={(e) => setCycleForm({...cycleForm, bloodPressure: e.target.value})}
-                    placeholder="e.g., 120/80"
+                    value={cycleForm.medicationUse}
+                    onChange={(e) => setCycleForm({...cycleForm, medicationUse: e.target.value})}
+                    placeholder="e.g., Birth control, Metformin, Ibuprofen"
                   />
-                  <small>Systolic/Diastolic</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Family History (Select all that apply)</label>
+                  <div className="family-history-grid">
+                    {familyHistoryOptions.map(condition => (
+                      <label key={condition} className="family-history-option">
+                        <input
+                          type="checkbox"
+                          checked={cycleForm.familyHistory.includes(condition)}
+                          onChange={() => handleFamilyHistoryToggle(condition)}
+                        />
+                        <span className="condition-label">{condition}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Energy Level</label>
-                  <select
-                    value={cycleForm.energy}
-                    onChange={(e) => setCycleForm({...cycleForm, energy: e.target.value})}
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="low">Low</option>
-                    <option value="high">High</option>
-                    <option value="very-low">Very Low</option>
-                    <option value="very-high">Very High</option>
-                  </select>
+              {/* Cycle Symptoms */}
+              <div className="symptoms-section">
+                <h4>🩺 Cycle Symptoms</h4>
+                <div className="symptoms-grid">
+                  {availableSymptoms.map(symptom => (
+                    <label key={symptom} className="symptom-option">
+                      <input
+                        type="checkbox"
+                        checked={cycleForm.symptoms.includes(symptom)}
+                        onChange={() => handleSymptomToggle(symptom)}
+                      />
+                      <span className="symptom-label">{symptom}</span>
+                    </label>
+                  ))}
                 </div>
-                
-                <div className="form-group">
-                  <label>Sleep Quality</label>
-                  <select
-                    value={cycleForm.sleep}
-                    onChange={(e) => setCycleForm({...cycleForm, sleep: e.target.value})}
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="poor">Poor</option>
-                    <option value="excellent">Excellent</option>
-                    <option value="insomnia">Insomnia</option>
-                    <option value="excessive">Excessive</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Stress Level</label>
-                  <select
-                    value={cycleForm.stress}
-                    onChange={(e) => setCycleForm({...cycleForm, stress: e.target.value})}
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="low">Low</option>
-                    <option value="high">High</option>
-                    <option value="very-high">Very High</option>
-                    <option value="overwhelming">Overwhelming</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label>Exercise Level</label>
-                  <select
-                    value={cycleForm.exercise}
-                    onChange={(e) => setCycleForm({...cycleForm, exercise: e.target.value})}
-                  >
-                    <option value="none">None</option>
-                    <option value="light">Light</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="intense">Intense</option>
-                    <option value="excessive">Excessive</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Cycle Symptoms</label>
-              <div className="symptoms-grid">
-                {availableSymptoms.map(symptom => (
-                  <label key={symptom} className="symptom-option">
-                    <input
-                      type="checkbox"
-                      checked={cycleForm.symptoms.includes(symptom)}
-                      onChange={() => handleSymptomToggle(symptom)}
-                    />
-                    <span className="symptom-label">{symptom}</span>
-                  </label>
-                ))}
               </div>
             </div>
 
@@ -553,10 +803,41 @@ const CycleTracking = () => {
         </div>
 
 
+
         {/* Simple Cycle Summary */}
         {cycleData.length > 0 && (
           <div className="cycle-summary-section">
-            <h2>📊 Your Cycle at a Glance</h2>
+            <div className="summary-header">
+              <h2>📊 Your Cycle at a Glance</h2>
+              {cycleData.length >= 3 && (
+                <div className="analysis-buttons">
+                  <button 
+                    className="three-cycle-btn"
+                    onClick={generateThreeCycleAnalysis}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? '⏳ Analyzing...' : '🔬 Get 3-Cycle Analysis'}
+                  </button>
+                  {savedThreeCycleAnalysis ? (
+                    <button 
+                      className="view-saved-analysis-btn"
+                      onClick={() => {
+                        console.log('🔍 View Saved Analysis clicked!');
+                        console.log('📋 Saved analysis data:', savedThreeCycleAnalysis);
+                        setSelectedThreeCycleAnalysis(savedThreeCycleAnalysis);
+                        console.log('✅ Analysis modal should now be visible');
+                      }}
+                    >
+                      📋 View Saved Analysis
+                    </button>
+                  ) : (
+                    <div className="no-saved-analysis">
+                      <small>No saved analysis yet</small>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="summary-cards">
               <div className="summary-card">
                 <div className="card-icon">📅</div>
@@ -579,24 +860,46 @@ const CycleTracking = () => {
                   <p>{cycleData.length}</p>
                 </div>
               </div>
+              {cycleData.length >= 3 && (
+                <div className="summary-card analysis-ready">
+                  <div className="card-icon">🔬</div>
+                  <div className="card-content">
+                    <h3>Analysis Ready</h3>
+                    <p>3+ cycles logged</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* AI Insights */}
+
+        {/* AI Insights - Structured */}
         {insights && (
           <div className="insights-section">
-            <h2>✨ Your Cycle Insights</h2>
+            <div className="insights-header">
+              <h2>✨ AI-Powered Cycle Analysis</h2>
+            </div>
             <div className="insights-content">
               {Array.isArray(insights) ? insights.map((insight, index) => (
-                <div key={index} className="insight-item">
-                  <div className="insight-icon">💡</div>
-                  <p className="insight-text">{insight}</p>
+                <div key={index} className="insight-card">
+                  <div className="insight-header">
+                    <div className="insight-icon">💡</div>
+                    <h4>Insight #{index + 1}</h4>
+                  </div>
+                  <div className="insight-body">
+                    <p className="insight-text">{insight}</p>
+                  </div>
                 </div>
               )) : (
-                <div className="insight-item">
-                  <div className="insight-icon">💡</div>
-                  <p className="insight-text">{insights}</p>
+                <div className="insight-card">
+                  <div className="insight-header">
+                    <div className="insight-icon">💡</div>
+                    <h4>AI Analysis</h4>
+                  </div>
+                  <div className="insight-body">
+                    <p className="insight-text">{insights}</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -617,54 +920,6 @@ const CycleTracking = () => {
           </div>
         )}
 
-        {/* Cycle Patterns */}
-        {cyclePatterns && (
-          <div className="cycle-patterns-section">
-            <h2>📈 Your Cycle Patterns</h2>
-            <div className="patterns-content">
-              {typeof cyclePatterns === 'string' ? (
-                <div className="pattern-item">
-                  <div className="pattern-icon">📊</div>
-                  <p className="pattern-text">{cyclePatterns}</p>
-                </div>
-              ) : (
-                <div className="pattern-cards">
-                  <div className="pattern-card">
-                    <div className="pattern-header">
-                      <div className="pattern-icon">🩸</div>
-                      <h3>Flow Assessment</h3>
-                    </div>
-                    <p className="pattern-text">{cyclePatterns.flowAssessment}</p>
-                  </div>
-                  
-                  <div className="pattern-card">
-                    <div className="pattern-header">
-                      <div className="pattern-icon">⚠️</div>
-                      <h3>Symptom Evaluation</h3>
-                    </div>
-                    <p className="pattern-text">{cyclePatterns.symptomEvaluation}</p>
-                  </div>
-                  
-                  <div className="pattern-card">
-                    <div className="pattern-header">
-                      <div className="pattern-icon">📋</div>
-                      <h3>Action Item</h3>
-                    </div>
-                    <p className="pattern-text">{cyclePatterns.actionItem}</p>
-                  </div>
-                  
-                  <div className="pattern-card">
-                    <div className="pattern-header">
-                      <div className="pattern-icon">🎯</div>
-                      <h3>Confidence Level</h3>
-                    </div>
-                    <p className="pattern-text">{cyclePatterns.confidence}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Personalized Tips */}
         {personalizedRecommendations && (
@@ -756,49 +1011,6 @@ const CycleTracking = () => {
             </div>
           </div>
         </div>
-
-        {/* Cycle History */}
-        {cycleData.length > 0 && (
-          <div className="cycle-history">
-            <h2>📈 Cycle History</h2>
-            <div className="history-list">
-              {cycleData.slice(-5).reverse().map((cycle, index) => (
-                <div key={index} className="history-item">
-                  <div className="history-date">
-                    {new Date(cycle.timestamp).toLocaleDateString()}
-                  </div>
-                  <div className="history-details">
-                    <span>Period: {cycle.lastPeriod}</span>
-                    <span>Length: {cycle.cycleLength} days</span>
-                    <span>Flow: {cycle.flowIntensity}</span>
-                    <span>Pain: {cycle.pain}/10</span>
-                    {cycle.symptoms && cycle.symptoms.length > 0 && (
-                      <span>Symptoms: {cycle.symptoms.length}</span>
-                    )}
-                  </div>
-                  <div className="history-actions">
-                    {cycle.aiInsights && (
-                      <button 
-                        className="view-insights-btn"
-                        onClick={() => setSelectedCycleInsights(cycle)}
-                        title="View AI Insights for this cycle"
-                      >
-                        🤖
-                      </button>
-                    )}
-                    <button 
-                      className="delete-btn"
-                      onClick={() => deleteCycleLog(cycleData.length - 1 - index)}
-                      title="Delete this log"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Interactive Dashboard - Show after 3+ consecutive cycles */}
         {cycleData.length >= 3 && (
@@ -996,6 +1208,49 @@ const CycleTracking = () => {
           </div>
         )}
 
+        {/* Cycle History */}
+        {cycleData.length > 0 && (
+          <div className="cycle-history">
+            <h2>📈 Cycle History</h2>
+            <div className="history-list">
+              {cycleData.slice(-5).reverse().map((cycle, index) => (
+                <div key={index} className="history-item">
+                  <div className="history-date">
+                    {new Date(cycle.timestamp).toLocaleDateString()}
+                  </div>
+                  <div className="history-details">
+                    <span>Period: {cycle.lastPeriod}</span>
+                    <span>Length: {cycle.cycleLength} days</span>
+                    <span>Flow: {cycle.flowIntensity}</span>
+                    <span>Pain: {cycle.pain}/10</span>
+                    {cycle.symptoms && cycle.symptoms.length > 0 && (
+                      <span>Symptoms: {cycle.symptoms.length}</span>
+                    )}
+                  </div>
+                  <div className="history-actions">
+                    {cycle.aiInsights && (
+                      <button 
+                        className="view-insights-btn"
+                        onClick={() => setSelectedCycleInsights(cycle)}
+                        title="View AI Insights for this cycle"
+                      >
+                        🤖
+                      </button>
+                    )}
+                    <button 
+                      className="delete-btn"
+                      onClick={() => deleteCycleLog(cycleData.length - 1 - index)}
+                      title="Delete this log"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Historical AI Insights Modal */}
         {selectedCycleInsights && (
           <div className="insights-modal-overlay" onClick={() => setSelectedCycleInsights(null)}>
@@ -1081,6 +1336,43 @@ const CycleTracking = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3-Cycle Analysis Modal */}
+        {selectedThreeCycleAnalysis && (
+          <div className="insights-modal-overlay" onClick={() => setSelectedThreeCycleAnalysis(null)}>
+            <div className="insights-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>🔬 Comprehensive 3-Cycle Analysis</h2>
+                <button 
+                  className="close-btn"
+                  onClick={() => setSelectedThreeCycleAnalysis(null)}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="modal-content">
+                <div className="modal-section">
+                  <div className="analysis-badge">
+                    <span className="analysis-icon">🤖</span>
+                    <span>AI In-Depth Analysis</span>
+                    <span className="analysis-date">
+                      Generated: {new Date(selectedThreeCycleAnalysis.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="analysis-text">
+                    {selectedThreeCycleAnalysis.analysis.split('\n').map((paragraph, index) => (
+                      paragraph.trim() && (
+                        <p key={index} className="analysis-paragraph">
+                          {paragraph}
+                        </p>
+                      )
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -8,6 +8,19 @@ const MenopauseSupport = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [aiService] = useState(() => new AFABAIService());
+
+  // Helper function to calculate age
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return 25; // Default age if not provided
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
   
   // Menopause tracking form state
   const [menopauseForm, setMenopauseForm] = useState({
@@ -77,7 +90,7 @@ const MenopauseSupport = () => {
 
   // Load existing menopause data
   useEffect(() => {
-    const savedData = localStorage.getItem('afabMenopauseData');
+    const savedData = localStorage.getItem(`afabMenopauseData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setMenopauseData(parsed);
@@ -146,8 +159,36 @@ Please provide:
 
 Be medical, accurate, and supportive. Include specific guidance for the current menopause stage and symptom severity.`;
 
-      const aiInsights = await aiService.generateHealthInsights(prompt);
-      setInsights(aiInsights);
+      // Create user profile for AI analysis
+      const userProfile = {
+        ...user,
+        age: calculateAge(user?.dateOfBirth),
+        conditions: { reproductive: [] },
+        medications: [],
+        lifestyle: { exerciseFrequency: 'Moderate' }
+      };
+
+      const aiInsights = await aiService.generateMenopauseInsights(menopauseForm, userProfile);
+      
+      // Set all the comprehensive AI menopause insights (SAME STRUCTURE AS CYCLE TRACKING)
+      if (aiInsights) {
+        // AI Insights - detailed medical analysis
+        setInsights(aiInsights.aiInsights || ['AI menopause analysis completed successfully!']);
+        
+        // Store AI insights with the menopause data
+        const menopauseWithInsights = {
+          ...menopauseForm,
+          aiInsights: aiInsights,
+          insightsTimestamp: new Date().toISOString()
+        };
+        
+        // Update the menopause data with AI insights
+        const updatedMenopauseData = [...menopauseData, menopauseWithInsights];
+        setMenopauseData(updatedMenopauseData);
+        localStorage.setItem(`afabMenopauseData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedMenopauseData));
+        
+        console.log('🎉 REAL AI menopause insights displayed successfully!');
+      }
       
       // Reset form for next entry
       setMenopauseForm({

@@ -27,7 +27,7 @@ export const HealthDataProvider = ({ children }) => {
   // Load health data from localStorage and calculate insights
   const loadHealthData = useCallback(() => {
     try {
-      const healthLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
+      const healthLogs = JSON.parse(localStorage.getItem(`healthLogs_${user?.id || user?.email || 'anonymous'}`) || '[]');
       const today = new Date().toISOString().split('T')[0];
       
       // Find today's log
@@ -203,7 +203,7 @@ export const HealthDataProvider = ({ children }) => {
   // Load user goals
   const loadGoals = () => {
     try {
-      return JSON.parse(localStorage.getItem('healthGoals') || '{}');
+      return JSON.parse(localStorage.getItem(`healthGoals_${user?.id || user?.email || 'anonymous'}`) || '{}');
     } catch (error) {
       return {};
     }
@@ -212,9 +212,9 @@ export const HealthDataProvider = ({ children }) => {
   // Save health data
   const saveHealthData = (newLog) => {
     try {
-      const existingLogs = JSON.parse(localStorage.getItem('healthLogs') || '[]');
+      const existingLogs = JSON.parse(localStorage.getItem(`healthLogs_${user?.id || user?.email || 'anonymous'}`) || '[]');
       const updatedLogs = [...existingLogs, newLog];
-      localStorage.setItem('healthLogs', JSON.stringify(updatedLogs));
+      localStorage.setItem(`healthLogs_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedLogs));
       
       // Reload data to update insights
       loadHealthData();
