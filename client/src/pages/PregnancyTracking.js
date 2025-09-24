@@ -73,6 +73,13 @@ const PregnancyTracking = () => {
   const [healthAlerts, setHealthAlerts] = useState([]);
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
   const [riskAssessment, setRiskAssessment] = useState(null);
+  const [selectedPregnancyInsights, setSelectedPregnancyInsights] = useState(null);
+
+  // CONVERSATIONAL FLOW STATE
+  const [isConversationalMode, setIsConversationalMode] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [conversationData, setConversationData] = useState({});
+  const [conversationSteps, setConversationSteps] = useState([]);
 
   // Helper function to calculate age from date of birth
   const calculateAge = (dateOfBirth) => {
@@ -85,6 +92,511 @@ const PregnancyTracking = () => {
       age--;
     }
     return age;
+  };
+
+  // Delete a specific pregnancy entry
+  const deletePregnancyEntry = (index) => {
+    if (window.confirm('Are you sure you want to delete this pregnancy entry?')) {
+      // Get the current data from localStorage (not the filtered state)
+      const savedData = localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
+      if (savedData) {
+        const allData = JSON.parse(savedData);
+        
+        // Find the entry to delete by matching timestamp with the displayed entry
+        const displayedData = pregnancyData.slice(-5).reverse();
+        const entryToDelete = displayedData[index];
+        
+        if (entryToDelete) {
+          // Remove the entry from the full dataset
+          const updatedData = allData.filter(entry => entry.timestamp !== entryToDelete.timestamp);
+          
+          // Save the updated data
+          localStorage.setItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
+          
+          // Filter the updated data the same way as in useEffect
+          const validData = updatedData.filter(entry => {
+            const entryDate = new Date(entry.timestamp);
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            return entryDate > sixMonthsAgo && entry.dueDate && entry.dueDate !== '';
+          });
+          
+          // Update the state with the filtered data
+          setPregnancyData(validData);
+          
+          console.log(`🗑️ Entry deleted. Remaining entries: ${validData.length}`);
+          
+          // Clear any existing insights since we deleted an entry
+          setInsights(null);
+          setPregnancyPatterns(null);
+          setPersonalizedRecommendations(null);
+          setHealthAlerts([]);
+          setRiskAssessment(null);
+          
+          // Recalculate progress if we have data left
+          if (validData.length > 0) {
+            const latestEntry = validData[validData.length - 1];
+            if (latestEntry.dueDate) {
+              calculatePregnancyProgress(latestEntry.dueDate);
+            }
+          } else {
+            setPregnancyProgress(null);
+          }
+        }
+      }
+    }
+  };
+
+  // View insights for a specific entry
+  const viewInsightsForEntry = (entry, index) => {
+    const userId = user?.id || user?.email || 'anonymous';
+    const storageKey = `aiInsights_pregnancy_${userId}`;
+    
+    try {
+      const storedInsights = localStorage.getItem(storageKey);
+      if (storedInsights) {
+        const insights = JSON.parse(storedInsights);
+        
+        // Set the insights for the modal display
+        setSelectedPregnancyInsights({
+          ...insights,
+          timestamp: entry.timestamp,
+          entry: entry
+        });
+      } else {
+        alert('No AI insights found for this entry. Please complete a new pregnancy check-in to generate insights.');
+      }
+    } catch (error) {
+      console.error('Error retrieving insights:', error);
+      alert('Error retrieving AI insights. Please try again.');
+    }
+  };
+
+  // CONVERSATIONAL FLOW FUNCTIONS
+  const getConversationSteps = (trimester) => {
+    const baseSteps = [
+      {
+        id: 'basic-info',
+        title: 'Basic Pregnancy Information',
+        questions: [
+          {
+            id: 'dueDate',
+            type: 'date',
+            label: 'What is your due date?',
+            required: true,
+            placeholder: 'Select your due date'
+          },
+          {
+            id: 'lastMenstrualPeriod',
+            type: 'date',
+            label: 'When was your last menstrual period?',
+            required: true,
+            placeholder: 'Select LMP date'
+          },
+          {
+            id: 'isFirstPregnancy',
+            type: 'select',
+            label: 'Is this your first pregnancy?',
+            required: true,
+            options: [
+              { value: 'yes', label: 'Yes, first pregnancy' },
+              { value: 'no', label: 'No, I have been pregnant before' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'current-symptoms',
+        title: 'How are you feeling today?',
+        questions: [
+          {
+            id: 'mood',
+            type: 'scale',
+            label: 'How would you rate your overall mood today?',
+            required: true,
+            min: 1,
+            max: 10,
+            labels: { 1: 'Very low', 5: 'Neutral', 10: 'Excellent' }
+          },
+          {
+            id: 'energy',
+            type: 'scale',
+            label: 'How is your energy level?',
+            required: true,
+            min: 1,
+            max: 10,
+            labels: { 1: 'Very tired', 5: 'Moderate', 10: 'Very energetic' }
+          },
+          {
+            id: 'sleep',
+            type: 'scale',
+            label: 'How was your sleep quality last night?',
+            required: true,
+            min: 1,
+            max: 10,
+            labels: { 1: 'Very poor', 5: 'Fair', 10: 'Excellent' }
+          }
+        ]
+      }
+    ];
+
+    // Add trimester-specific steps
+    if (trimester === 1) {
+      baseSteps.push({
+        id: 'first-trimester',
+        title: 'First Trimester (Weeks 1-12)',
+        questions: [
+          {
+            id: 'morningSickness',
+            type: 'select',
+            label: 'How is your morning sickness?',
+            required: true,
+            options: [
+              { value: 'none', label: 'No morning sickness' },
+              { value: 'mild', label: 'Mild nausea' },
+              { value: 'moderate', label: 'Moderate nausea' },
+              { value: 'severe', label: 'Severe nausea/vomiting' }
+            ]
+          },
+          {
+            id: 'foodAversions',
+            type: 'multiselect',
+            label: 'Any food aversions?',
+            required: false,
+            options: [
+              'Meat', 'Dairy', 'Vegetables', 'Spicy foods', 'Coffee', 'Alcohol', 'None'
+            ]
+          },
+          {
+            id: 'breastTenderness',
+            type: 'select',
+            label: 'Breast tenderness?',
+            required: true,
+            options: [
+              { value: 'none', label: 'None' },
+              { value: 'mild', label: 'Mild' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'severe', label: 'Severe' }
+            ]
+          },
+          {
+            id: 'spotting',
+            type: 'select',
+            label: 'Any spotting or bleeding?',
+            required: true,
+            options: [
+              { value: 'none', label: 'No spotting' },
+              { value: 'light', label: 'Light spotting' },
+              { value: 'moderate', label: 'Moderate bleeding' },
+              { value: 'heavy', label: 'Heavy bleeding' }
+            ]
+          }
+        ]
+      });
+    } else if (trimester === 2) {
+      baseSteps.push({
+        id: 'second-trimester',
+        title: 'Second Trimester (Weeks 13-26)',
+        questions: [
+          {
+            id: 'fetalMovement',
+            type: 'select',
+            label: 'Have you felt the baby move yet?',
+            required: true,
+            options: [
+              { value: 'yes', label: 'Yes, I feel movement' },
+              { value: 'no', label: 'No, not yet' },
+              { value: 'unsure', label: 'Not sure' }
+            ]
+          },
+          {
+            id: 'energyLevel',
+            type: 'select',
+            label: 'How is your energy compared to first trimester?',
+            required: true,
+            options: [
+              { value: 'much-better', label: 'Much better' },
+              { value: 'better', label: 'Better' },
+              { value: 'same', label: 'About the same' },
+              { value: 'worse', label: 'Worse' }
+            ]
+          },
+          {
+            id: 'backPain',
+            type: 'select',
+            label: 'Any back pain or discomfort?',
+            required: true,
+            options: [
+              { value: 'none', label: 'No back pain' },
+              { value: 'mild', label: 'Mild discomfort' },
+              { value: 'moderate', label: 'Moderate pain' },
+              { value: 'severe', label: 'Severe pain' }
+            ]
+          },
+          {
+            id: 'heartburn',
+            type: 'select',
+            label: 'Any heartburn or digestive issues?',
+            required: true,
+            options: [
+              { value: 'none', label: 'None' },
+              { value: 'mild', label: 'Mild heartburn' },
+              { value: 'moderate', label: 'Moderate heartburn' },
+              { value: 'severe', label: 'Severe heartburn' }
+            ]
+          }
+        ]
+      });
+    } else if (trimester === 3) {
+      baseSteps.push({
+        id: 'third-trimester',
+        title: 'Third Trimester (Weeks 27-40)',
+        questions: [
+          {
+            id: 'fetalMovement',
+            type: 'select',
+            label: 'How often do you feel the baby move?',
+            required: true,
+            options: [
+              { value: 'very-active', label: 'Very active, constant movement' },
+              { value: 'active', label: 'Active, regular movement' },
+              { value: 'moderate', label: 'Moderate movement' },
+              { value: 'decreased', label: 'Decreased movement' }
+            ]
+          },
+          {
+            id: 'braxtonHicks',
+            type: 'select',
+            label: 'Any Braxton Hicks contractions?',
+            required: true,
+            options: [
+              { value: 'none', label: 'None' },
+              { value: 'mild', label: 'Mild, occasional' },
+              { value: 'moderate', label: 'Moderate, regular' },
+              { value: 'frequent', label: 'Frequent, strong' }
+            ]
+          },
+          {
+            id: 'swelling',
+            type: 'select',
+            label: 'Any swelling in hands or feet?',
+            required: true,
+            options: [
+              { value: 'none', label: 'No swelling' },
+              { value: 'mild', label: 'Mild swelling' },
+              { value: 'moderate', label: 'Moderate swelling' },
+              { value: 'severe', label: 'Severe swelling' }
+            ]
+          },
+          {
+            id: 'sleepComfort',
+            type: 'select',
+            label: 'How is your sleep and comfort?',
+            required: true,
+            options: [
+              { value: 'good', label: 'Sleeping well' },
+              { value: 'fair', label: 'Sleeping okay' },
+              { value: 'poor', label: 'Sleeping poorly' },
+              { value: 'very-poor', label: 'Very poor sleep' }
+            ]
+          }
+        ]
+      });
+    }
+
+    // Add medical history step
+    baseSteps.push({
+      id: 'medical-history',
+      title: 'Medical History & Risk Factors',
+      questions: [
+        {
+          id: 'previousComplications',
+          type: 'multiselect',
+          label: 'Any previous pregnancy complications?',
+          required: false,
+          options: [
+            'Gestational diabetes', 'Preeclampsia', 'Preterm labor', 'Miscarriage', 'Stillbirth', 'None'
+          ]
+        },
+        {
+          id: 'chronicConditions',
+          type: 'multiselect',
+          label: 'Any chronic medical conditions?',
+          required: false,
+          options: [
+            'Diabetes', 'High blood pressure', 'Thyroid issues', 'Heart conditions', 'Autoimmune disorders', 'None'
+          ]
+        },
+        {
+          id: 'medications',
+          type: 'multiselect',
+          label: 'Current medications or supplements?',
+          required: false,
+          options: [
+            'Prenatal vitamins', 'Folic acid', 'Iron supplements', 'Prescription medications', 'None'
+          ]
+        }
+      ]
+    });
+
+    // Add lifestyle step
+    baseSteps.push({
+      id: 'lifestyle',
+      title: 'Lifestyle & Health',
+      questions: [
+        {
+          id: 'diet',
+          type: 'select',
+          label: 'How would you rate your diet and nutrition?',
+          required: true,
+          options: [
+            { value: 'excellent', label: 'Excellent - very healthy' },
+            { value: 'good', label: 'Good - mostly healthy' },
+            { value: 'fair', label: 'Fair - could be better' },
+            { value: 'poor', label: 'Poor - needs improvement' }
+          ]
+        },
+        {
+          id: 'exercise',
+          type: 'select',
+          label: 'How much exercise do you get?',
+          required: true,
+          options: [
+            { value: 'none', label: 'No exercise' },
+            { value: 'light', label: 'Light exercise (walking, yoga)' },
+            { value: 'moderate', label: 'Moderate exercise' },
+            { value: 'active', label: 'Very active' }
+          ]
+        },
+        {
+          id: 'stress',
+          type: 'scale',
+          label: 'How would you rate your stress level?',
+          required: true,
+          min: 1,
+          max: 10,
+          labels: { 1: 'Very low', 5: 'Moderate', 10: 'Very high' }
+        }
+      ]
+    });
+
+    return baseSteps;
+  };
+
+  const startConversation = () => {
+    const steps = getConversationSteps(pregnancyForm.trimester);
+    setConversationSteps(steps);
+    setIsConversationalMode(true);
+    setCurrentStep(0);
+    setConversationData({});
+  };
+
+  const nextStep = () => {
+    if (currentStep < conversationSteps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleConversationAnswer = (questionId, answer) => {
+    setConversationData(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  const completeConversation = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Merge conversation data with form data
+      const mergedData = {
+        ...pregnancyForm,
+        ...conversationData,
+        date: new Date().toISOString().split('T')[0],
+        timestamp: new Date().toISOString(),
+        moduleType: 'pregnancy',
+        userId: user?.id
+      };
+
+      // Save to localStorage
+      const updatedData = [...pregnancyData, mergedData];
+      setPregnancyData(updatedData);
+      localStorage.setItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedData));
+
+      // Calculate pregnancy progress
+      if (mergedData.dueDate) {
+        calculatePregnancyProgress(mergedData.dueDate);
+      }
+
+      // Generate AI insights
+      const userProfile = {
+        ...user,
+        age: calculateAge(user?.dateOfBirth),
+        conditions: { reproductive: [] },
+        familyHistory: { womensConditions: [] },
+        lifestyle: { exercise: { frequency: 'Moderate' }, stress: { level: 'Moderate' } },
+        tobaccoUse: 'No'
+      };
+
+      console.log('🤖 Calling AI service for pregnancy analysis...');
+      
+      const aiInsights = await Promise.race([
+        aiService.generatePregnancyInsights(updatedData, userProfile),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('AI request timeout after 60 seconds')), 60000)
+        )
+      ]);
+
+      console.log('✅ AI Pregnancy Insights received:', aiInsights);
+
+      // Set AI insights
+      if (aiInsights) {
+        // Set the main AI insights object
+        setInsights(aiInsights.aiInsights || aiInsights);
+        
+        // Set personalized tips
+        if (aiInsights.personalizedTips) {
+          setPersonalizedRecommendations(Array.isArray(aiInsights.personalizedTips) ? 
+            aiInsights.personalizedTips.join(' • ') : 
+            aiInsights.personalizedTips);
+        }
+        
+        // Set pregnancy patterns
+        if (aiInsights.pregnancyPatterns) {
+          setPregnancyPatterns(aiInsights.pregnancyPatterns);
+        }
+        
+        // Set gentle reminders
+        if (aiInsights.gentleReminders) {
+          setHealthAlerts(Array.isArray(aiInsights.gentleReminders) ? 
+            aiInsights.gentleReminders : 
+            [aiInsights.gentleReminders]);
+        }
+        
+        // Set risk assessment
+        if (aiInsights.riskAssessment) {
+          setRiskAssessment(aiInsights.riskAssessment);
+        }
+      }
+
+      // Reset conversation
+      setIsConversationalMode(false);
+      setCurrentStep(0);
+      setConversationData({});
+      setConversationSteps([]);
+
+    } catch (error) {
+      console.error('❌ Error completing conversation:', error);
+      setInsights(['AI services temporarily unavailable. Please try again in a moment.']);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // MEDICAL-GRADE Pregnancy symptoms (what doctors actually track)
@@ -176,18 +688,40 @@ const PregnancyTracking = () => {
 
   // Load existing pregnancy data
   useEffect(() => {
+    // Clear any existing pregnancy progress first
+    setPregnancyProgress(null);
+    
     const savedData = localStorage.getItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
-      setPregnancyData(parsed);
       
-      // Calculate pregnancy progress
-      if (parsed.length > 0) {
-        const latest = parsed[parsed.length - 1];
+      // Only load data if it's recent (within last 6 months) and has valid due date
+      const validData = parsed.filter(entry => {
+        const entryDate = new Date(entry.timestamp);
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        
+        return entryDate > sixMonthsAgo && entry.dueDate && entry.dueDate !== '';
+      });
+      
+      if (validData.length > 0) {
+        setPregnancyData(validData);
+        
+        // Calculate pregnancy progress only for valid data
+        const latest = validData[validData.length - 1];
         if (latest.dueDate) {
           calculatePregnancyProgress(latest.dueDate);
         }
+      } else {
+        // Clear invalid/old data
+        localStorage.removeItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
+        setPregnancyData([]);
+        setPregnancyProgress(null);
       }
+    } else {
+      // No saved data, ensure clean state
+      setPregnancyData([]);
+      setPregnancyProgress(null);
     }
   }, []);
 
@@ -327,7 +861,7 @@ const PregnancyTracking = () => {
       const aiInsights = await Promise.race([
         aiService.generatePregnancyInsights(updatedData, userProfile),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('AI request timeout after 25 seconds')), 25000)
+          setTimeout(() => reject(new Error('AI request timeout after 60 seconds')), 60000)
         )
       ]);
       
@@ -406,6 +940,95 @@ const PregnancyTracking = () => {
     return info[trimester] || { weeks: 'Unknown', description: 'Unknown Trimester' };
   };
 
+  // FIELD RENDERERS FOR CONVERSATIONAL FLOW
+  const renderField = (question) => {
+    const value = conversationData[question.id] || '';
+    
+    switch (question.type) {
+      case 'date':
+        return (
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => handleConversationAnswer(question.id, e.target.value)}
+            required={question.required}
+            placeholder={question.placeholder}
+            className="conversation-input"
+          />
+        );
+      
+      case 'select':
+        return (
+          <select
+            value={value}
+            onChange={(e) => handleConversationAnswer(question.id, e.target.value)}
+            required={question.required}
+            className="conversation-select"
+          >
+            <option value="">Select an option...</option>
+            {question.options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+      
+      case 'multiselect':
+        const selectedValues = Array.isArray(value) ? value : [];
+        return (
+          <div className="multiselect-container">
+            {question.options.map(option => (
+              <label key={option} className="multiselect-option">
+                <input
+                  type="checkbox"
+                  checked={selectedValues.includes(option)}
+                  onChange={(e) => {
+                    const newValues = e.target.checked
+                      ? [...selectedValues, option]
+                      : selectedValues.filter(v => v !== option);
+                    handleConversationAnswer(question.id, newValues);
+                  }}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+      
+      case 'scale':
+        return (
+          <div className="scale-container">
+            <div className="scale-labels">
+              <span>{question.labels[question.min]}</span>
+              <span>{question.labels[question.max]}</span>
+            </div>
+            <input
+              type="range"
+              min={question.min}
+              max={question.max}
+              value={value || question.min}
+              onChange={(e) => handleConversationAnswer(question.id, parseInt(e.target.value))}
+              className="conversation-scale"
+            />
+            <div className="scale-value">{value || question.min}</div>
+          </div>
+        );
+      
+      default:
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => handleConversationAnswer(question.id, e.target.value)}
+            required={question.required}
+            placeholder={question.placeholder}
+            className="conversation-input"
+          />
+        );
+    }
+  };
+
   return (
     <div className="pregnancy-tracking-page">
       <div className="page-header">
@@ -417,228 +1040,237 @@ const PregnancyTracking = () => {
       </div>
 
       <div className="pregnancy-content">
-        {/* Pregnancy Overview */}
-        <div className="pregnancy-overview">
-          <div className="overview-card">
-            <h3>📅 Due Date</h3>
-            <p className="date-display">
-              {pregnancyForm.dueDate ? formatDate(new Date(pregnancyForm.dueDate)) : 'Set your due date'}
-            </p>
+        {/* Pregnancy Overview - Only show when data exists */}
+        {pregnancyData.length > 0 && pregnancyProgress && (
+          <div className="pregnancy-overview">
+            <div className="overview-card">
+              <h3>📅 Due Date</h3>
+              <p className="date-display">
+                {pregnancyData[pregnancyData.length - 1]?.dueDate ? formatDate(new Date(pregnancyData[pregnancyData.length - 1].dueDate)) : 'Not set'}
+              </p>
+            </div>
+            
+            <div className="overview-card">
+              <h3>📊 Pregnancy Progress</h3>
+              <p className="progress-display">
+                {pregnancyProgress.weeksPregnant} weeks, {pregnancyProgress.daysPregnant % 7} days
+              </p>
+            </div>
+            
+            <div className="overview-card">
+              <h3>🎯 Trimester</h3>
+              <p className="trimester-display">
+                Trimester {pregnancyProgress.trimester}
+              </p>
+            </div>
           </div>
-          
-          <div className="overview-card">
-            <h3>📊 Pregnancy Progress</h3>
-            <p className="progress-display">
-              {pregnancyProgress ? 
-                `${pregnancyProgress.weeksPregnant} weeks, ${pregnancyProgress.daysPregnant % 7} days` : 
-                'Calculate progress'
-              }
-            </p>
-          </div>
-          
-          <div className="overview-card">
-            <h3>🎯 Trimester</h3>
-            <p className="trimester-display">
-              {pregnancyProgress ? 
-                `Trimester ${pregnancyProgress.trimester}` : 
-                'Set trimester'
-              }
-            </p>
-          </div>
-        </div>
+        )}
 
-        {/* Pregnancy Logging Form */}
-        <div className="pregnancy-form-section">
-          <h2>Log Your Pregnancy Data</h2>
-          <form onSubmit={handlePregnancyLog} className="pregnancy-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Date *</label>
-                <input
-                  type="date"
-                  value={pregnancyForm.date}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, date: e.target.value})}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Due Date</label>
-                <input
-                  type="date"
-                  value={pregnancyForm.dueDate}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, dueDate: e.target.value})}
-                />
-                <small>Your estimated due date</small>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Current Trimester</label>
-                <select
-                  value={pregnancyForm.trimester}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, trimester: parseInt(e.target.value)})}
-                >
-                  <option value={1}>First Trimester (1-12 weeks)</option>
-                  <option value={2}>Second Trimester (13-26 weeks)</option>
-                  <option value={3}>Third Trimester (27-40 weeks)</option>
-                </select>
-                <small>{getTrimesterInfo(pregnancyForm.trimester).description}</small>
-              </div>
-              
-              <div className="form-group">
-                <label>Weight (lbs)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={pregnancyForm.weight}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, weight: e.target.value})}
-                  placeholder="e.g., 150.5"
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Blood Pressure</label>
-                <input
-                  type="text"
-                  value={pregnancyForm.bloodPressure}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, bloodPressure: e.target.value})}
-                  placeholder="e.g., 120/80"
-                />
-                <small>Systolic/Diastolic</small>
-              </div>
-              
-              <div className="form-group">
-                <label>Fetal Heartbeat (BPM)</label>
-                <input
-                  type="number"
-                  value={pregnancyForm.fetalHeartbeat}
-                  onChange={(e) => setPregnancyForm({...pregnancyForm, fetalHeartbeat: e.target.value})}
-                  placeholder="e.g., 140"
-                />
-                <small>Beats per minute</small>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Pregnancy Symptoms</label>
-              <div className="symptoms-grid">
-                {availableSymptoms.map(symptom => (
-                  <label key={symptom} className="symptom-option">
-                    <input
-                      type="checkbox"
-                      checked={pregnancyForm.symptoms.includes(symptom)}
-                      onChange={() => handleSymptomToggle(symptom)}
-                    />
-                    <span className="symptom-label">{symptom}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Medications & Supplements</label>
-              <div className="medications-grid">
-                {availableMedications.map(medication => (
-                  <label key={medication} className="medication-option">
-                    <input
-                      type="checkbox"
-                      checked={pregnancyForm.medications.includes(medication)}
-                      onChange={() => handleMedicationToggle(medication)}
-                    />
-                    <span className="medication-label">{medication}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Upcoming Appointments</label>
-              <textarea
-                value={pregnancyForm.appointments}
-                onChange={(e) => setPregnancyForm({...pregnancyForm, appointments: e.target.value})}
-                placeholder="List any upcoming prenatal appointments, tests, or screenings..."
-                rows="3"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Additional Notes</label>
-              <textarea
-                value={pregnancyForm.notes}
-                onChange={(e) => setPregnancyForm({...pregnancyForm, notes: e.target.value})}
-                placeholder="Any additional notes about your pregnancy, concerns, or questions for your healthcare provider..."
-                rows="4"
-              />
-            </div>
-
+        {/* Clear Data Button for Testing */}
+        {pregnancyData.length > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <button 
-              type="submit" 
-              className="submit-btn"
-              disabled={isLoading}
+              onClick={() => {
+                localStorage.removeItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
+                setPregnancyData([]);
+                setPregnancyProgress(null);
+                setInsights(null);
+                setPregnancyPatterns(null);
+                setPersonalizedRecommendations(null);
+                setHealthAlerts([]);
+                setRiskAssessment(null);
+              }}
+              style={{
+                background: 'rgba(255, 107, 157, 0.2)',
+                border: '1px solid #ff6b9d',
+                borderRadius: '8px',
+                padding: '0.5rem 1rem',
+                color: '#ff6b9d',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
             >
-              {isLoading ? 'Analyzing...' : 'Log Pregnancy Data'}
+              🗑️ Clear All Pregnancy Data
             </button>
-          </form>
-        </div>
+          </div>
+        )}
 
-        {/* AI Insights */}
-        {insights && (
-          <div className="insights-section">
-            <h2>✨ Your Pregnancy Insights</h2>
-            <div className="insights-content">
-              {Array.isArray(insights) ? insights.map((insight, index) => (
-                <div key={index} className="insight-item">
-                  <div className="insight-icon">💡</div>
-                  <p className="insight-text">{insight}</p>
+        {/* Pregnancy Logging - Conversational Flow */}
+        <div className="pregnancy-form-section">
+          <h2>🤰 Track Your Pregnancy Journey</h2>
+          
+          {!isConversationalMode ? (
+            <div className="conversation-start">
+              <div className="welcome-message">
+                <h3>Welcome to your personalized pregnancy companion! 👋</h3>
+                <p>Let's start by understanding your current pregnancy stage to provide you with the most relevant and helpful insights.</p>
+              </div>
+              
+              <div className="trimester-selector">
+                <h3>Which trimester are you currently in?</h3>
+                <div className="trimester-options">
+                  {[1, 2, 3].map(trimester => (
+                    <button
+                      key={trimester}
+                      className={`trimester-btn ${pregnancyForm.trimester === trimester ? 'selected' : ''}`}
+                      onClick={() => setPregnancyForm({...pregnancyForm, trimester})}
+                    >
+                      <div className="trimester-icon">
+                        {trimester === 1 ? '🌱' : trimester === 2 ? '🌿' : '🌳'}
+                      </div>
+                      <div className="trimester-number">Trimester {trimester}</div>
+                      <div className="trimester-weeks">{getTrimesterInfo(trimester).weeks} weeks</div>
+                      <div className="trimester-desc">{getTrimesterInfo(trimester).description}</div>
+                    </button>
+                  ))}
                 </div>
-              )) : (
-                <div className="insight-item">
-                  <div className="insight-icon">💡</div>
-                  <p className="insight-text">{insights}</p>
+              </div>
+              
+              <button 
+                className="start-conversation-btn"
+                onClick={startConversation}
+                disabled={!pregnancyForm.trimester}
+              >
+                {pregnancyForm.trimester ? `Start ${getTrimesterInfo(pregnancyForm.trimester).description} Check-in` : 'Select your trimester first'}
+              </button>
+            </div>
+          ) : (
+            <div className="conversation-flow">
+              <div className="conversation-header">
+                <div className="progress-container">
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${((currentStep + 1) / conversationSteps.length) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="step-counter">
+                    Step {currentStep + 1} of {conversationSteps.length}
+                  </div>
+                </div>
+              </div>
+
+              {conversationSteps[currentStep] && (
+                <div className="conversation-step">
+                  <div className="step-header">
+                    <h3>{conversationSteps[currentStep].title}</h3>
+                    <p className="step-description">
+                      {currentStep === 0 && "Let's start with some basic information about your pregnancy."}
+                      {currentStep === 1 && "Tell us how you're feeling today."}
+                      {currentStep === 2 && "Share details specific to your current trimester."}
+                      {currentStep === 3 && "Help us understand your medical background."}
+                      {currentStep === 4 && "Tell us about your lifestyle and daily habits."}
+                    </p>
+                  </div>
+                  
+                  <div className="questions-container">
+                    {conversationSteps[currentStep].questions.map((question, index) => (
+                      <div key={question.id} className="question-group">
+                        <label className="question-label">
+                          {question.label}
+                          {question.required && <span className="required">*</span>}
+                        </label>
+                        {renderField(question)}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="conversation-navigation">
+                    <button 
+                      className="nav-btn prev-btn"
+                      onClick={prevStep}
+                      disabled={currentStep === 0}
+                    >
+                      ← Previous
+                    </button>
+                    
+                    {currentStep === conversationSteps.length - 1 ? (
+                      <button 
+                        className="nav-btn complete-btn"
+                        onClick={completeConversation}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? '🤖 Analyzing Your Pregnancy...' : '✨ Complete Check-in'}
+                      </button>
+                    ) : (
+                      <button 
+                        className="nav-btn next-btn"
+                        onClick={nextStep}
+                      >
+                        Next →
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Gentle Health Reminders */}
-        {healthAlerts.length > 0 && (
-          <div className="health-reminders-section">
-            <h2>💝 Gentle Reminders</h2>
-            <div className="reminders-list">
-              {healthAlerts.map((alert, index) => (
-                <div key={index} className="reminder-item">
-                  <div className="reminder-icon">🌸</div>
-                  <div className="reminder-content">
-                    <p className="reminder-text">{alert}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pregnancy Health Overview */}
-        {riskAssessment && (
-          <div className="pregnancy-health-section">
-            <h2>🌺 Your Pregnancy Health</h2>
-            <div className="health-content">
-              <div className="health-summary">
-                <div className="health-icon">🌱</div>
-                <p className="health-text">{riskAssessment}</p>
+        {/* AI Insights - Same Structure as Cycle & Fertility */}
+        {insights && (
+          <div className="ai-insights-section">
+            <h2>🤖 Dr. AI Pregnancy Analysis</h2>
+            
+            {/* Greeting & Context */}
+            {insights.greeting && (
+              <div className="insight-box greeting-box">
+                <h3>👋 Greeting</h3>
+                <div 
+                  className="insight-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: insights.greeting.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
+                  }}
+                />
               </div>
-            </div>
+            )}
+
+            {/* Clinical Summary */}
+            {insights.clinicalSummary && (
+              <div className="insight-box clinical-summary-box">
+                <h3>🩺 Clinical Summary</h3>
+                <div 
+                  className="insight-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: insights.clinicalSummary.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Systemic & Lifestyle Factors */}
+            {insights.systemicFactors && (
+              <div className="insight-box systemic-factors-box">
+                <h3>🏥 Systemic & Lifestyle Factors</h3>
+                <div 
+                  className="insight-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: insights.systemicFactors.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Clinical Impression */}
+            {insights.clinicalImpression && (
+              <div className="insight-box clinical-impression-box">
+                <h3>🔬 Clinical Impression</h3>
+                <div 
+                  className="insight-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: insights.clinicalImpression.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
+                  }}
+                />
+              </div>
+            )}
+
           </div>
         )}
 
         {/* Pregnancy Patterns */}
         {pregnancyPatterns && (
           <div className="pregnancy-patterns-section">
-            <h2>📈 Your Pregnancy Patterns</h2>
+            <h2>📈 Pregnancy Patterns</h2>
             <div className="patterns-content">
               <div className="pattern-item">
                 <div className="pattern-icon">📊</div>
@@ -650,13 +1282,28 @@ const PregnancyTracking = () => {
 
         {/* Personalized Tips */}
         {personalizedRecommendations && (
-          <div className="recommendations-section">
-            <h2>💝 Personalized Tips for You</h2>
-            <div className="recommendations-content">
-              <div className="recommendation-item">
-                <div className="rec-icon">✨</div>
-                <p className="rec-text">{personalizedRecommendations}</p>
+          <div className="personalized-tips-section">
+            <h2>💡 Personalized Tips for You</h2>
+            <div className="tips-content">
+              <div className="tip-item">
+                <div className="tip-icon">✨</div>
+                <p className="tip-text">{personalizedRecommendations}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gentle Reminders */}
+        {healthAlerts.length > 0 && (
+          <div className="gentle-reminders-section">
+            <h2>🌸 Gentle Reminders</h2>
+            <div className="reminders-content">
+              {healthAlerts.map((alert, index) => (
+                <div key={index} className="reminder-item">
+                  <div className="reminder-icon">🌸</div>
+                  <p className="reminder-text">{alert}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -668,17 +1315,41 @@ const PregnancyTracking = () => {
             <div className="history-list">
               {pregnancyData.slice(-5).reverse().map((entry, index) => (
                 <div key={index} className="history-item">
-                  <div className="history-date">
-                    {new Date(entry.timestamp).toLocaleDateString()}
+                  <div className="history-content">
+                    <div className="history-date">
+                      {new Date(entry.timestamp).toLocaleDateString()}
+                    </div>
+                    <div className="history-details">
+                      <span>Trimester: {entry.trimester}</span>
+                      {entry.weight && <span>Weight: {entry.weight} lbs</span>}
+                      {entry.bloodPressure && <span>BP: {entry.bloodPressure}</span>}
+                      {entry.fetalHeartbeat && <span>FHR: {entry.fetalHeartbeat} BPM</span>}
+                      {entry.symptoms && entry.symptoms.length > 0 && (
+                        <span>Symptoms: {entry.symptoms.length}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="history-details">
-                    <span>Trimester: {entry.trimester}</span>
-                    {entry.weight && <span>Weight: {entry.weight} lbs</span>}
-                    {entry.bloodPressure && <span>BP: {entry.bloodPressure}</span>}
-                    {entry.fetalHeartbeat && <span>FHR: {entry.fetalHeartbeat} BPM</span>}
-                    {entry.symptoms.length > 0 && (
-                      <span>Symptoms: {entry.symptoms.length}</span>
-                    )}
+                  <div className="history-actions">
+                    <button 
+                      className="robot-btn"
+                      onClick={() => viewInsightsForEntry(entry, index)}
+                      title="View AI Insights"
+                    >
+                      🤖
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`🗑️ Delete button clicked for display index: ${index}`);
+                        deletePregnancyEntry(index);
+                      }}
+                      title="Delete Entry"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               ))}
@@ -754,6 +1425,100 @@ const PregnancyTracking = () => {
           </div>
         </div>
       </div>
+
+      {/* Historical AI Insights Modal */}
+      {selectedPregnancyInsights && (
+        <div className="insights-modal-overlay" onClick={() => setSelectedPregnancyInsights(null)}>
+          <div className="insights-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🤖 AI Insights - {new Date(selectedPregnancyInsights.timestamp).toLocaleDateString()}</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setSelectedPregnancyInsights(null)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <div className="insights-section">
+                <h3>🤖 Dr. AI Pregnancy Analysis</h3>
+                
+                {/* Greeting */}
+                {selectedPregnancyInsights.greeting && (
+                  <div className="insight-item">
+                    <h4>👋 Greeting</h4>
+                    <p>{selectedPregnancyInsights.greeting}</p>
+                  </div>
+                )}
+
+                {/* Clinical Summary */}
+                {selectedPregnancyInsights.clinicalSummary && (
+                  <div className="insight-item">
+                    <h4>🩺 Clinical Summary</h4>
+                    <p>{selectedPregnancyInsights.clinicalSummary}</p>
+                  </div>
+                )}
+
+                {/* Systemic & Lifestyle Factors */}
+                {selectedPregnancyInsights.systemicFactors && (
+                  <div className="insight-item">
+                    <h4>🏥 Systemic & Lifestyle Factors</h4>
+                    <p>{selectedPregnancyInsights.systemicFactors}</p>
+                  </div>
+                )}
+
+                {/* Clinical Impression */}
+                {selectedPregnancyInsights.clinicalImpression && (
+                  <div className="insight-item">
+                    <h4>🔬 Clinical Impression</h4>
+                    <p>{selectedPregnancyInsights.clinicalImpression}</p>
+                  </div>
+                )}
+
+
+                {/* Personalized Tips */}
+                {selectedPregnancyInsights.personalizedTips && (
+                  <div className="insight-item">
+                    <h4>💡 Personalized Tips</h4>
+                    <ul>
+                      {Array.isArray(selectedPregnancyInsights.personalizedTips) ? 
+                        selectedPregnancyInsights.personalizedTips.map((tip, index) => (
+                          <li key={index}>{tip}</li>
+                        )) : 
+                        <li>{selectedPregnancyInsights.personalizedTips}</li>
+                      }
+                    </ul>
+                  </div>
+                )}
+
+                {/* Gentle Reminders */}
+                {selectedPregnancyInsights.gentleReminders && (
+                  <div className="insight-item">
+                    <h4>🌸 Gentle Reminders</h4>
+                    <ul>
+                      {Array.isArray(selectedPregnancyInsights.gentleReminders) ? 
+                        selectedPregnancyInsights.gentleReminders.map((reminder, index) => (
+                          <li key={index}>{reminder}</li>
+                        )) : 
+                        <li>{selectedPregnancyInsights.gentleReminders}</li>
+                      }
+                    </ul>
+                  </div>
+                )}
+
+                {/* Pregnancy Patterns */}
+                {selectedPregnancyInsights.pregnancyPatterns && (
+                  <div className="insight-item">
+                    <h4>📈 Pregnancy Patterns</h4>
+                    <p>{selectedPregnancyInsights.pregnancyPatterns}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

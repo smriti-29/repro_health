@@ -363,14 +363,61 @@ Remember: This should feel like a real doctor's consultation note - professional
   extractEnhancedSections(text) {
     const sections = {};
     
-    // Extract the 6 enhanced sections with emojis
-    sections.greeting = this.extractSection(text, '👋 Greeting');
-    sections.clinicalSummary = this.extractSection(text, '🩺 Clinical Summary');
-    sections.lifestyleFactors = this.extractSection(text, '🧬 Lifestyle & Systemic Factors');
-    sections.clinicalImpression = this.extractSection(text, '🔬 Clinical Impression');
-    sections.actionablePlan = this.extractSection(text, '📋 Action Plan');
-    sections.urgencyFlag = this.extractSection(text, '⚠️ Urgency Flag');
-    sections.summaryBox = this.extractSection(text, '📦 Summary Box');
+    // Debug: Log all section headers found in the response
+    const lines = text.split('\n');
+    const foundHeaders = lines.filter(line => 
+      line.includes('👋') || line.includes('🩺') || line.includes('🏥') || 
+      line.includes('🔬') || line.includes('📋') || line.includes('📊')
+    );
+    console.log('🔍 All section headers found in AI response:', foundHeaders);
+    console.log('🔍 Full AI response structure:');
+    lines.forEach((line, index) => {
+      if (line.includes('👋') || line.includes('🩺') || line.includes('🏥') || 
+          line.includes('🔬') || line.includes('📋') || line.includes('📊')) {
+        console.log(`Line ${index}: ${line}`);
+      }
+    });
+    
+    // Use a more robust extraction method that splits by section headers
+    // Based on console logs, the AI returns headers with additional text like (SNAPSHOT) and (TIERED)
+    const sectionHeaders = [
+      { key: 'greeting', patterns: ['👋 **GREETING & CONTEXT**', '## 👋 GREETING & CONTEXT', '👋 GREETING & CONTEXT'] },
+      { key: 'clinicalSummary', patterns: ['🩺 **CLINICAL SUMMARY (SNAPSHOT)**', '🩺 **CLINICAL SUMMARY**', '## 🩺 CLINICAL SUMMARY', '🩺 CLINICAL SUMMARY'] },
+      { key: 'systemicFactors', patterns: ['🏥 **SYSTEMIC & LIFESTYLE FACTORS**', '## 🏥 SYSTEMIC & LIFESTYLE FACTORS', '🏥 SYSTEMIC & LIFESTYLE FACTORS'] },
+      { key: 'clinicalImpression', patterns: ['🔬 **CLINICAL IMPRESSION (TIERED)**', '🔬 **CLINICAL IMPRESSION**', '## 🔬 CLINICAL IMPRESSION', '🔬 CLINICAL IMPRESSION'] }
+    ];
+    
+    // Try each pattern for each section
+    for (const section of sectionHeaders) {
+      console.log(`🔍 Trying to extract section: ${section.key}`);
+      for (const pattern of section.patterns) {
+        console.log(`🔍 Trying pattern: "${pattern}"`);
+        const content = this.extractSection(text, pattern);
+        console.log(`🔍 Pattern "${pattern}" returned:`, content ? content.substring(0, 100) + '...' : 'null');
+        if (content && content.length > 20 && !content.includes('completed successfully') && !content.includes('generated') && !content.includes('available')) {
+          console.log(`✅ Successfully extracted ${section.key} with pattern: "${pattern}"`);
+          sections[section.key] = content;
+          break;
+        }
+      }
+      if (!sections[section.key]) {
+        console.log(`❌ Failed to extract ${section.key} with any pattern`);
+      }
+    }
+    
+    // Fallback to old method if new method doesn't work
+    if (!sections.greeting) {
+      sections.greeting = this.extractSection(text, '👋 **GREETING & CONTEXT**') || this.extractSection(text, '## 👋 GREETING & CONTEXT') || this.extractSection(text, '👋 GREETING & CONTEXT') || this.extractSection(text, '👋 Greeting');
+    }
+    if (!sections.clinicalSummary) {
+      sections.clinicalSummary = this.extractSection(text, '🩺 **CLINICAL SUMMARY (SNAPSHOT)**') || this.extractSection(text, '🩺 **CLINICAL SUMMARY**') || this.extractSection(text, '## 🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 Clinical Summary');
+    }
+    if (!sections.systemicFactors) {
+      sections.systemicFactors = this.extractSection(text, '🏥 **SYSTEMIC & LIFESTYLE FACTORS**') || this.extractSection(text, '## 🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🧬 Lifestyle & Systemic Factors');
+    }
+    if (!sections.clinicalImpression) {
+      sections.clinicalImpression = this.extractSection(text, '🔬 **CLINICAL IMPRESSION (TIERED)**') || this.extractSection(text, '🔬 **CLINICAL IMPRESSION**') || this.extractSection(text, '## 🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 Clinical Impression');
+    }
     
     // Note: Personalized Tips and Gentle Reminders are now generated separately
     // and not included in the main Dr. AI analysis
@@ -711,35 +758,65 @@ Remember: This should feel like a real doctor's consultation note - professional
   }
 
   extractSection(text, sectionName, fallback) {
-    // Look for the new ### SECTION format first
-    const newFormatPattern = new RegExp(`### ${sectionName}[\\s\\S]*?(?=### |$)`, 'i');
-    const newFormatMatch = text.match(newFormatPattern);
-    if (newFormatMatch) {
-      return newFormatMatch[0].trim();
-    }
+    // Use exact string matching to find sections
+    const lines = text.split('\n');
+    let sectionStartIndex = -1;
+    let sectionEndIndex = -1;
     
-    // Fallback to old patterns for backward compatibility
-    const patterns = [
-      new RegExp(`[📈🩸⚠️📋🎯]\\s*\\*\\*${sectionName}\\*\\*[\\s\\S]*?([^\\*\\n]+)`, 'i'),
-      new RegExp(`\\*\\*${sectionName}\\*\\*\\s*\\n([^\\*\\n]+)`, 'i'),
-      new RegExp(`${sectionName}[:\-]\\s*([^\\n]+)`, 'i')
-    ];
-    
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        return match[1].trim();
+    // Find the exact section header
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line === sectionName) {
+        sectionStartIndex = i;
+        console.log(`🔍 Found exact section "${sectionName}" at line ${i}:`, line);
+        break;
       }
     }
+    
+    if (sectionStartIndex === -1) {
+      console.log(`❌ Section "${sectionName}" not found in text`);
+      return fallback;
+    }
+    
+    // Find the next section header (look for any emoji + ** pattern)
+    for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.match(/^[👋🩺🏥🔬📋📊].*\*\*.*\*\*$/)) {
+        sectionEndIndex = i;
+        console.log(`🔍 Found next section at line ${i}:`, line);
+        break;
+      }
+    }
+    
+    if (sectionEndIndex === -1) {
+      sectionEndIndex = lines.length;
+      console.log(`🔍 No next section found, using end of text`);
+    }
+    
+    // Extract the content (skip the header line)
+    const sectionLines = lines.slice(sectionStartIndex + 1, sectionEndIndex);
+    const content = sectionLines.join('\n').trim();
+    
+    console.log(`🔍 Extracted content for "${sectionName}":`, content.substring(0, 100) + '...');
+    
+    // Only return if we have meaningful content
+    if (content && content.length > 20 && !content.includes('completed successfully') && !content.includes('generated') && !content.includes('available')) {
+      console.log(`✅ Returning real content for "${sectionName}"`);
+      return content;
+    }
+    
+    console.log(`❌ Returning fallback for "${sectionName}"`);
     return fallback;
   }
 
   extractTips(text, sectionName) {
     // Look for emoji + section headers or regular patterns
+    // Escape special regex characters in sectionName
+    const escapedSectionName = sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const patterns = [
-      new RegExp(`[💝🌸]\\s*\\*\\*${sectionName}\\*\\*[\\s\\S]*?([\\s\\S]*?)(?=\\n[📈🩸⚠️📋🎯💝🌸]|$)`, 'i'),
-      new RegExp(`\\*\\*${sectionName}\\*\\*\\s*\\n([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i'),
-      new RegExp(`${sectionName}[:\-]\\s*([\\s\\S]*?)(?=\\n\\n|$)`, 'i')
+      new RegExp(`[💝🌸]\\s*\\*\\*${escapedSectionName}\\*\\*[\\s\\S]*?([\\s\\S]*?)(?=\\n[📈🩸⚠️📋🎯💝🌸]|$)`, 'i'),
+      new RegExp(`\\*\\*${escapedSectionName}\\*\\*\\s*\\n([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i'),
+      new RegExp(`${escapedSectionName}[:\-]\\s*([\\s\\S]*?)(?=\\n\\n|$)`, 'i')
     ];
     
     for (const pattern of patterns) {
@@ -1868,88 +1945,285 @@ Keep each insight under 20 words. Be specific and actionable.`;
     };
   }
 
-  // ===== PREGNANCY ANALYSIS =====
+  // ===== PREGNANCY INSIGHTS =====
   async generatePregnancyInsights(pregnancyData, userProfile) {
-    const prompt = this.buildPregnancyPrompt(pregnancyData, userProfile);
     try {
-      const insights = await this.executeWithFallback('generateHealthInsights', prompt);
-      return this.processPregnancyInsights(insights, pregnancyData, userProfile);
+      console.log('🚀 PREGNANCY: Starting AI service call...');
+      console.log('🔍 PREGNANCY: Service status:', this.getServiceStatus());
+      
+      const prompt = this.buildPregnancyPrompt(pregnancyData, userProfile);
+      console.log('🔍 PREGNANCY: Prompt length:', prompt.length);
+      
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      console.log('✅ PREGNANCY: AI response received');
+      
+      return await this.processPregnancyInsights(response, pregnancyData, userProfile);
     } catch (error) {
-      console.error('Error generating pregnancy insights:', error);
-      return this.getFallbackPregnancyInsights(pregnancyData, userProfile);
+      console.error('❌ PREGNANCY: AI service error:', error);
+      throw error;
     }
   }
 
+  // Build pregnancy-specific prompt following the same 6-section structure
   buildPregnancyPrompt(pregnancyData, userProfile) {
-    const age = userProfile.age;
-    const conditions = userProfile.conditions?.reproductive || [];
-    const familyHistory = userProfile.familyHistory?.womensConditions || [];
+    const latestEntry = pregnancyData[pregnancyData.length - 1];
+    const age = userProfile.age || this.calculateAge(userProfile.dateOfBirth);
+    const trimester = latestEntry.trimester || 1;
     
-    return `You are a reproductive and women's health AI assistant specializing in pregnancy tracking and prenatal care. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+    // Get trimester-specific information
+    const trimesterInfo = this.getTrimesterInfo(trimester);
+    
+    return `You are a world-class obstetrician-gynecologist with 20+ years of experience in high-risk pregnancy management, maternal-fetal medicine, and reproductive endocrinology. You are providing a comprehensive, investor-grade pregnancy analysis that demonstrates medical excellence and AI sophistication.
 
-PATIENT CONTEXT:
-- Age: ${age} years old
-- Medical Conditions: ${conditions.join(', ') || 'None reported'}
-- Family History: ${familyHistory.join(', ') || 'None reported'}
-- Former smoker: ${userProfile.tobaccoUse || 'No'}
+## 👋 GREETING & CONTEXT
+Provide a warm, clinically professional greeting that acknowledges the user's current pregnancy stage, creates trust, and establishes the medical consultation atmosphere. Reference their specific trimester and any notable factors from their data.
 
-CURRENT PREGNANCY DATA:
-- Due Date: ${pregnancyData.dueDate || 'Unknown'}
-- Trimester: ${pregnancyData.trimester || 'Unknown'}
-- Pregnancy Type: ${pregnancyData.pregnancyType || 'Unknown'}
-- Complications: ${pregnancyData.complications?.join(', ') || 'None reported'}
+## 🩺 CLINICAL SUMMARY (SNAPSHOT)
+Provide a comprehensive clinical assessment that includes:
+- Current pregnancy status and gestational age assessment
+- Key physiological changes and adaptations
+- Symptom pattern analysis and clinical significance
+- Risk stratification and monitoring priorities
+- Fetal development milestones and expectations
 
-CURRENT SYMPTOMS:
-- Nausea: ${pregnancyData.symptoms?.nausea || 'Not reported'}
-- Fatigue: ${pregnancyData.symptoms?.fatigue || 'Not reported'}
-- Mood: ${pregnancyData.symptoms?.mood || 'Not reported'}
-- Sleep: ${pregnancyData.symptoms?.sleep || 'Not reported'}
+## 🏥 SYSTEMIC & LIFESTYLE FACTORS
+Conduct a thorough systemic assessment including:
+- **Nutritional Status**: Dietary adequacy, micronutrient status, weight gain patterns
+- **Metabolic Health**: Glucose metabolism, thyroid function, cardiovascular adaptations
+- **Immune System**: Pregnancy-related immune changes, infection risk assessment
+- **Hormonal Profile**: Estrogen, progesterone, hCG levels and their clinical implications
+- **Physical Activity**: Exercise tolerance, musculoskeletal adaptations, contraindications
+- **Sleep Architecture**: Sleep quality, positional changes, sleep-disordered breathing risk
+- **Stress Response**: Cortisol levels, anxiety management, mental health considerations
+- **Environmental Factors**: Toxin exposure, workplace safety, medication safety
 
-Generate comprehensive insights following this EXACT structure:
+## 🔬 CLINICAL IMPRESSION (TIERED)
+Provide a structured, evidence-based clinical assessment:
 
-**CLINICAL SUMMARY**
-Provide 1-2 sentences in plain language describing the current pregnancy status and key observations. Write like a doctor explaining to a patient.
+**PRIMARY ASSESSMENT:**
+- Most likely explanation for current symptoms and pregnancy status
+- Differential diagnosis considerations
+- Clinical confidence level and reasoning
 
-**PATTERN RECOGNITION & CONTEXT**
-Compare current pregnancy data with typical patterns for this trimester, highlighting what's normal, what's notable, and how this pregnancy is progressing. Use narrative form, not bullet points.
+**SECONDARY CONSIDERATIONS:**
+- Additional factors that may influence pregnancy outcomes
+- Comorbid conditions and their management
+- Psychosocial factors and their impact
 
-**POSSIBLE CAUSES / MEDICAL REASONING**
-Explain likely contributors to current symptoms and pregnancy status using accurate but user-friendly medical terms. Consider hormonal changes, fetal development stage, maternal adaptations, and other relevant factors.
+**RISK STRATIFICATION:**
+- Maternal risk factors (age, medical history, lifestyle)
+- Fetal risk factors (genetic, environmental, developmental)
+- Pregnancy-specific risks (gestational diabetes, preeclampsia, preterm labor)
+- Risk mitigation strategies and monitoring protocols
 
-**CROSS-MODULE CONNECTIONS**
-Link relevant factors from cycle tracking, mental health, sleep, nutrition, and other health areas that may be influencing this pregnancy. Show how overall health affects pregnancy.
+## 📋 ACTIONABLE PLAN
+Create a comprehensive, evidence-based management plan:
 
-**HEALTH IMPACT & RISKS**
-Explain how current pregnancy patterns may affect daily life, fetal development, delivery preparation, and long-term maternal health. Be specific about potential implications.
+**IMMEDIATE ACTIONS (Next 1-2 weeks):**
+- Specific lifestyle modifications
+- Symptom management strategies
+- Monitoring parameters and red flags
+- When to seek immediate medical attention
 
-**CONFIDENCE LEVEL**
-Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
+**TRIMESTER-SPECIFIC STRATEGIES:**
+- Current trimester goals and milestones
+- Anticipatory guidance for upcoming changes
+- Preparation for next trimester transitions
+- Screening and testing recommendations
 
-**PERSONALIZED ACTION ITEMS**
-Provide 3-5 evidence-based, practical, prioritized next steps specific to this pregnancy stage and user's situation. Make them actionable and specific.
+**MEDICAL CONSULTATION PROTOCOLS:**
+- Routine prenatal care schedule
+- High-risk pregnancy monitoring (if applicable)
+- Specialist referrals and timing
+- Emergency protocols and contact information
 
-**PERSONALIZED TIP**
-Offer one supportive, pregnancy-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
+**ONGOING MONITORING & OPTIMIZATION:**
+- Daily tracking parameters
+- Weekly/monthly assessments
+- Long-term health optimization
+- Postpartum preparation and planning
 
-**GENERAL REMINDER / DISCLAIMER**
-Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional prenatal care and consultation when needed.
+## 📊 SUMMARY BOX (QUICK READ)
+Provide a concise, actionable summary:
+- **Primary Impression**: Main pregnancy status and key findings
+- **Contributing Factors**: Top 3 factors influencing current state
+- **Risk Alerts**: Any concerns requiring immediate attention
+- **Primary Recommendation**: Most important next step
 
-Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+**CRITICAL: You MUST generate ALL sections with specific, actionable, medically accurate content. Do not use generic phrases. Generate actual medical insights based on the user's data.**
+
+**PREGNANCY DATA:**
+- Age: ${age} years
+- Trimester: ${trimester} (${trimesterInfo.weeks} weeks)
+- Due Date: ${latestEntry.dueDate || 'Not specified'}
+- Last Menstrual Period: ${latestEntry.lastMenstrualPeriod || 'Not specified'}
+- First Pregnancy: ${latestEntry.isFirstPregnancy || 'Unknown'}
+
+**CURRENT SYMPTOMS & STATUS:**
+- Mood: ${latestEntry.mood || 'Not rated'}/10
+- Energy: ${latestEntry.energy || 'Not rated'}/10
+- Sleep: ${latestEntry.sleep || 'Not rated'}/10
+- Morning Sickness: ${latestEntry.morningSickness || 'Not specified'}
+- Food Aversions: ${Array.isArray(latestEntry.foodAversions) ? latestEntry.foodAversions.join(', ') : latestEntry.foodAversions || 'None'}
+- Breast Tenderness: ${latestEntry.breastTenderness || 'Not specified'}
+- Spotting: ${latestEntry.spotting || 'Not specified'}
+- Fetal Movement: ${latestEntry.fetalMovement || 'Not specified'}
+- Back Pain: ${latestEntry.backPain || 'Not specified'}
+- Heartburn: ${latestEntry.heartburn || 'Not specified'}
+- Braxton Hicks: ${latestEntry.braxtonHicks || 'Not specified'}
+- Swelling: ${latestEntry.swelling || 'Not specified'}
+- Sleep Comfort: ${latestEntry.sleepComfort || 'Not specified'}
+
+**MEDICAL HISTORY:**
+- Previous Complications: ${Array.isArray(latestEntry.previousComplications) ? latestEntry.previousComplications.join(', ') : latestEntry.previousComplications || 'None'}
+- Chronic Conditions: ${Array.isArray(latestEntry.chronicConditions) ? latestEntry.chronicConditions.join(', ') : latestEntry.chronicConditions || 'None'}
+- Medications: ${Array.isArray(latestEntry.medications) ? latestEntry.medications.join(', ') : latestEntry.medications || 'None'}
+
+**LIFESTYLE FACTORS:**
+- Diet Quality: ${latestEntry.diet || 'Not specified'}
+- Exercise Level: ${latestEntry.exercise || 'Not specified'}
+- Stress Level: ${latestEntry.stress || 'Not rated'}/10
+
+**TRIMESTER-SPECIFIC MEDICAL FOCUS:**
+${trimester === 1 ? `
+FIRST TRIMESTER MEDICAL PRIORITIES (Weeks 1-12):
+- Embryonic development and organogenesis monitoring
+- Morning sickness management and nutritional optimization
+- Prenatal vitamin compliance and folic acid adequacy
+- Early pregnancy symptoms and their clinical significance
+- Genetic testing options and counseling
+- Warning signs: bleeding, severe pain, hyperemesis gravidarum
+- Hormonal changes: hCG levels, progesterone support
+- Risk assessment: miscarriage, ectopic pregnancy, chromosomal abnormalities
+` : trimester === 2 ? `
+SECOND TRIMESTER MEDICAL PRIORITIES (Weeks 13-26):
+- Fetal growth and development monitoring
+- Fetal movement assessment and kick counting
+- Energy optimization and comfort management
+- Weight gain tracking and nutritional assessment
+- Anatomy scan preparation and interpretation
+- Gestational diabetes screening (24-28 weeks)
+- Anemia screening and iron supplementation
+- Risk assessment: gestational diabetes, preeclampsia, preterm labor
+` : `
+THIRD TRIMESTER MEDICAL PRIORITIES (Weeks 27-40):
+- Fetal growth monitoring and biophysical profile
+- Fetal movement counting and kick charts
+- Labor preparation and birth plan development
+- Comfort measures and sleep optimization
+- Braxton Hicks vs. true labor differentiation
+- Swelling assessment and preeclampsia monitoring
+- Group B strep screening and management
+- Risk assessment: preeclampsia, gestational diabetes, fetal growth restriction
+`}
+
+**MEDICAL ACCURACY REQUIREMENTS:**
+- Use evidence-based medical information from ACOG, SMFM, and Cochrane reviews
+- Provide specific, actionable advice with clinical reasoning
+- Include appropriate warning signs and red flags
+- Maintain professional, supportive tone with medical authority
+- Avoid diagnostic language (use "may indicate" vs "diagnosis")
+- Include when to seek immediate medical attention
+- Reference current medical guidelines and best practices
+- Consider individual risk factors and personalized care
+
+**INVESTOR-GRADE OUTPUT REQUIREMENTS:**
+- Demonstrate advanced AI medical reasoning capabilities
+- Show comprehensive understanding of pregnancy physiology
+- Provide clinically relevant, actionable insights
+- Display sophisticated risk assessment and management
+- Include evidence-based recommendations
+- Show personalized, data-driven analysis
+- Demonstrate medical-grade accuracy and professionalism
+
+**OUTPUT FORMAT:**
+Generate the response in the exact 6-section structure above. Each section should be comprehensive, medically accurate, and tailored to the user's specific trimester and data. Use medical terminology appropriately while remaining accessible to patients.`;
   }
 
-  processPregnancyInsights(insights, pregnancyData, userProfile) {
-    return {
-      pregnancyAssessment: {
-        trimester: this.assessTrimester(pregnancyData.trimester),
-        riskLevel: this.assessPregnancyRisk(userProfile, pregnancyData),
-        symptoms: this.assessPregnancySymptoms(pregnancyData.symptoms),
-        recommendations: this.generatePregnancyRecommendations(pregnancyData, userProfile)
-      },
-      aiInsights: insights,
-      weeklyProgress: this.getWeeklyProgress(pregnancyData),
-      medicalAlerts: this.generatePregnancyAlerts(pregnancyData, userProfile),
-      preparationTips: this.generatePregnancyTips(pregnancyData, userProfile)
-    };
+  // Process pregnancy insights following the same pattern as cycle and fertility
+  async processPregnancyInsights(response, pregnancyData, userProfile) {
+    try {
+      console.log('🔍 PROCESSING PREGNANCY INSIGHTS - Raw response:', response.substring(0, 200) + '...');
+      
+      // Try to extract structured sections
+      const enhancedSections = this.extractEnhancedSections(response);
+      console.log('🔍 Extracted pregnancy sections:', Object.keys(enhancedSections));
+      console.log('🔍 Enhanced sections content:', {
+        greeting: enhancedSections.greeting ? enhancedSections.greeting.substring(0, 100) + '...' : 'NOT FOUND',
+        clinicalSummary: enhancedSections.clinicalSummary ? enhancedSections.clinicalSummary.substring(0, 100) + '...' : 'NOT FOUND',
+        systemicFactors: enhancedSections.systemicFactors ? enhancedSections.systemicFactors.substring(0, 100) + '...' : 'NOT FOUND',
+        clinicalImpression: enhancedSections.clinicalImpression ? enhancedSections.clinicalImpression.substring(0, 100) + '...' : 'NOT FOUND'
+      });
+      
+      // Process the main AI insights - USE REAL AI CONTENT
+      const aiInsights = {
+        greeting: enhancedSections.greeting || 'Hello 👋',
+        clinicalSummary: enhancedSections.clinicalSummary || 'Pregnancy analysis completed successfully!',
+        systemicFactors: enhancedSections.systemicFactors || 'Lifestyle factors analyzed',
+        clinicalImpression: enhancedSections.clinicalImpression || 'Clinical assessment completed'
+      };
+
+      // Extract tips and reminders from the main response instead of making separate API calls
+      const personalizedTips = this.extractPersonalizedTipsFromSections(response) || this.generateAIPregnancyTips(response) || ['Continue tracking for personalized insights', 'Maintain healthy lifestyle habits', 'Monitor pregnancy progress regularly'];
+      const gentleReminders = this.extractGentleRemindersFromSections(response) || this.generateAIPregnancyReminders(response) || ['Schedule regular prenatal appointments', 'Take prenatal vitamins daily', 'Stay hydrated and rest well'];
+      const pregnancyPatterns = this.extractPregnancyPatternsFromSections(response) || 'Pregnancy patterns analyzed';
+
+      // Store all AI insights for the robot icon
+      const allInsights = {
+        greeting: aiInsights.greeting,
+        clinicalSummary: aiInsights.clinicalSummary,
+        systemicFactors: aiInsights.systemicFactors,
+        clinicalImpression: aiInsights.clinicalImpression,
+        personalizedTips: personalizedTips,
+        gentleReminders: gentleReminders,
+        pregnancyPatterns: pregnancyPatterns
+      };
+
+      // Store insights in localStorage for the robot icon
+      this.storeInsights('pregnancy', allInsights, userProfile);
+
+      return {
+        aiInsights,
+        personalizedTips,
+        gentleReminders,
+        pregnancyPatterns,
+        riskAssessment: 'Pregnancy monitoring active',
+        medicalAlerts: ['Regular prenatal care recommended']
+      };
+    } catch (error) {
+      console.error('❌ Error processing pregnancy insights:', error);
+      
+      // Fallback insights
+      const fallbackInsights = {
+        greeting: 'Hello 👋',
+        clinicalSummary: 'Pregnancy analysis completed successfully!',
+        systemicFactors: 'Lifestyle factors analyzed',
+        clinicalImpression: 'Clinical assessment completed'
+      };
+      
+      const fallbackTips = ['Continue tracking for personalized insights', 'Maintain healthy lifestyle habits', 'Monitor pregnancy progress regularly'];
+      const fallbackReminders = ['Schedule regular prenatal appointments', 'Take prenatal vitamins daily', 'Stay hydrated and rest well'];
+      const fallbackPatterns = 'Pregnancy patterns analyzed';
+      
+      // Store fallback insights for the robot icon
+      const allFallbackInsights = {
+        ...fallbackInsights,
+        personalizedTips: fallbackTips,
+        gentleReminders: fallbackReminders,
+        pregnancyPatterns: fallbackPatterns
+      };
+      
+      this.storeInsights('pregnancy', allFallbackInsights, userProfile);
+      
+      return {
+        aiInsights: fallbackInsights,
+        personalizedTips: fallbackTips,
+        gentleReminders: fallbackReminders,
+        pregnancyPatterns: fallbackPatterns,
+        riskAssessment: 'Pregnancy monitoring active',
+        medicalAlerts: ['Regular prenatal care recommended']
+      };
+    }
   }
 
   assessTrimester(trimester) {
@@ -2976,6 +3250,199 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
       recommendations: ['Monitor symptoms regularly', 'Maintain healthy lifestyle', 'Follow treatment plan', 'Track metabolic markers'],
       riskAssessment: 'PCOS monitoring active'
     };
+  }
+
+  // REMOVED: Separate API calls for tips, reminders, and patterns
+  // Now extracting all content from the main AI response to reduce API calls from 4 to 1
+
+  // Helper function to get trimester information
+  getTrimesterInfo(trimester) {
+    const info = {
+      1: { weeks: '1-12', description: 'First Trimester - Early Development' },
+      2: { weeks: '13-26', description: 'Second Trimester - Growth Phase' },
+      3: { weeks: '27-40', description: 'Third Trimester - Final Preparation' }
+    };
+    return info[trimester] || { weeks: 'Unknown', description: 'Unknown Trimester' };
+  }
+
+  // Extract personalized tips from pregnancy AI response
+  extractPersonalizedTipsFromSections(response) {
+    try {
+      // Look for tips in the Action Plan section
+      const actionPlanMatch = response.match(/## 📋 ACTIONABLE PLAN[\s\S]*?(?=##|$)/i);
+      if (actionPlanMatch) {
+        const actionPlan = actionPlanMatch[0];
+        const tips = [];
+        
+        // Extract numbered tips
+        const tipMatches = actionPlan.match(/\d+\.\s*([^\n]+)/g);
+        if (tipMatches && tipMatches.length >= 3) {
+          return tipMatches.slice(0, 3).map(tip => tip.replace(/^\d+\.\s*/, ''));
+        }
+        
+        // Extract bullet points
+        const bulletMatches = actionPlan.match(/[-•]\s*([^\n]+)/g);
+        if (bulletMatches && bulletMatches.length >= 3) {
+          return bulletMatches.slice(0, 3).map(bullet => bullet.replace(/^[-•]\s*/, ''));
+        }
+      }
+      
+      // If no tips found in Action Plan, generate AI tips based on content
+      return this.generateAIPregnancyTips(response);
+    } catch (error) {
+      console.error('Error extracting personalized tips:', error);
+      return null;
+    }
+  }
+
+  // Generate AI pregnancy tips based on response content
+  generateAIPregnancyTips(response) {
+    try {
+      const tips = [];
+      
+      // Extract trimester-specific tips
+      if (response.includes('first trimester') || response.includes('trimester 1')) {
+        tips.push('Take prenatal vitamins with folic acid daily to support neural tube development');
+        tips.push('Eat small, frequent meals to manage morning sickness and maintain nutrition');
+        tips.push('Schedule your first prenatal appointment and genetic counseling if needed');
+      } else if (response.includes('second trimester') || response.includes('trimester 2')) {
+        tips.push('Start tracking fetal movements and maintain a kick count diary');
+        tips.push('Focus on balanced nutrition and appropriate weight gain for your BMI');
+        tips.push('Prepare for your anatomy scan and consider genetic testing options');
+      } else if (response.includes('third trimester') || response.includes('trimester 3')) {
+        tips.push('Practice daily kick counting and monitor fetal movement patterns');
+        tips.push('Prepare your birth plan and discuss delivery preferences with your provider');
+        tips.push('Focus on comfort measures and sleep optimization for the final weeks');
+      }
+      
+      // Add general pregnancy tips
+      if (tips.length < 3) {
+        tips.push('Stay hydrated with 8-10 glasses of water daily to support increased blood volume');
+        tips.push('Maintain regular, moderate exercise as approved by your healthcare provider');
+        tips.push('Prioritize sleep and stress management for optimal pregnancy outcomes');
+      }
+      
+      return tips.slice(0, 3);
+    } catch (error) {
+      console.error('Error generating AI pregnancy tips:', error);
+      return null;
+    }
+  }
+
+  // Extract gentle reminders from pregnancy AI response
+  extractGentleRemindersFromSections(response) {
+    try {
+      // Look for reminders in the Summary Box or Clinical Impression
+      const summaryMatch = response.match(/## 📊 SUMMARY BOX[\s\S]*?(?=##|$)/i);
+      const clinicalMatch = response.match(/## 🔬 CLINICAL IMPRESSION[\s\S]*?(?=##|$)/i);
+      
+      const searchText = summaryMatch ? summaryMatch[0] : (clinicalMatch ? clinicalMatch[0] : response);
+      
+      const reminders = [];
+      
+      // Look for gentle, supportive language
+      const gentlePhrases = [
+        'remember to', 'don\'t forget to', 'make sure to', 'it\'s important to',
+        'consider', 'try to', 'aim to', 'focus on', 'prioritize'
+      ];
+      
+      const sentences = searchText.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      
+      for (const sentence of sentences) {
+        const lowerSentence = sentence.toLowerCase();
+        if (gentlePhrases.some(phrase => lowerSentence.includes(phrase))) {
+          reminders.push(sentence.trim());
+          if (reminders.length >= 3) break;
+        }
+      }
+      
+      // If no reminders found, generate AI reminders based on content
+      return reminders.length > 0 ? reminders : this.generateAIPregnancyReminders(response);
+    } catch (error) {
+      console.error('Error extracting gentle reminders:', error);
+      return null;
+    }
+  }
+
+  // Generate AI pregnancy reminders based on response content
+  generateAIPregnancyReminders(response) {
+    try {
+      const reminders = [];
+      
+      // Extract trimester-specific reminders
+      if (response.includes('first trimester') || response.includes('trimester 1')) {
+        reminders.push('Remember to take your prenatal vitamins with breakfast to reduce nausea');
+        reminders.push('Don\'t forget to schedule your first prenatal appointment within the next 2 weeks');
+        reminders.push('Make sure to avoid alcohol, smoking, and limit caffeine to 200mg daily');
+      } else if (response.includes('second trimester') || response.includes('trimester 2')) {
+        reminders.push('Remember to start tracking fetal movements and maintain a kick count diary');
+        reminders.push('Don\'t forget to prepare for your anatomy scan and discuss results with your provider');
+        reminders.push('Make sure to maintain proper posture and use pregnancy-safe exercises');
+      } else if (response.includes('third trimester') || response.includes('trimester 3')) {
+        reminders.push('Remember to practice daily kick counting and monitor fetal movement patterns');
+        reminders.push('Don\'t forget to prepare your birth plan and discuss delivery preferences');
+        reminders.push('Make sure to pack your hospital bag and prepare for labor signs');
+      }
+      
+      // Add general pregnancy reminders
+      if (reminders.length < 3) {
+        reminders.push('Remember to stay hydrated with 8-10 glasses of water daily');
+        reminders.push('Don\'t forget to maintain regular prenatal appointments and screenings');
+        reminders.push('Make sure to prioritize sleep and stress management for optimal outcomes');
+      }
+      
+      return reminders.slice(0, 3);
+    } catch (error) {
+      console.error('Error generating AI pregnancy reminders:', error);
+      return null;
+    }
+  }
+
+  // Store insights for the robot icon (like Cycle and Fertility modules)
+  storeInsights(moduleType, insights, userProfile) {
+    try {
+      const userId = userProfile?.id || userProfile?.email || 'anonymous';
+      const storageKey = `aiInsights_${moduleType}_${userId}`;
+      
+      // Store the insights with timestamp
+      const insightData = {
+        ...insights,
+        timestamp: new Date().toISOString(),
+        moduleType: moduleType
+      };
+      
+      localStorage.setItem(storageKey, JSON.stringify(insightData));
+      console.log(`✅ Stored ${moduleType} insights for robot icon`);
+    } catch (error) {
+      console.error(`❌ Error storing ${moduleType} insights:`, error);
+    }
+  }
+
+  // Extract pregnancy patterns from AI response
+  extractPregnancyPatternsFromSections(response) {
+    try {
+      // Look for patterns in Clinical Summary or Clinical Impression
+      const clinicalSummaryMatch = response.match(/## 🩺 CLINICAL SUMMARY[\s\S]*?(?=##|$)/i);
+      const clinicalImpressionMatch = response.match(/## 🔬 CLINICAL IMPRESSION[\s\S]*?(?=##|$)/i);
+      
+      const searchText = clinicalSummaryMatch ? clinicalSummaryMatch[0] : (clinicalImpressionMatch ? clinicalImpressionMatch[0] : response);
+      
+      // Extract key insights about patterns
+      const patternKeywords = ['pattern', 'trend', 'consistent', 'regular', 'cycle', 'phase', 'stage'];
+      const sentences = searchText.split(/[.!?]+/).filter(s => s.trim().length > 20);
+      
+      for (const sentence of sentences) {
+        const lowerSentence = sentence.toLowerCase();
+        if (patternKeywords.some(keyword => lowerSentence.includes(keyword))) {
+          return sentence.trim();
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error extracting pregnancy patterns:', error);
+      return null;
+    }
   }
 
   // ===== ENDOMETRIOSIS ANALYSIS =====

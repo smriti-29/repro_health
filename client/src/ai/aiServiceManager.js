@@ -19,7 +19,7 @@ class AIServiceManager {
           this.quotaExceeded = false;
           this.requestCount = 0;
           this.maxRequestsPerHour = 1500; // Gemini daily limit
-          this.requestTimeout = 30000; // 30 second timeout for reliable Gemini responses
+          this.requestTimeout = 45000; // 45 second timeout for complex pregnancy analysis
     this.lastRequestTime = 0;
     this.requestHistory = [];
     
