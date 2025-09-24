@@ -38,19 +38,19 @@
 }
 
 .insight-card.insights {
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid #06b6d4;
 }
 
 .insight-card.risk {
-  border-left: 4px solid #FF9800;
+  border-left: 4px solid #667eea;
 }
 
 .insight-card.recommendations {
-  border-left: 4px solid #2196F3;
+  border-left: 4px solid #06b6d4;
 }
 
 .insight-card.tips {
-  border-left: 4px solid #9C27B0;
+  border-left: 4px solid #764ba2;
 }
 
 .insight-header {
@@ -152,12 +152,12 @@
 
 /* Professional Welcome Section */
 .welcome-section {
-  background: linear-gradient(135deg, rgba(255, 107, 157, 0.05) 0%, rgba(78, 205, 196, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(102, 126, 234, 0.05) 100%);
   border-radius: 28px;
   padding: 48px 56px;
   margin: 40px 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(255, 107, 157, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(6, 182, 212, 0.1);
   backdrop-filter: blur(20px);
 }
 
@@ -179,7 +179,7 @@
 .welcome-greeting {
   font-size: 2.75rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -219,7 +219,7 @@
 .stat-item:hover {
   transform: translateY(-3px);
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 107, 157, 0.4);
+  border-color: rgba(6, 182, 212, 0.4);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(255, 107, 157, 0.15);
   /* Ensure smooth transitions and prevent shaking */
   will-change: transform;
@@ -292,7 +292,7 @@
   position: absolute;
   top: -5px;
   right: -5px;
-  background: linear-gradient(135deg, #ff6b9d, #dc3545);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border-radius: 50%;
   width: 20px;
@@ -373,7 +373,7 @@
 .avatar-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -412,7 +412,7 @@
 .log-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -544,7 +544,7 @@
 .insights-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -655,7 +655,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   cursor: pointer;
   border: 2px solid white;
 }
@@ -670,7 +670,7 @@
 }
 
 .submit-log-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   border-radius: 12px;
   padding: 18px 30px;
@@ -703,7 +703,7 @@
   margin: 0 0 30px 0;
   font-size: 1.5rem;
   text-align: center;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -743,7 +743,7 @@
 }
 
 .symptoms-checklist::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border-radius: 4px;
 }
 
@@ -778,7 +778,7 @@
 
 .symptom-checkbox:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 107, 157, 0.4);
+  border-color: rgba(6, 182, 212, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255, 107, 157, 0.2);
 }
@@ -904,7 +904,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   transition: width 0.3s ease;
 }
 
@@ -955,7 +955,7 @@
 }
 
 .add-goal-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   border-radius: 12px;
   padding: 15px 30px;
@@ -1000,7 +1000,7 @@
 }
 
 .save-goal-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   border-radius: 12px;
   padding: 15px 30px;
@@ -1044,7 +1044,7 @@
 }
 
 .force-ai-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   border-radius: 12px;
   padding: 15px 30px;
@@ -1185,7 +1185,7 @@
 
 .profile-header-section h1 {
   font-size: 2.2rem;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1227,7 +1227,7 @@
 .overview-card:hover {
   transform: translateY(-6px);
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 107, 157, 0.4);
+  border-color: rgba(6, 182, 212, 0.4);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), 0 6px 20px rgba(255, 107, 157, 0.15);
 }
 
@@ -1319,7 +1319,7 @@
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1607,7 +1607,7 @@
 }
 
 .module-action {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   color: white;
   padding: 10px 20px;
@@ -1656,7 +1656,7 @@
 .insight-card:hover {
   transform: translateY(-4px);
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 107, 157, 0.4);
+  border-color: rgba(6, 182, 212, 0.4);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(255, 107, 157, 0.15);
 }
 
@@ -2016,7 +2016,7 @@
 }
 
 .reminder-action {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   color: white;
   padding: 8px 16px;
@@ -2137,7 +2137,7 @@
 }
 
 .upload-picture-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   color: white;
   padding: 8px 16px;
@@ -2259,7 +2259,7 @@
   right: 30px;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   border-radius: 50%;
   color: white;
@@ -2293,7 +2293,7 @@
 }
 
 .edit-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   color: white;
 }
 
@@ -2515,7 +2515,7 @@
 }
 
 .notify-btn {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   color: white;
   padding: 12px 24px;
@@ -2560,7 +2560,7 @@
 }
 
 .submit-button {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border: none;
   color: white;
   padding: 12px 24px;
@@ -2679,7 +2679,7 @@
 }
 
 .dashboard-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   border-radius: 4px;
 }
 

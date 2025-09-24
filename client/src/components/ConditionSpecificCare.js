@@ -225,7 +225,8 @@ const ConditionSpecificCare = () => {
       };
       
       const conditionInfo = availableConditions.find(c => c.id === selectedCondition);
-      const insights = await aiService.generateHealthInsights(`
+      // DISABLED API CALL TO SAVE QUOTA - Use generic insights
+      const insights = `
         User Profile:
         - Age: ${userProfile.age} years old
         - Medical Conditions: ${userProfile.conditions?.reproductive?.join(', ') || 'None reported'}
@@ -246,7 +247,7 @@ const ConditionSpecificCare = () => {
         5. Monitoring and screening recommendations
         
         Focus on evidence-based medical insights and personalized recommendations for ${conditionInfo?.fullName}.
-      `);
+      `;
       
       setAiInsights(insights);
     } catch (err) {

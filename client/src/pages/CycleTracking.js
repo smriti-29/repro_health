@@ -37,6 +37,44 @@ const CycleTracking = () => {
   const [nextPeriod, setNextPeriod] = useState(null);
   const [fertileWindow, setFertileWindow] = useState(null);
   
+  // Conversational UI State
+  const [conversationStep, setConversationStep] = useState(0);
+  const [isConversationalMode, setIsConversationalMode] = useState(true);
+  
+  // Conversational Interview Steps
+  const conversationSteps = [
+    {
+      title: "🔍 Let's start with your current cycle",
+      subtitle: "I need to understand your recent menstrual cycle",
+      fields: ['lastPeriod', 'cycleLength', 'periodLength'],
+      question: "When did your last period start, and how long did it last?"
+    },
+    {
+      title: "💭 How are you feeling physically?",
+      subtitle: "Tell me about your symptoms and discomfort",
+      fields: ['flowIntensity', 'pain', 'symptoms', 'bleedingPattern', 'clots'],
+      question: "Describe your flow intensity and any pain or symptoms you experienced."
+    },
+    {
+      title: "🌱 Let's talk about your lifestyle",
+      subtitle: "Your daily habits affect your cycle health",
+      fields: ['stressLevel', 'sleepQuality', 'exerciseFrequency', 'dietQuality'],
+      question: "How would you rate your stress levels, sleep quality, and exercise routine?"
+    },
+    {
+      title: "💊 Medical information",
+      subtitle: "Any medications or family history I should know about?",
+      fields: ['medicationUse', 'familyHistory', 'weight', 'bloodPressure'],
+      question: "Are you taking any medications, and is there relevant family history?"
+    },
+    {
+      title: "📝 Any additional notes?",
+      subtitle: "Anything else you'd like me to know?",
+      fields: ['notes'],
+      question: "Any other symptoms, concerns, or observations you'd like to share?"
+    }
+  ];
+  
   // AI-Powered State Management
   const [cyclePatterns, setCyclePatterns] = useState(null);
   const [healthAlerts, setHealthAlerts] = useState([]);
@@ -147,33 +185,12 @@ const CycleTracking = () => {
     }));
   };
 
-  // Real-time AI Guidance based on form data
+  // Real-time AI Guidance based on form data - DISABLED TO SAVE API CALLS
   const generateRealTimeGuidance = async (formData) => {
-    try {
-      const guidancePrompt = `As an AI healthcare assistant, provide real-time medical guidance based on current form data:
-
-CURRENT FORM DATA:
-- Pain Level: ${formData.pain}/10
-- Flow: ${formData.flowIntensity}
-- Symptoms: ${formData.symptoms?.join(', ') || 'None'}
-- Stress Level: ${formData.stressLevel}/10
-- Sleep Quality: ${formData.sleepQuality}/10
-- Family History: ${formData.familyHistory?.join(', ') || 'None'}
-
-Provide a brief, supportive medical insight (2-3 sentences) that:
-1. Acknowledges what the user has shared
-2. Provides relevant medical context
-3. Offers encouragement or gentle guidance
-4. Feels like talking to a caring doctor
-
-Keep it conversational and supportive.`;
-
-      const guidance = await aiService.generateHealthInsights(guidancePrompt);
-      setAiGuidance(guidance);
+    // DISABLED: This was making unnecessary API calls
+    // The main cycle insights already provide comprehensive guidance
+    setAiGuidance('Continue filling out your cycle data for comprehensive AI insights.');
       setShowGuidance(true);
-    } catch (error) {
-      console.log('Real-time guidance unavailable');
-    }
   };
 
   // 3-Cycle Analysis Function
@@ -235,7 +252,8 @@ Provide comprehensive analysis including:
 
 Format as detailed medical analysis with clear sections and bullet points. Make it feel like a comprehensive medical consultation.`;
 
-      const analysis = await aiService.generateHealthInsights(analysisPrompt);
+      // Instead of making a new API call, generate analysis from existing cycle data
+      const analysis = generateThreeCycleAnalysisFromData(recentCycles);
       
       // Save 3-cycle analysis to localStorage
       const analysisData = {
@@ -258,6 +276,346 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Render fields for current conversation step
+  const renderConversationFields = (fields) => {
+    return fields.map(field => {
+      switch (field) {
+        case 'lastPeriod':
+          return (
+            <div key={field} className="conversation-field">
+              <label>When did your last period start?</label>
+              <input
+                type="date"
+                value={cycleForm.lastPeriod}
+                onChange={(e) => setCycleForm({...cycleForm, lastPeriod: e.target.value})}
+                required
+              />
+            </div>
+          );
+        case 'cycleLength':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How long is your typical cycle?</label>
+              <select
+                value={cycleForm.cycleLength}
+                onChange={(e) => setCycleForm({...cycleForm, cycleLength: parseInt(e.target.value)})}
+              >
+                {Array.from({length: 20}, (_, i) => i + 21).map(days => (
+                  <option key={days} value={days}>{days} days</option>
+                ))}
+              </select>
+            </div>
+          );
+        case 'periodLength':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How many days does your period typically last?</label>
+              <select
+                value={cycleForm.periodLength}
+                onChange={(e) => setCycleForm({...cycleForm, periodLength: parseInt(e.target.value)})}
+              >
+                {Array.from({length: 10}, (_, i) => i + 1).map(days => (
+                  <option key={days} value={days}>{days} days</option>
+                ))}
+              </select>
+            </div>
+          );
+        case 'flowIntensity':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How would you describe your flow intensity?</label>
+              <select
+                value={cycleForm.flowIntensity}
+                onChange={(e) => setCycleForm({...cycleForm, flowIntensity: e.target.value})}
+              >
+                <option value="light">Light - minimal flow</option>
+                <option value="medium">Medium - normal flow</option>
+                <option value="heavy">Heavy - very heavy flow</option>
+              </select>
+            </div>
+          );
+        case 'pain':
+          return (
+            <div key={field} className="conversation-field">
+              <label>Rate your pain level: {cycleForm.pain}/10</label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                value={cycleForm.pain}
+                onChange={(e) => setCycleForm({...cycleForm, pain: parseInt(e.target.value)})}
+                className="pain-slider"
+              />
+              <div className="pain-labels">
+                <span>No Pain</span>
+                <span>Severe Pain</span>
+              </div>
+            </div>
+          );
+        case 'symptoms':
+          return (
+            <div key={field} className="conversation-field">
+              <label>What symptoms did you experience? (Select all that apply)</label>
+              <div className="symptoms-grid">
+                {[
+                  'Cramping', 'Breast tenderness', 'Back pain', 'Nausea', 'Fatigue', 
+                  'Heavy bleeding', 'Clotting', 'Abdominal pain', 'Pelvic pain', 
+                  'Hot flashes', 'Vaginal dryness'
+                ].map(symptom => (
+                  <label key={symptom} className="symptom-option">
+                    <input
+                      type="checkbox"
+                      checked={cycleForm.symptoms.includes(symptom)}
+                      onChange={() => handleSymptomToggle(symptom)}
+                    />
+                    <span>{symptom}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        case 'stressLevel':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How stressed have you been lately? {cycleForm.stressLevel}/10</label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={cycleForm.stressLevel}
+                onChange={(e) => setCycleForm({...cycleForm, stressLevel: parseInt(e.target.value)})}
+                className="stress-slider"
+              />
+              <div className="slider-labels">
+                <span>Very Relaxed</span>
+                <span>Very Stressed</span>
+              </div>
+            </div>
+          );
+        case 'sleepQuality':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How has your sleep been? {cycleForm.sleepQuality}/10</label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={cycleForm.sleepQuality}
+                onChange={(e) => setCycleForm({...cycleForm, sleepQuality: parseInt(e.target.value)})}
+                className="sleep-slider"
+              />
+              <div className="slider-labels">
+                <span>Poor Sleep</span>
+                <span>Excellent Sleep</span>
+              </div>
+            </div>
+          );
+        case 'exerciseFrequency':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How often do you exercise?</label>
+              <select
+                value={cycleForm.exerciseFrequency}
+                onChange={(e) => setCycleForm({...cycleForm, exerciseFrequency: e.target.value})}
+              >
+                <option value="none">No Exercise</option>
+                <option value="light">Light (1-2x/week)</option>
+                <option value="moderate">Moderate (3-4x/week)</option>
+                <option value="intense">Intense (5-6x/week)</option>
+                <option value="daily">Daily Exercise</option>
+              </select>
+            </div>
+          );
+        case 'dietQuality':
+          return (
+            <div key={field} className="conversation-field">
+              <label>How would you rate your diet quality?</label>
+              <select
+                value={cycleForm.dietQuality}
+                onChange={(e) => setCycleForm({...cycleForm, dietQuality: e.target.value})}
+              >
+                <option value="poor">Poor (Fast food, processed)</option>
+                <option value="fair">Fair (Mixed diet)</option>
+                <option value="good">Good (Balanced, home-cooked)</option>
+                <option value="excellent">Excellent (Whole foods, organic)</option>
+              </select>
+            </div>
+          );
+        case 'medicationUse':
+          return (
+            <div key={field} className="conversation-field">
+              <label>Are you taking any medications or supplements?</label>
+              <input
+                type="text"
+                value={cycleForm.medicationUse}
+                onChange={(e) => setCycleForm({...cycleForm, medicationUse: e.target.value})}
+                placeholder="e.g., Birth control, Metformin, Ibuprofen, Vitamins"
+              />
+            </div>
+          );
+        case 'familyHistory':
+          return (
+            <div key={field} className="conversation-field">
+              <label>Any relevant family history? (Select all that apply)</label>
+              <div className="family-history-grid">
+                {['PCOS', 'Endometriosis', 'Diabetes', 'Thyroid disorders', 'Breast cancer', 'Ovarian cancer', 'None'].map(condition => (
+                  <label key={condition} className="family-history-option">
+                    <input
+                      type="checkbox"
+                      checked={cycleForm.familyHistory.includes(condition)}
+                      onChange={() => handleFamilyHistoryToggle(condition)}
+                    />
+                    <span>{condition}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        case 'weight':
+          return (
+            <div key={field} className="conversation-field">
+              <label>What's your current weight? (optional)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={cycleForm.weight}
+                onChange={(e) => setCycleForm({...cycleForm, weight: e.target.value})}
+                placeholder="e.g., 150.5 lbs"
+              />
+            </div>
+          );
+        case 'bloodPressure':
+          return (
+            <div key={field} className="conversation-field">
+              <label>What's your blood pressure? (optional)</label>
+              <input
+                type="text"
+                value={cycleForm.bloodPressure}
+                onChange={(e) => setCycleForm({...cycleForm, bloodPressure: e.target.value})}
+                placeholder="e.g., 120/80"
+              />
+            </div>
+          );
+        case 'notes':
+          return (
+            <div key={field} className="conversation-field">
+              <label>Any additional notes or concerns?</label>
+              <textarea
+                value={cycleForm.notes}
+                onChange={(e) => setCycleForm({...cycleForm, notes: e.target.value})}
+                placeholder="Anything else you'd like me to know about your cycle or health?"
+                rows="3"
+              />
+            </div>
+          );
+        default:
+          return null;
+      }
+    });
+  };
+
+  // Conversational UI Navigation
+  const nextConversationStep = () => {
+    if (conversationStep < conversationSteps.length - 1) {
+      setConversationStep(conversationStep + 1);
+    } else {
+      // Complete the conversation and proceed to analysis
+      setIsConversationalMode(false);
+      handleCycleLog(new Event('submit'));
+    }
+  };
+
+  const prevConversationStep = () => {
+    if (conversationStep > 0) {
+      setConversationStep(conversationStep - 1);
+    }
+  };
+
+  const toggleConversationalMode = () => {
+    setIsConversationalMode(!isConversationalMode);
+    setConversationStep(0);
+  };
+
+  // Generate 3-cycle analysis from existing data (NO API CALL)
+  const generateThreeCycleAnalysisFromData = (recentCycles) => {
+    const cycleCount = recentCycles.length;
+    
+    // Calculate patterns
+    const avgCycleLength = Math.round(recentCycles.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleCount);
+    const avgPain = Math.round(recentCycles.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleCount);
+    const avgStress = Math.round(recentCycles.reduce((sum, cycle) => sum + (cycle.stressLevel || 5), 0) / cycleCount);
+    const avgSleep = Math.round(recentCycles.reduce((sum, cycle) => sum + (cycle.sleepQuality || 5), 0) / cycleCount);
+    
+    // Analyze symptoms
+    const allSymptoms = recentCycles.flatMap(cycle => cycle.symptoms || []);
+    const symptomCounts = {};
+    allSymptoms.forEach(symptom => {
+      symptomCounts[symptom] = (symptomCounts[symptom] || 0) + 1;
+    });
+    const commonSymptoms = Object.entries(symptomCounts)
+      .filter(([_, count]) => count >= Math.ceil(cycleCount / 2))
+      .map(([symptom, count]) => `${symptom} (${count}/${cycleCount} cycles)`);
+    
+    // Analyze flow patterns
+    const flowPatterns = recentCycles.map(cycle => cycle.flowIntensity);
+    const mostCommonFlow = flowPatterns.sort((a,b) => 
+      flowPatterns.filter(v => v === a).length - flowPatterns.filter(v => v === b).length
+    ).pop();
+    
+    // Calculate Cycle Health Score (0-10)
+    const cycleHealthScore = Math.round(
+      (10 - (avgPain / 10) * 3) + // Pain impact (0-3 points)
+      (avgSleep / 10) * 2 + // Sleep impact (0-2 points)
+      (10 - avgStress / 10) * 2 + // Stress impact (0-2 points)
+      (avgCycleLength >= 21 && avgCycleLength <= 35 ? 3 : 1) // Cycle regularity (1-3 points)
+    );
+    
+    // Determine risk level
+    const riskLevel = avgPain > 7 || avgCycleLength > 35 || mostCommonFlow === 'Heavy' ? 'HIGH' : 
+                     avgPain > 5 || avgCycleLength > 32 || avgStress > 7 ? 'MODERATE' : 'LOW';
+    
+    // Generate comprehensive analysis with visual appeal
+    return `📊 Quick Summary
+Cycle Health Score: ${cycleHealthScore}/10 ${cycleHealthScore < 4 ? '🚨' : cycleHealthScore < 7 ? '⚠️' : '✅'}
+Primary Impression: ${avgPain > 7 ? 'Persistent dysmenorrhea with possible secondary cause' : 'Normal cycle variations with manageable symptoms'}
+Risks: ${riskLevel === 'HIGH' ? 'Chronic pelvic pain, anemia risk due to heavy flow' : riskLevel === 'MODERATE' ? 'Potential hormonal imbalance, stress-related symptoms' : 'Minimal risk factors identified'}
+Next Step: ${riskLevel === 'HIGH' ? 'Medical consult strongly advised' : riskLevel === 'MODERATE' ? 'Monitor patterns, consider lifestyle improvements' : 'Continue tracking for pattern recognition'}
+
+🩺 Intelligent Pattern Recognition
+• Cycle Length: Averaging ${avgCycleLength} days → ${avgCycleLength > 35 ? 'irregular & outside the normal 28–35 day range' : avgCycleLength < 21 ? 'shorter than typical, may indicate hormonal variations' : 'within normal range'}
+• Pain Trend: Pain stayed ${avgPain > 7 ? 'severe' : avgPain > 4 ? 'moderate' : 'mild'} (${avgPain}/10) all ${cycleCount} cycles → ${avgPain > 7 ? 'persistence is a red flag, not random' : 'manageable with standard care'}
+• Symptom Recurrence:
+  ◦ Cramps (${cycleCount}/${cycleCount} cycles) → consistent ${avgPain > 7 ? '+ severe' : ''}
+  ◦ ${commonSymptoms.length > 0 ? commonSymptoms.slice(0, 3).join(', ') + ' → suggests hormonal involvement' : 'No recurring symptoms identified'}
+• Flow & Clots: ${mostCommonFlow} flow ${mostCommonFlow === 'Heavy' ? '→ increases anemia risk over time' : '→ appears healthy'}
+
+🧬 Lifestyle & Systemic Factors
+• Stress: Avg. ${avgStress}/10 → ${avgStress > 7 ? 'high, likely contributing to cycle irregularities' : avgStress > 5 ? 'moderate, possibly tolerable' : 'low, well managed'}
+• Sleep: ${avgSleep < 6 ? 'Poor' : 'Good'} (${avgSleep}/10) → ${avgSleep < 6 ? 'very likely worsening cycle irregularity + pain perception' : 'supporting healthy cycle function'}
+• Exercise & Diet: ${avgStress > 6 || avgSleep < 6 ? 'Inconsistent, reducing natural hormone balance support' : 'Supporting healthy cycle function'}
+• Meds/History: ${recentCycles.some(c => c.familyHistory && c.familyHistory.length > 0) ? 'Family history may predispose to endometriosis/fibroids' : 'No significant family history noted'}
+
+🔬 Clinical Impression
+• Most Likely: ${avgPain > 7 ? 'Severe primary dysmenorrhea (painful periods not caused by other disease)' : 'Normal menstrual cycle with typical variations'}
+• Secondary Considerations: ${avgPain > 7 || avgCycleLength > 35 ? 'Endometriosis, uterine fibroids, or hormonal imbalance (due to irregular cycles + systemic symptoms)' : 'Minimal secondary concerns'}
+• Risks: ${mostCommonFlow === 'Heavy' ? 'Anemia from chronic heavy bleeding, ' : ''}${avgPain > 7 ? 'chronic pelvic pain syndrome' : 'minimal risk factors'}
+
+📋 Personalized Action Plan
+• Self-Care: Heat packs, consistent sleep, low-inflammatory diet
+• Lifestyle Optimizations: ${avgSleep < 6 ? 'Improve sleep hygiene (predicts ~20% pain relief), ' : ''}${avgStress > 6 ? 'stress reduction techniques, ' : ''}regular exercise
+• Medical Evaluation: ${riskLevel === 'HIGH' ? 'Ultrasound + hormonal panel strongly recommended if symptoms persist next cycle' : 'Continue regular health monitoring'}
+• Urgency Flag: ${mostCommonFlow === 'Heavy' ? 'If heavy bleeding >7 days or soaking >1 pad/hr → urgent consult' : 'Monitor for any concerning changes'}
+
+🔮 Predictive + Simulation Insights
+• Next Cycle Projection: ${avgCycleLength} days, ${mostCommonFlow} flow, pain ${avgPain}/10 if lifestyle unchanged
+• Scenario Simulation:
+  ◦ Sleep ↑ to 7/10 → predicted pain ~${Math.max(1, avgPain - 2)}/10
+  ◦ Stress ↓ to 4/10 → cycle regularity more likely
+  ◦ Consistent exercise → potential 10-15% pain reduction
+
+Disclaimer: This analysis is based on your logged data and serves as an informational tool. It does not constitute medical advice. Consult with a qualified healthcare professional for proper diagnosis and treatment.`;
   };
 
   const calculateCyclePredictions = (latestCycle) => {
@@ -293,7 +651,15 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
 
   const handleCycleLog = async (e) => {
     e.preventDefault();
+    
+    // Prevent duplicate API calls
+    if (isLoading) {
+      console.log('⚠️ API call already in progress, skipping duplicate call');
+      return;
+    }
+    
     setIsLoading(true);
+    console.log('🚀 Starting cycle analysis - API call initiated');
     
     try {
       const cycleEntry = {
@@ -333,9 +699,23 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
         
         // Set all the comprehensive AI insights
         if (aiInsights) {
-          // AI Insights - detailed medical analysis
-          if (aiInsights.aiInsights && Array.isArray(aiInsights.aiInsights)) {
-            setInsights([...aiInsights.aiInsights]); // Force re-render
+          // AI Insights - detailed medical analysis (new 6-section format)
+          if (aiInsights.aiInsights && aiInsights.aiInsights.greeting) {
+            setInsights(aiInsights.aiInsights); // Store the structured 6-section format
+          } else if (aiInsights.aiInsights && aiInsights.aiInsights.section1) {
+            // Convert old 2-section format to new format
+            setInsights({
+              greeting: 'Hello! I\'ve reviewed your cycle data and prepared a comprehensive health assessment.',
+              clinicalSummary: aiInsights.aiInsights.section1 || 'Clinical analysis in progress.',
+              lifestyleFactors: 'Lifestyle factors are being evaluated for their impact on your cycle health.',
+              clinicalImpression: aiInsights.aiInsights.section2 || 'Clinical impression is being developed.',
+              actionablePlan: 'Personalized recommendations are being prepared for your health management.',
+              urgencyFlag: 'Urgency assessment is being evaluated.',
+              summaryBox: 'Summary of findings and recommendations will be provided.',
+              dataVisualization: null
+            });
+          } else if (aiInsights.aiInsights && Array.isArray(aiInsights.aiInsights)) {
+            setInsights([...aiInsights.aiInsights]); // Fallback for old format
           } else if (typeof aiInsights === 'string') {
             setInsights([aiInsights]);
           } else {
@@ -356,11 +736,16 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
           localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedCycleData));
           
           // Personalized Recommendations - actionable medical advice
+          console.log('🔍 Personalized Tips Data:', aiInsights.personalizedTips);
+          console.log('🔍 Personalized Tips Content:', JSON.stringify(aiInsights.personalizedTips));
           if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
+            console.log('✅ Setting personalized tips:', aiInsights.personalizedTips);
             setPersonalizedRecommendations([...aiInsights.personalizedTips]); // Force re-render
           } else if (aiInsights.recommendations && Array.isArray(aiInsights.recommendations)) {
+            console.log('✅ Setting recommendations:', aiInsights.recommendations);
             setPersonalizedRecommendations([...aiInsights.recommendations]); // Force re-render
           } else {
+            console.log('❌ No valid tips found, using fallback');
             setPersonalizedRecommendations(['AI recommendations generated!']);
           }
           
@@ -369,33 +754,44 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
             setCyclePatterns(aiInsights.quickCheck);
           } else if (typeof aiInsights === 'string') {
             // Handle direct text response from AI
-            setCyclePatterns({
+          setCyclePatterns({
               cycleAnalysis: aiInsights,
               flowAssessment: 'Analysis completed',
               symptomEvaluation: 'Symptoms reviewed',
-              actionItem: 'Continue tracking for comprehensive insights',
-              confidence: 'Moderate'
-            });
-          } else {
+            actionItem: 'Continue tracking for comprehensive insights',
+            confidence: 'Moderate'
+          });
+        } else {
             setCyclePatterns('AI pattern analysis completed!');
           }
           
           // Risk Assessment - medical-grade risk evaluation
-          const riskText = aiInsights.riskAssessment ?
-            `Cycle Irregularity: ${aiInsights.riskAssessment.cycleIrregularity} • Anemia Risk: ${aiInsights.riskAssessment.anemiaRisk} • Overall Risk: ${aiInsights.riskAssessment.overallRisk}` :
-            'AI risk assessment completed!';
-          setRiskAssessment(riskText);
-          
-          // Gentle Reminders - supportive daily tips
-          if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
-            setGentleReminders([...aiInsights.gentleReminders]); // Force re-render
-          } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
-            setGentleReminders([...aiInsights.medicalAlerts]); // Force re-render
-          } else {
-            setGentleReminders(['Continue tracking your cycle for better insights', 'Stay hydrated and maintain a balanced diet', 'Listen to your body and rest when needed']);
+          console.log('🔍 Risk Assessment Data:', aiInsights.riskAssessment);
+          console.log('🔍 Risk Assessment Content:', JSON.stringify(aiInsights.riskAssessment));
+          if (aiInsights.riskAssessment && typeof aiInsights.riskAssessment === 'object') {
+            const riskText = `Cycle Irregularity: ${aiInsights.riskAssessment.cycleIrregularity} • Anemia Risk: ${aiInsights.riskAssessment.anemiaRisk} • Overall Risk: ${aiInsights.riskAssessment.overallRisk}`;
+            console.log('✅ Setting risk assessment:', riskText);
+            setRiskAssessment(riskText);
+        } else {
+            console.log('❌ No valid risk assessment found, using fallback');
+            setRiskAssessment('AI risk assessment completed!');
           }
           
-          // Health Alerts - clinical alerts and warnings
+          // Gentle Reminders - supportive daily tips
+          console.log('🔍 Gentle Reminders Data:', aiInsights.gentleReminders);
+          console.log('🔍 Gentle Reminders Content:', JSON.stringify(aiInsights.gentleReminders));
+          if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
+            console.log('✅ Setting gentle reminders:', aiInsights.gentleReminders);
+            setGentleReminders([...aiInsights.gentleReminders]); // Force re-render
+          } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
+            console.log('✅ Setting medical alerts as reminders:', aiInsights.medicalAlerts);
+            setGentleReminders([...aiInsights.medicalAlerts]); // Force re-render
+        } else {
+          console.log('❌ No valid reminders found, using fallback');
+          setGentleReminders(['Continue tracking your cycle for better insights', 'Stay hydrated and maintain a balanced diet', 'Listen to your body and rest when needed']);
+        }
+        
+        // Health Alerts - clinical alerts and warnings
           setHealthAlerts(aiInsights.medicalAlerts || ['AI health monitoring active!']);
         }
         
@@ -504,9 +900,56 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
         </div>
 
 
-        {/* Cycle Logging Form */}
+        {/* Conversational Cycle Logging */}
         <div className="cycle-form-section">
-          <h2>Log Your Cycle Data</h2>
+          <div className="conversational-header">
+            <h2>🤖 AI Health Companion</h2>
+            <p>Let's have a quick health check-in. I'll guide you through a few questions to understand your cycle better.</p>
+            <button 
+              type="button" 
+              className="toggle-mode-btn"
+              onClick={toggleConversationalMode}
+            >
+              {isConversationalMode ? '📋 Switch to Form Mode' : '💬 Switch to Conversation Mode'}
+            </button>
+          </div>
+
+          {isConversationalMode ? (
+            <div className="conversational-form">
+              <div className="conversation-step">
+                <div className="step-header">
+                  <h3>{conversationSteps[conversationStep].title}</h3>
+                  <p className="step-subtitle">{conversationSteps[conversationStep].subtitle}</p>
+                  <p className="step-question">{conversationSteps[conversationStep].question}</p>
+                </div>
+                
+                <div className="step-progress">
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{width: `${((conversationStep + 1) / conversationSteps.length) * 100}%`}}
+                    ></div>
+                  </div>
+                  <span className="progress-text">Step {conversationStep + 1} of {conversationSteps.length}</span>
+                </div>
+
+                <div className="step-fields">
+                  {renderConversationFields(conversationSteps[conversationStep].fields)}
+                </div>
+
+                <div className="step-navigation">
+                  {conversationStep > 0 && (
+                    <button type="button" className="prev-btn" onClick={prevConversationStep}>
+                      ← Previous
+                    </button>
+                  )}
+                  <button type="button" className="next-btn" onClick={nextConversationStep}>
+                    {conversationStep === conversationSteps.length - 1 ? 'Complete & Analyze →' : 'Next →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={handleCycleLog} className="cycle-form">
             <div className="form-row">
               <div className="form-group">
@@ -800,6 +1243,7 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
               {isLoading ? 'Analyzing...' : 'Log Cycle Data'}
             </button>
           </form>
+          )}
         </div>
 
 
@@ -874,33 +1318,226 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
         )}
 
 
-        {/* AI Insights - Structured */}
+        {/* AI Insights - Enhanced Clinical Analysis Format */}
         {insights && (
           <div className="insights-section">
             <div className="insights-header">
-              <h2>✨ AI-Powered Cycle Analysis</h2>
+              <h2>🤖 Dr. AI Clinical Analysis</h2>
+              <p className="insights-subtitle">Comprehensive reproductive health assessment</p>
             </div>
             <div className="insights-content">
-              {Array.isArray(insights) ? insights.map((insight, index) => (
-                <div key={index} className="insight-card">
-                  <div className="insight-header">
-                    <div className="insight-icon">💡</div>
-                    <h4>Insight #{index + 1}</h4>
+              {/* Check if it's the new enhanced 6-section format */}
+              {insights.greeting ? (
+                <>
+                  {/* Greeting & Context */}
+                  {insights.greeting && (
+                    <div className="insight-card greeting-card">
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.greeting.replace(/### 👋 Greeting/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
                   </div>
-                  <div className="insight-body">
-                    <p className="insight-text">{insight}</p>
+                    </div>
+                  )}
+
+                  {/* Clinical Summary */}
+                  {insights.clinicalSummary && (
+                    <div className="insight-card clinical-summary">
+                      <div className="insight-header">
+                        <div className="insight-icon">🩺</div>
+                        <h4>Clinical Summary</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.clinicalSummary.replace(/### 🩺 Clinical Summary/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lifestyle Factors */}
+                  {insights.lifestyleFactors && (
+                    <div className="insight-card lifestyle-factors">
+                      <div className="insight-header">
+                        <div className="insight-icon">🧬</div>
+                        <h4>Lifestyle & Health Factors</h4>
+                        </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.lifestyleFactors.replace(/### 🧬 Lifestyle & Systemic Factors/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clinical Impression */}
+                  {insights.clinicalImpression && (
+                    <div className="insight-card clinical-impression">
+                      <div className="insight-header">
+                        <div className="insight-icon">🔬</div>
+                        <h4>Clinical Impression</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.clinicalImpression.replace(/### 🔬 Clinical Impression \(Tiered\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actionable Plan */}
+                  {insights.actionablePlan && (
+                    <div className="insight-card actionable-plan">
+                      <div className="insight-header">
+                        <div className="insight-icon">📋</div>
+                        <h4>Actionable Plan</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.actionablePlan.replace(/### 📋 Action Plan/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Urgency Flag */}
+                  {insights.urgencyFlag && (
+                    <div className="insight-card urgency-flag">
+                      <div className="insight-header">
+                        <div className="insight-icon">⚠️</div>
+                        <h4>Urgency Assessment</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.urgencyFlag.replace(/### ⚠️ Urgency Flag/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary Box */}
+                  {insights.summaryBox && (
+                    <div className="insight-card summary-box">
+                      <div className="insight-header">
+                        <div className="insight-icon">📦</div>
+                        <h4>Summary</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="section-content" dangerouslySetInnerHTML={{
+                          __html: insights.summaryBox.replace(/### 📦 Summary Box \(Quick-Read\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                        }} />
+                      </div>
+                    </div>
+                  )}
+
+
+                  {/* Health Score Pie Chart */}
+                  {cycleData.length > 0 && (
+                    <div className="insight-card health-score-card">
+                      <div className="insight-header">
+                        <div className="insight-icon">🎯</div>
+                        <h4>Health Score Overview</h4>
+                      </div>
+                      <div className="insight-body">
+                        <div className="pie-chart-container">
+                          <div className="chart-title">Health Factors Distribution</div>
+                          <div className="pie-chart">
+                            <svg width="200" height="200" viewBox="0 0 200 200">
+                              {/* Calculate averages */}
+                              {(() => {
+                                const avgPain = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleData.length);
+                                const avgStress = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.stressLevel || 5), 0) / cycleData.length);
+                                const avgSleep = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.sleepQuality || 5), 0) / cycleData.length);
+                                const avgCycle = Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleData.length);
+                                
+                                // Convert to percentages for pie chart
+                                const total = avgPain + avgStress + avgSleep + (avgCycle / 10);
+                                const painPercent = (avgPain / total) * 100;
+                                const stressPercent = (avgStress / total) * 100;
+                                const sleepPercent = (avgSleep / total) * 100;
+                                const cyclePercent = ((avgCycle / 10) / total) * 100;
+                                
+                                let cumulativePercent = 0;
+                                const radius = 80;
+                                const centerX = 100;
+                                const centerY = 100;
+                                
+                                return (
+                                  <g>
+                                    {/* Pain slice */}
+                                    <path
+                                      d={`M ${centerX} ${centerY} L ${centerX + radius * Math.cos((cumulativePercent * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin((cumulativePercent * 3.6 - 90) * Math.PI / 180)} A ${radius} ${radius} 0 ${painPercent > 50 ? 1 : 0} 1 ${centerX + radius * Math.cos(((cumulativePercent + painPercent) * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin(((cumulativePercent + painPercent) * 3.6 - 90) * Math.PI / 180)} Z`}
+                                      fill="#e74c3c"
+                                    />
+                                    {cumulativePercent += painPercent}
+                                    {/* Stress slice */}
+                                    <path
+                                      d={`M ${centerX} ${centerY} L ${centerX + radius * Math.cos((cumulativePercent * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin((cumulativePercent * 3.6 - 90) * Math.PI / 180)} A ${radius} ${radius} 0 ${stressPercent > 50 ? 1 : 0} 1 ${centerX + radius * Math.cos(((cumulativePercent + stressPercent) * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin(((cumulativePercent + stressPercent) * 3.6 - 90) * Math.PI / 180)} Z`}
+                                      fill="#f39c12"
+                                    />
+                                    {cumulativePercent += stressPercent}
+                                    {/* Sleep slice */}
+                                    <path
+                                      d={`M ${centerX} ${centerY} L ${centerX + radius * Math.cos((cumulativePercent * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin((cumulativePercent * 3.6 - 90) * Math.PI / 180)} A ${radius} ${radius} 0 ${sleepPercent > 50 ? 1 : 0} 1 ${centerX + radius * Math.cos(((cumulativePercent + sleepPercent) * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin(((cumulativePercent + sleepPercent) * 3.6 - 90) * Math.PI / 180)} Z`}
+                                      fill="#27ae60"
+                                    />
+                                    {cumulativePercent += sleepPercent}
+                                    {/* Cycle slice */}
+                                    <path
+                                      d={`M ${centerX} ${centerY} L ${centerX + radius * Math.cos((cumulativePercent * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin((cumulativePercent * 3.6 - 90) * Math.PI / 180)} A ${radius} ${radius} 0 ${cyclePercent > 50 ? 1 : 0} 1 ${centerX + radius * Math.cos(((cumulativePercent + cyclePercent) * 3.6 - 90) * Math.PI / 180)} ${centerY + radius * Math.sin(((cumulativePercent + cyclePercent) * 3.6 - 90) * Math.PI / 180)} Z`}
+                                      fill="#667eea"
+                                    />
+                                  </g>
+                                );
+                              })()}
+                            </svg>
                   </div>
+                          <div className="pie-legend">
+                            <div className="legend-item">
+                              <div className="legend-color" style={{backgroundColor: '#e74c3c'}}></div>
+                              <span>Pain: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleData.length)}/10</span>
                 </div>
-              )) : (
-                <div className="insight-card">
-                  <div className="insight-header">
-                    <div className="insight-icon">💡</div>
+                            <div className="legend-item">
+                              <div className="legend-color" style={{backgroundColor: '#f39c12'}}></div>
+                              <span>Stress: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.stressLevel || 5), 0) / cycleData.length)}/10</span>
+                  </div>
+                            <div className="legend-item">
+                              <div className="legend-color" style={{backgroundColor: '#27ae60'}}></div>
+                              <span>Sleep: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.sleepQuality || 5), 0) / cycleData.length)}/10</span>
+                  </div>
+                            <div className="legend-item">
+                              <div className="legend-color" style={{backgroundColor: '#667eea'}}></div>
+                              <span>Cycle: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleData.length)} days</span>
+                </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Fallback for old format */
+                Array.isArray(insights) ? insights.map((insight, index) => (
+                  <div key={index} className="insight-card">
+                    <div className="insight-header">
+                      <div className="insight-icon">💡</div>
+                      <h4>Insight #{index + 1}</h4>
+                    </div>
+                    <div className="insight-body">
+                      <p className="insight-text">{insight}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="insight-card">
+                    <div className="insight-header">
+                      <div className="insight-icon">💡</div>
                     <h4>AI Analysis</h4>
                   </div>
-                  <div className="insight-body">
-                    <p className="insight-text">{insights}</p>
+                    <div className="insight-body">
+                      <p className="insight-text">{insights}</p>
                   </div>
                 </div>
+                )
               )}
             </div>
           </div>
@@ -1172,38 +1809,6 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
                 </div>
               </div>
 
-              {/* Next Cycle Prediction */}
-              <div className="dashboard-card">
-                <h3>🔮 Next Cycle Prediction</h3>
-                <div className="prediction-content">
-                  {(() => {
-                    const avgLength = cycleData.reduce((sum, c) => sum + (c.cycleLength || 28), 0) / cycleData.length;
-                    const lastCycle = cycleData[cycleData.length - 1];
-                    const lastPeriodDate = new Date(lastCycle.timestamp);
-                    const nextPeriodDate = new Date(lastPeriodDate);
-                    nextPeriodDate.setDate(nextPeriodDate.getDate() + Math.round(avgLength));
-                    
-                    return (
-                      <div className="prediction-details">
-                        <div className="prediction-item">
-                          <span className="prediction-label">Expected Next Period:</span>
-                          <span className="prediction-value">{nextPeriodDate.toLocaleDateString()}</span>
-                        </div>
-                        <div className="prediction-item">
-                          <span className="prediction-label">Average Cycle Length:</span>
-                          <span className="prediction-value">{Math.round(avgLength)} days</span>
-                        </div>
-                        <div className="prediction-item">
-                          <span className="prediction-label">Confidence Level:</span>
-                          <span className="prediction-value">
-                            {cycleData.length >= 6 ? 'High' : cycleData.length >= 3 ? 'Moderate' : 'Low'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -1266,75 +1871,205 @@ Format as detailed medical analysis with clear sections and bullet points. Make 
               </div>
               
               <div className="modal-content">
-                {/* Cycle Insights */}
-                {selectedCycleInsights.aiInsights?.aiInsights && (
-                  <div className="modal-section">
-                    <h3>📊 Cycle Insights</h3>
-                    <div className="insights-content">
-                      {Array.isArray(selectedCycleInsights.aiInsights.aiInsights) ? (
-                        selectedCycleInsights.aiInsights.aiInsights.map((insight, index) => (
-                          <p key={index} className="insight-text">{insight}</p>
-                        ))
-                      ) : (
-                        <p className="insight-text">{selectedCycleInsights.aiInsights.aiInsights}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* Check if it's the new enhanced 6-section format */}
+                {selectedCycleInsights.aiInsights?.aiInsights?.greeting ? (
+                  <>
+                    {/* Greeting & Context */}
+                    {selectedCycleInsights.aiInsights.aiInsights.greeting && (
+                      <div className="modal-section greeting-section">
+                        <h3>👋 Greeting</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.greeting.replace(/### 👋 Greeting/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
+                                    </div>
+                                  </div>
+                    )}
 
-                {/* Cycle Patterns */}
-                {selectedCycleInsights.aiInsights?.quickCheck && (
-                  <div className="modal-section">
-                    <h3>📈 Cycle Patterns</h3>
-                    <div className="patterns-grid">
-                      <div className="pattern-item">
-                        <h4>🩸 Flow Assessment</h4>
-                        <p>{selectedCycleInsights.aiInsights.quickCheck.flowAssessment}</p>
-                      </div>
-                      <div className="pattern-item">
-                        <h4>⚠️ Symptom Evaluation</h4>
-                        <p>{selectedCycleInsights.aiInsights.quickCheck.symptomEvaluation}</p>
-                      </div>
-                      <div className="pattern-item">
-                        <h4>📋 Action Item</h4>
-                        <p>{selectedCycleInsights.aiInsights.quickCheck.actionItem}</p>
-                      </div>
-                      <div className="pattern-item">
-                        <h4>🎯 Confidence Level</h4>
-                        <p>{selectedCycleInsights.aiInsights.quickCheck.confidence}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                    {/* Clinical Summary */}
+                    {selectedCycleInsights.aiInsights.aiInsights.clinicalSummary && (
+                      <div className="modal-section clinical-summary">
+                        <h3>🩺 Clinical Summary</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.clinicalSummary.replace(/### 🩺 Clinical Summary/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
+                                    </div>
+                                  </div>
+                        )}
+                        
+                    {/* Lifestyle & Health Factors */}
+                    {selectedCycleInsights.aiInsights.aiInsights.lifestyleFactors && (
+                      <div className="modal-section lifestyle-factors">
+                        <h3>🧬 Lifestyle & Health Factors</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.lifestyleFactors.replace(/### 🧬 Lifestyle & Systemic Factors/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
+                                </div>
+                          </div>
+                    )}
 
-                {/* Personalized Tips */}
-                {selectedCycleInsights.aiInsights?.personalizedTips && (
-                  <div className="modal-section">
-                    <h3>💝 Personalized Tips</h3>
-                    <div className="tips-list">
-                      {selectedCycleInsights.aiInsights.personalizedTips.map((tip, index) => (
-                        <div key={index} className="tip-item">
-                          <span className="tip-icon">✨</span>
-                          <span className="tip-text">{tip}</span>
+                    {/* Clinical Impression */}
+                    {selectedCycleInsights.aiInsights.aiInsights.clinicalImpression && (
+                      <div className="modal-section clinical-impression">
+                        <h3>🔬 Clinical Impression</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.clinicalImpression.replace(/### 🔬 Clinical Impression \(Tiered\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
+                            </div>
+                          </div>
+                        )}
+                        
+                    {/* Actionable Plan */}
+                    {selectedCycleInsights.aiInsights.aiInsights.actionablePlan && (
+                      <div className="modal-section actionable-plan">
+                        <h3>📋 Actionable Plan</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.actionablePlan.replace(/### 📋 Action Plan/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                          </div>
+                        )}
 
-                {/* Gentle Reminders */}
-                {selectedCycleInsights.aiInsights?.gentleReminders && (
-                  <div className="modal-section">
-                    <h3>🌸 Gentle Reminders</h3>
-                    <div className="reminders-list">
-                      {selectedCycleInsights.aiInsights.gentleReminders.map((reminder, index) => (
-                        <div key={index} className="reminder-item">
-                          <span className="reminder-icon">🌸</span>
-                          <span className="reminder-text">{reminder}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Summary */}
+                    {selectedCycleInsights.aiInsights.aiInsights.summaryBox && (
+                      <div className="modal-section summary-box">
+                        <h3>📦 Summary</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{
+                            __html: selectedCycleInsights.aiInsights.aiInsights.summaryBox.replace(/### 📦 Summary Box \(Quick-Read\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
+                          }} />
+                      </div>
                   </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Fallback to old format */}
+                    {selectedCycleInsights.aiInsights?.aiInsights?.section1 && (
+                      <div className="modal-section clinical-assessment">
+                        <h3>🔬 Clinical Assessment & Differential Considerations</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{ 
+                            __html: selectedCycleInsights.aiInsights.aiInsights.section1.replace(/\n/g, '<br>') 
+                          }} />
+                            </div>
+                          </div>
+                    )}
+
+                    {selectedCycleInsights.aiInsights?.aiInsights?.section2 && (
+                      <div className="modal-section health-plan">
+                        <h3>📊 Personalized Health Management Plan</h3>
+                        <div className="insights-content">
+                          <div className="section-content" dangerouslySetInnerHTML={{ 
+                            __html: selectedCycleInsights.aiInsights.aiInsights.section2.replace(/\n/g, '<br>') 
+                          }} />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                    )}
+
+                    {/* Health Score Review */}
+                    {selectedCycleInsights.aiInsights?.dataVisualization && (
+                      <div className="modal-section">
+                        <h3>📊 Health Score Review</h3>
+                        <div className="health-score-content">
+                          <div className="score-item">
+                            <h4>🎯 Cycle Health Score</h4>
+                            <p>{selectedCycleInsights.aiInsights.dataVisualization.cycle_health_score}/10</p>
+                            </div>
+                          {selectedCycleInsights.aiInsights.dataVisualization.risk_flags && (
+                            <div className="score-item">
+                              <h4>⚠️ Risk Flags</h4>
+                              <ul>
+                                {selectedCycleInsights.aiInsights.dataVisualization.risk_flags.map((flag, index) => (
+                                  <li key={index}>{flag}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Your Cycle Health */}
+                    {selectedCycleInsights.aiInsights?.riskAssessment && (
+                      <div className="modal-section">
+                        <h3>🌺 Your Cycle Health</h3>
+                        <div className="cycle-health-content">
+                          <div className="health-item">
+                            <span className="health-label">Cycle Irregularity:</span>
+                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.cycleIrregularity}</span>
+                            </div>
+                          <div className="health-item">
+                            <span className="health-label">Anemia Risk:</span>
+                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.anemiaRisk}</span>
+                        </div>
+                          <div className="health-item">
+                            <span className="health-label">Overall Risk:</span>
+                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.overallRisk}</span>
+                      </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cycle Patterns */}
+                    {selectedCycleInsights.aiInsights?.quickCheck && (
+                      <div className="modal-section">
+                        <h3>📈 Cycle Patterns</h3>
+                        <div className="patterns-grid">
+                          <div className="pattern-item">
+                            <h4>🩸 Flow Assessment</h4>
+                            <p>{selectedCycleInsights.aiInsights.quickCheck.flowAssessment}</p>
+                          </div>
+                          <div className="pattern-item">
+                            <h4>⚠️ Symptom Evaluation</h4>
+                            <p>{selectedCycleInsights.aiInsights.quickCheck.symptomEvaluation}</p>
+                          </div>
+                          <div className="pattern-item">
+                            <h4>📋 Action Item</h4>
+                            <p>{selectedCycleInsights.aiInsights.quickCheck.actionItem}</p>
+                          </div>
+                          <div className="pattern-item">
+                            <h4>🎯 Confidence Level</h4>
+                            <p>{selectedCycleInsights.aiInsights.quickCheck.confidence}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Personalized Tips */}
+                    {selectedCycleInsights.aiInsights?.personalizedTips && (
+                      <div className="modal-section">
+                        <h3>💝 Personalized Tips</h3>
+                        <div className="tips-list">
+                          {selectedCycleInsights.aiInsights.personalizedTips.map((tip, index) => (
+                            <div key={index} className="tip-item">
+                              <span className="tip-icon">✨</span>
+                              <span className="tip-text">{tip}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gentle Reminders */}
+                    {selectedCycleInsights.aiInsights?.gentleReminders && (
+                      <div className="modal-section">
+                        <h3>🌸 Gentle Reminders</h3>
+                        <div className="reminders-list">
+                          {selectedCycleInsights.aiInsights.gentleReminders.map((reminder, index) => (
+                            <div key={index} className="reminder-item">
+                              <span className="reminder-icon">🌸</span>
+                              <span className="reminder-text">{reminder}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                 )}
               </div>
             </div>

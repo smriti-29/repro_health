@@ -39,15 +39,15 @@ input, select, textarea {
 
 /* Global theme helpers */
 :root {
-  --bg-dark: #0f1320;
-  --ink: #0b0d12;
-  --ink-soft: #111726;
-  --text: #0f172a;
-  --muted: #64748b;
+  --bg-dark: #0f0f23;
+  --ink: #1a1a2e;
+  --ink-soft: #16213e;
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.7);
   --white: #ffffff;
   --blue: #667eea;
-  --blue-soft: #a5b4fc;
-  --pink-soft: #fbcfe8;
+  --blue-soft: #06b6d4;
+  --pink-soft: #764ba2;
   --card: rgba(255, 255, 255, 0.06);
   --border: rgba(255, 255, 255, 0.08);
 }

@@ -22,10 +22,176 @@ class AFABAIService extends AIServiceManager {
     }
   }
 
+  // ===== MEDICATION NLP PARSING =====
+  parseMedicationInfo(medicationText) {
+    if (!medicationText || medicationText.trim() === '') {
+      return {
+        medications: [],
+        parsedText: 'No medications reported',
+        hasMedications: false
+      };
+    }
+
+    const medications = [];
+    const text = medicationText.toLowerCase();
+    
+    // Common medication patterns
+    const medicationPatterns = [
+      // Pattern: "Metformin 500mg twice daily"
+      /(\w+)\s+(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|units?)\s*(?:twice\s+daily|daily|once\s+daily|bid|tid|qid|as\s+needed|prn)/gi,
+      // Pattern: "Birth control pill" or "BCP"
+      /(?:birth\s+control|bcp|oral\s+contraceptive|pill)/gi,
+      // Pattern: "Ibuprofen 200mg as needed"
+      /(ibuprofen|acetaminophen|tylenol|advil|motrin)\s+(\d+(?:\.\d+)?)\s*(mg)?\s*(?:as\s+needed|prn|when\s+needed)/gi,
+      // Pattern: "Iron supplement" or "Vitamin D"
+      /(iron|vitamin\s+\w+|multivitamin|supplement)/gi,
+      // Pattern: "Metformin" (just drug name)
+      /(metformin|spironolactone|clomid|letrozole|progesterone|estrogen|thyroid|levothyroxine)/gi
+    ];
+
+    // Extract medications using patterns
+    medicationPatterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        const medication = {
+          name: match[1] || match[0],
+          dosage: match[2] || null,
+          unit: match[3] || null,
+          frequency: this.extractFrequency(text, match[0]),
+          duration: this.extractDuration(text, match[0]),
+          type: this.categorizeMedication(match[1] || match[0])
+        };
+        
+        // Avoid duplicates
+        if (!medications.some(med => med.name.toLowerCase() === medication.name.toLowerCase())) {
+          medications.push(medication);
+        }
+      }
+    });
+
+    // If no patterns matched, try to extract any drug names
+    if (medications.length === 0) {
+      const commonDrugs = ['metformin', 'spironolactone', 'clomid', 'letrozole', 'progesterone', 'estrogen', 'thyroid', 'levothyroxine', 'ibuprofen', 'acetaminophen', 'iron', 'vitamin'];
+      commonDrugs.forEach(drug => {
+        if (text.includes(drug)) {
+          medications.push({
+            name: drug,
+            dosage: null,
+            unit: null,
+            frequency: this.extractFrequency(text, drug),
+            duration: this.extractDuration(text, drug),
+            type: this.categorizeMedication(drug)
+          });
+        }
+      });
+    }
+
+    // Handle unknown medications - extract any word that might be a drug name
+    if (medications.length === 0 && text.length > 3) {
+      // Look for potential medication names (words with numbers, capital letters, or common drug suffixes)
+      const potentialDrugs = text.match(/\b[A-Z][a-z]*(?:[0-9]+|[a-z]*)\b/g) || [];
+      potentialDrugs.forEach(potentialDrug => {
+        if (potentialDrug.length > 3 && !['None', 'Not', 'Taking', 'Currently'].includes(potentialDrug)) {
+          medications.push({
+            name: potentialDrug,
+            dosage: null,
+            unit: null,
+            frequency: this.extractFrequency(text, potentialDrug),
+            duration: this.extractDuration(text, potentialDrug),
+            type: 'unknown - requires AI analysis'
+          });
+        }
+      });
+    }
+
+    return {
+      medications: medications,
+      parsedText: this.formatMedicationSummary(medications),
+      hasMedications: medications.length > 0
+    };
+  }
+
+  extractFrequency(text, medication) {
+    const frequencyPatterns = [
+      { pattern: /twice\s+daily|bid/gi, frequency: 'twice daily' },
+      { pattern: /three\s+times\s+daily|tid/gi, frequency: 'three times daily' },
+      { pattern: /four\s+times\s+daily|qid/gi, frequency: 'four times daily' },
+      { pattern: /once\s+daily|daily/gi, frequency: 'once daily' },
+      { pattern: /as\s+needed|prn|when\s+needed/gi, frequency: 'as needed' },
+      { pattern: /weekly/gi, frequency: 'weekly' },
+      { pattern: /monthly/gi, frequency: 'monthly' }
+    ];
+
+    for (const { pattern, frequency } of frequencyPatterns) {
+      if (pattern.test(text)) {
+        return frequency;
+      }
+    }
+    return 'unspecified';
+  }
+
+  extractDuration(text, medication) {
+    const durationPatterns = [
+      { pattern: /for\s+(\d+)\s+months?/gi, duration: 'months' },
+      { pattern: /for\s+(\d+)\s+weeks?/gi, duration: 'weeks' },
+      { pattern: /for\s+(\d+)\s+days?/gi, duration: 'days' },
+      { pattern: /since\s+(\w+)/gi, duration: 'ongoing' },
+      { pattern: /(\d+)\s+months?/gi, duration: 'months' },
+      { pattern: /(\d+)\s+weeks?/gi, duration: 'weeks' }
+    ];
+
+    for (const { pattern, duration } of durationPatterns) {
+      if (pattern.test(text)) {
+        return duration;
+      }
+    }
+    return 'unspecified';
+  }
+
+  categorizeMedication(medicationName) {
+    const name = medicationName.toLowerCase();
+    
+    if (name.includes('metformin')) return 'diabetes/PCOS';
+    if (name.includes('spironolactone')) return 'hormonal/PCOS';
+    if (name.includes('clomid') || name.includes('letrozole')) return 'fertility';
+    if (name.includes('progesterone') || name.includes('estrogen')) return 'hormonal';
+    if (name.includes('thyroid') || name.includes('levothyroxine')) return 'thyroid';
+    if (name.includes('ibuprofen') || name.includes('acetaminophen')) return 'pain relief';
+    if (name.includes('iron') || name.includes('vitamin')) return 'supplement';
+    if (name.includes('birth control') || name.includes('pill')) return 'contraceptive';
+    
+    return 'other';
+  }
+
+  formatMedicationSummary(medications) {
+    if (medications.length === 0) {
+      return 'No medications reported';
+    }
+
+    return medications.map(med => {
+      let summary = med.name;
+      if (med.dosage && med.unit) {
+        summary += ` ${med.dosage}${med.unit}`;
+      }
+      if (med.frequency !== 'unspecified') {
+        summary += ` (${med.frequency})`;
+      }
+      if (med.duration !== 'unspecified') {
+        summary += ` for ${med.duration}`;
+      }
+      return summary;
+    }).join(', ');
+  }
+
   buildCyclePrompt(cycleData, userProfile) {
     const latestCycle = cycleData[cycleData.length - 1];
     const cycleCount = cycleData.length;
     const age = userProfile.age || 25;
+    const username = userProfile.name || 'there';
+    
+    // Parse medication information
+    const medicationInfo = this.parseMedicationInfo(latestCycle.medicationUse);
+    console.log('💊 Parsed medications:', medicationInfo);
     
     // Calculate patterns from historical data
     let avgCycleLength = 28;
@@ -51,139 +217,486 @@ class AFABAIService extends AIServiceManager {
         .slice(0, 3);
     }
     
-        return `You are an advanced AI assistant specializing in reproductive and women's health, with expertise in menstrual cycle analysis. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+        return `You are an advanced AI assistant specializing in reproductive health and menstrual cycles. 
+Your task is to generate actionable, medically accurate, empathetic, and user-friendly content for the dashboard.
 
-IMPORTANT: Do not introduce yourself as any specific doctor or use any doctor names. Start directly with the analysis content.
+You are provided with the following user input data for the current cycle:
 
-PATIENT CONTEXT:
-- Age: ${age} years
-- Medical History: ${userProfile.conditions?.reproductive?.join(', ') || 'None reported'}
-- Lifestyle: ${userProfile.lifestyle?.exercise?.frequency || 'Moderate'} activity, ${userProfile.lifestyle?.stress?.level || 'Moderate'} stress
+- Cycle length: ${latestCycle.cycleLength} days
+- Flow intensity: ${latestCycle.flowIntensity} (Light/Medium/Heavy/Very Heavy)
+- Pain level: ${latestCycle.pain}/10
+- Symptoms: ${Array.isArray(latestCycle.symptoms) ? latestCycle.symptoms.join(', ') : latestCycle.symptoms || 'None'}
+- Bleeding pattern: ${latestCycle.bleedingPattern || 'Normal'}
+- Blood clots: ${latestCycle.clots || 'None reported'}
+- Stress level: ${latestCycle.stressLevel || 5}/10
+- Sleep quality: ${latestCycle.sleepQuality || 5}/10
+- Exercise frequency: ${latestCycle.exerciseFrequency || 'Moderate'}
+- Diet quality: ${latestCycle.dietQuality || 'Good'}
+- Medications: ${medicationInfo.parsedText}
+- Family history: ${Array.isArray(latestCycle.familyHistory) ? latestCycle.familyHistory.join(', ') : latestCycle.familyHistory || Array.isArray(userProfile.familyHistory) ? userProfile.familyHistory.join(', ') : userProfile.familyHistory || 'None reported'}
 
-CURRENT CYCLE DATA:
-- Cycle Length: ${latestCycle.cycleLength} days
-- Flow: ${latestCycle.flowIntensity} intensity
-- Pain Level: ${latestCycle.pain}/10
-- Symptoms: ${latestCycle.symptoms?.join(', ') || 'None'}
-- Bleeding Pattern: ${latestCycle.bleedingPattern || 'Normal'}
+**Rules:**
 
-COMPREHENSIVE HEALTH ASSESSMENT:
-- Stress Level: ${latestCycle.stressLevel || 5}/10
-- Sleep Quality: ${latestCycle.sleepQuality || 5}/10
-- Exercise Frequency: ${latestCycle.exerciseFrequency || 'moderate'}
-- Diet Quality: ${latestCycle.dietQuality || 'good'}
-- Current Medications: ${latestCycle.medicationUse || 'None'}
-- Weight: ${latestCycle.weight || 'Not provided'} lbs
-- Family History: ${latestCycle.familyHistory?.join(', ') || 'None reported'}
+1. **Personalized Tips Section:**
+   - Generate 2–3 tips that are **specific, actionable, and relevant** to the user's inputs.
+   - Include guidance on diet, exercise, rest, symptom management, or lifestyle.
+   - Avoid vague statements like "may help" or "consider doing".
+   - Each tip should be concise (1–2 sentences), medically safe, and feasible.
 
-HISTORICAL PATTERNS (${cycleCount} cycles tracked):
-- Average Cycle Length: ${avgCycleLength} days
-- Average Pain Level: ${avgPain}/10
-- Recurring Symptoms: ${commonSymptoms.join(', ') || 'None identified'}
+2. **Gentle Reminders Section:**
+   - Generate 4 empathetic, supportive reminders.
+   - Each reminder should reflect the user's current cycle stage and symptoms.
+   - Use positive, encouraging tone with emojis.
+   - Include practical reminders (e.g., rest, hydration, heat therapy, pain management, pad changing).
 
-Generate comprehensive insights following this EXACT structure:
+---
 
-        🩺 **CLINICAL SUMMARY**
-        Provide 1-2 sentences in plain language describing the current cycle status and key observations. Write like a healthcare professional explaining to a patient.
+OUTPUT STRUCTURE:
 
-        📊 **INTELLIGENT PATTERN RECOGNITION & CONTEXT**
-        Compare current cycle with past data, highlighting trends, changes, and patterns. Reference historical context and how this cycle fits into the broader pattern. Include specific bullet points with data analysis:
-        - Cycle length trends: "Your cycles have been [X] days, which is [normal/irregular]"
-        - Symptom patterns: "You consistently report [specific symptoms] during [phase]"
-        - Pain level analysis: "Pain has [increased/decreased/remained stable] from [X]/10 to [Y]/10"
-        - Flow pattern insights: "Your flow intensity shows [pattern] which may indicate [medical insight]"
-        - Lifestyle correlation: "Higher stress levels correlate with [specific cycle changes]"
-        Use both narrative and bullet points for clarity.
+### 👋 Greeting
+Friendly intro: "Hello 👋 I've reviewed your cycle data. Here's your personalized health analysis."
 
-        🔍 **POSSIBLE CAUSES / MEDICAL REASONING**
-        Explain likely contributors using accurate but user-friendly medical terms. Consider hormonal factors, lifestyle influences, stress, nutrition, and other relevant factors. Make it educational but accessible.
+---
 
-        🔗 **CROSS-MODULE CONNECTIONS**
-        Link relevant factors from fertility, mental health, sleep, stress, and other health areas that may be influencing this cycle. Show how one area of health influences another.
+### 🩺 Clinical Summary
+- Summarize cycle details: cycle length, period length, flow intensity, pain level, bleeding pattern, clotting.  
+- Mention if values fall inside/outside typical ranges.  
+- Highlight immediate red flags (e.g., prolonged bleeding, very high pain, excessive flow).
 
-        ⚠️ **HEALTH IMPACT & RISKS**
-        Explain how current cycle patterns may affect daily life, fertility, long-term reproductive health, and overall wellbeing. Be specific about potential implications.
+---
 
-        🎯 **CONFIDENCE LEVEL**
-        Rate as High/Medium/Low with specific reasoning based on data completeness, pattern consistency, and any uncertainties. Explain what would increase confidence.
+### 🧬 Lifestyle & Systemic Factors
+- Assess stress, sleep, diet, and exercise.  
+- Mention how these factors could affect cycle health.  
+- Note any medications, birth control, or family history and their relevance.
 
-        💡 **INTELLIGENT PERSONALIZED ACTION ITEMS**
-        Based on the user's specific symptoms, family history, and cycle patterns, provide 3-5 evidence-based, practical, prioritized next steps. For example:
-        - If heavy bleeding: "Use hot water bag for 15-20 minutes, rest more, increase iron intake"
-        - If PCOS family history: "Consider tracking blood sugar, maintain regular exercise"
-        - If high stress: "Practice deep breathing, consider meditation apps"
-        Make each recommendation specific to their actual data.
-        
-        🌟 **CONTEXTUAL PERSONALIZED TIP**
-        Based on their specific symptoms, family history, and current cycle data, offer one targeted piece of advice. For example:
-        - If they have heavy bleeding + PCOS family history: "Given your heavy flow and family history of PCOS, consider discussing iron levels with your doctor"
-        - If they have high stress + irregular cycles: "Your stress levels may be affecting cycle regularity - try stress management techniques"
-        Make it feel like personalized medical advice from a caring healthcare professional.
+---
 
-        🌸 **INTELLIGENT CONTEXTUAL REMINDERS**
-        Based on the user's specific symptoms and patterns, provide 3-4 contextual reminders. For example:
-        - If heavy bleeding: "Rest more during heavy flow days, use hot water bag for cramps, monitor for signs of anemia"
-        - If high pain levels: "Consider over-the-counter pain relief, heat therapy, gentle stretching"
-        - If irregular cycles: "Continue tracking for pattern recognition, consider stress management"
-        - If family history of conditions: "Regular check-ups recommended given family history"
-        Make each reminder specific to their actual symptoms and data.
-        
-        ⚖️ **MEDICAL DISCLAIMER**
-        Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional consultation when needed.
+### 🔬 Clinical Impression (Tiered)
+- Most likely explanation based on current inputs (e.g., Primary Dysmenorrhea if pain + heavy flow).  
+- If recurrent: add possible secondary causes (e.g., endometriosis, fibroids, hormonal imbalance).  
+- Risk considerations: e.g., anemia risk if prolonged heavy bleeding, PCOS risk if metformin + irregular cycles.  
 
-Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+---
+
+### 📋 Action Plan
+**Self-Care Guidance:** Apply heat to your abdomen for pain relief. Stay well-hydrated. Rest when needed. Over-the-counter pain relievers like ibuprofen (always follow package instructions) may help manage pain, but should not be used long term without a physician's recommendation.
+
+**Lifestyle Optimization:** Prioritize improving sleep hygiene (aim for 7-9 hours of quality sleep), implement stress-reduction techniques (yoga, meditation, deep breathing), maintain a balanced diet, and continue with your moderate exercise routine.
+
+**When to See a Doctor:** Seek medical attention immediately if you experience fainting, severe dizziness, heavy blood loss (soaking through more than one pad per hour), or persistent, unmanageable pain. If your symptoms persist or worsen over the next few cycles, please schedule an appointment with your gynecologist for a thorough evaluation.
+
+**Future Monitoring:** Continue tracking your cycle length, period length, flow intensity (using a menstrual cup or period tracker app can help quantify flow), pain levels, and any other symptoms you experience. Note the presence or absence of blood clots.
+
+---
+
+### ⚠️ Urgency Flag
+- Immediate action needed if: fainting, severe dizziness, heavy blood loss, or persistent severe pain.  
+- Otherwise: monitor vs consult timeline (e.g., "if repeated for 2+ cycles, schedule ultrasound/hormonal panel").
+
+---
+
+### 📦 Summary Box (Quick-Read)
+- Primary Impression: [condition-like label, e.g., Dysmenorrhea]  
+- Contributing Factors: [stress, sleep, meds, family history]  
+- Risks: [anemia, hormonal imbalance, secondary causes]  
+- Recommendation: [monitor, consult, urgent care triggers]  
+
+---
+
+### 💡 Personalized Tips for You
+Generate exactly 3 actionable tips based on the user's specific data. Each tip should be one complete sentence:
+
+1. [First tip based on flow intensity - e.g., "Change your pad every 1-2 hours if flow is heavy to prevent infection"]
+2. [Second tip based on pain level - e.g., "Apply a heating pad for 15-20 minutes every 2 hours to reduce cramping"]  
+3. [Third tip based on lifestyle factors - e.g., "Aim for 7-9 hours of sleep nightly to improve cycle regularity"]
+
+---
+
+### 🌸 Gentle Reminders
+Generate exactly 4 empathetic reminders based on current symptoms. Each reminder should be one complete sentence with emoji:
+
+1. 🌸 [Flow-based reminder - e.g., "Change your pad every 2-3 hours to stay comfortable and prevent irritation"]
+2. 🌼 [Pain-based reminder - e.g., "Apply heat therapy for 15 minutes when cramps start"]  
+3. 🌸 [Hydration reminder - e.g., "Drink 8-10 glasses of water daily to reduce bloating and fatigue"]
+4. 🌼 [Supportive reminder - e.g., "Listen to your body and rest when you need it - you're doing great"]
+
+---
+
+### 📊 Data Visualization Suggestions (JSON block)
+Provide structured data for charts (local rendering, no extra API cost):
+{
+  "pain_trend": { "current_cycle": ${latestCycle.pain}, "average": ${avgPain} },
+  "flow_trend": { "current": "${latestCycle.flowIntensity}", "pattern": "consistent" },
+  "cycle_health_score": ${Math.round((10 - (latestCycle.pain || 0)) + (latestCycle.sleepQuality || 5) + (10 - (latestCycle.stressLevel || 5))) / 3}/10,
+  "risk_flags": ${latestCycle.pain > 7 ? '["High pain level", "Medical evaluation recommended"]' : latestCycle.flowIntensity === 'Heavy' ? '["Heavy flow", "Monitor for anemia"]' : '["Continue monitoring"]'}
+}
+
+Remember: This should feel like a real doctor's consultation note - professional, personalized, and actionable. Use their actual data throughout, not generic advice.`;
   }
 
   processCycleInsights(insights, cycleData, userProfile) {
     try {
-      // Try to parse JSON response from AI
-      const parsedInsights = JSON.parse(insights);
+      // Parse the structured 6-section response
+      const textInsights = insights.toString();
+
+      // Extract the 6 main sections
+      const sections = this.extractEnhancedSections(textInsights);
+
+      // Create quick check summary from the sections
+      const quickCheck = this.createQuickCheckSummary(sections, cycleData);
       
       return {
-        quickCheck: {
-          // Remove cycleAnalysis - it duplicates aiInsights
-          flowAssessment: parsedInsights.quickCheck?.flowAssessment || 'Flow patterns analyzed',
-          symptomEvaluation: parsedInsights.quickCheck?.symptomEvaluation || 'Symptoms evaluated',
-          actionItem: parsedInsights.quickCheck?.actionItem || 'Continue tracking for comprehensive insights',
-          confidence: parsedInsights.quickCheck?.confidence || 'Moderate'
+        quickCheck: quickCheck,
+        aiInsights: {
+          greeting: sections.greeting || 'Hello! I\'ve reviewed your cycle data and prepared a comprehensive health assessment.',
+          clinicalSummary: sections.clinicalSummary || 'Your cycle data is being analyzed for clinical assessment.',
+          lifestyleFactors: sections.lifestyleFactors || 'Lifestyle factors are being evaluated for their impact on your cycle health.',
+          clinicalImpression: sections.clinicalImpression || 'Clinical impression is being developed based on your specific data.',
+          actionablePlan: sections.actionablePlan || 'Personalized recommendations are being prepared for your health management.',
+          summaryBox: sections.summaryBox || 'Summary of findings and recommendations will be provided.'
         },
-        aiInsights: parsedInsights.aiInsights || [insights],
-        riskAssessment: parsedInsights.riskAssessment || 'Continue tracking to assess cycle patterns and overall health',
-        recommendations: parsedInsights.recommendations || ['Continue tracking your cycle'],
-        medicalAlerts: parsedInsights.medicalAlerts || ['No immediate alerts'],
-        personalizedTips: parsedInsights.personalizedTips || ['Keep tracking for personalized insights']
+        riskAssessment: this.extractRiskFromSections(sections),
+        recommendations: this.extractRecommendationsFromSections(sections),
+        medicalAlerts: this.extractAlertsFromSections(sections),
+        personalizedTips: this.extractPersonalizedTipsFromSections(sections),
+        gentleReminders: this.extractGentleRemindersFromSections(sections)
       };
     } catch (error) {
-      // If JSON parsing fails, parse text response for specific sections
-      const textInsights = insights.toString();
-      
-      // Extract Cycle Insights (unique insights - predictions, trends, user journey)
-      const cycleInsights = this.extractCycleInsights(textInsights, insights);
-      
-      // Extract specific sections for Cycle Patterns
-      const flowAssessment = this.extractSection(textInsights, 'FLOW ASSESSMENT', 'Flow patterns analyzed');
-      const symptomEvaluation = this.extractSection(textInsights, 'SYMPTOM EVALUATION', 'Symptoms reviewed');
-      const actionItem = this.extractSection(textInsights, 'ACTION ITEM', 'Continue tracking for comprehensive insights');
-      const confidence = this.extractSection(textInsights, 'CONFIDENCE LEVEL', 'Moderate');
-      const personalizedTips = this.extractTips(textInsights, 'PERSONALIZED TIPS');
-      const gentleReminders = this.extractTips(textInsights, 'GENTLE REMINDERS');
-      
-      return {
-        quickCheck: {
-          // Remove cycleAnalysis - it duplicates aiInsights
-          flowAssessment: flowAssessment,
-          symptomEvaluation: symptomEvaluation,
-          actionItem: actionItem,
-          confidence: confidence
-        },
-        aiInsights: [cycleInsights], // Use extracted cycle insights, not full response
-        riskAssessment: 'Continue tracking to assess cycle patterns and overall health',
-        recommendations: ['Continue tracking your cycle'],
-        medicalAlerts: ['No immediate alerts'],
-        personalizedTips: personalizedTips,
-        gentleReminders: gentleReminders
-      };
+      console.error('Error processing cycle insights:', error);
+      return this.getFallbackCycleInsights(cycleData, userProfile);
     }
+  }
+
+  extractEnhancedSections(text) {
+    const sections = {};
+    
+    // Extract the 6 enhanced sections with emojis
+    sections.greeting = this.extractSection(text, '👋 Greeting');
+    sections.clinicalSummary = this.extractSection(text, '🩺 Clinical Summary');
+    sections.lifestyleFactors = this.extractSection(text, '🧬 Lifestyle & Systemic Factors');
+    sections.clinicalImpression = this.extractSection(text, '🔬 Clinical Impression');
+    sections.actionablePlan = this.extractSection(text, '📋 Action Plan');
+    sections.urgencyFlag = this.extractSection(text, '⚠️ Urgency Flag');
+    sections.summaryBox = this.extractSection(text, '📦 Summary Box');
+    
+    // Extract the new specific sections for tips and reminders
+    sections.personalizedTips = this.extractSection(text, '💡 Personalized Tips for You');
+    sections.gentleReminders = this.extractSection(text, '🌸 Gentle Reminders');
+    
+    // Extract JSON data visualization
+    sections.dataVisualization = this.extractJSONSection(text);
+    
+    return sections;
+  }
+
+  extractJSONSection(text) {
+    try {
+      // Look for JSON block in the response
+      const jsonMatch = text.match(/\{[\s\S]*"pain_trend"[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (error) {
+      console.log('Could not parse JSON visualization data:', error);
+    }
+    return null;
+  }
+
+  extractStructuredSections(text) {
+    const sections = {};
+    
+    // Extract Section 1: Clinical Assessment & Differential Considerations
+    sections.section1 = this.extractSection(text, 'SECTION 1: 🔬 Clinical Assessment & Differential Considerations', '');
+    
+    // Extract Section 2: Personalized Health Management Plan  
+    sections.section2 = this.extractSection(text, 'SECTION 2: 📊 Personalized Health Management Plan', '');
+    
+    return sections;
+  }
+
+  createQuickCheckSummary(sections, cycleData) {
+    const latestCycle = cycleData[cycleData.length - 1];
+    
+    return {
+      flowAssessment: this.extractHealthScore(sections.section2),
+      symptomEvaluation: this.extractKeyInsight(sections.section1),
+      actionItem: this.extractActionItem(sections.section1),
+      confidence: this.extractRiskLevel(sections.section1)
+    };
+  }
+
+  extractHealthScore(section2) {
+    if (!section2) return 'Health score: 7/10 - Good';
+    
+    const scoreMatch = section2.match(/Cycle Health Score:\s*(\d+\/10)/i);
+    return scoreMatch ? `Health score: ${scoreMatch[1]}` : 'Health score: 7/10 - Good';
+  }
+
+  extractRiskLevel(section1) {
+    if (!section1) return 'GREEN';
+    
+    const riskKeywords = {
+      'RED': ['urgent', 'immediate', 'severe', 'concerning', 'medical attention'],
+      'YELLOW': ['monitor', 'watch', 'consider', 'evaluation', 'follow-up'],
+      'GREEN': ['normal', 'healthy', 'good', 'stable', 'continue']
+    };
+    
+    const text = section1.toLowerCase();
+    for (const [level, keywords] of Object.entries(riskKeywords)) {
+      if (keywords.some(keyword => text.includes(keyword))) {
+        return level;
+      }
+    }
+    return 'GREEN';
+  }
+
+  extractKeyInsight(section1) {
+    if (!section1) return 'Cycle patterns being analyzed';
+    
+    const summaryMatch = section1.match(/Summary Box:([\s\S]*?)(?=\n\n|\n###|$)/i);
+    return summaryMatch ? summaryMatch[1].trim() : 'Cycle patterns being analyzed';
+  }
+
+  extractActionItem(section1) {
+    if (!section1) return 'Continue tracking for insights';
+    
+    const guidanceMatch = section1.match(/Clinical Guidance:([\s\S]*?)(?=\n\n|\n###|$)/i);
+    return guidanceMatch ? guidanceMatch[1].trim() : 'Continue tracking for insights';
+  }
+
+  extractRiskFromSections(sections) {
+    console.log('🔍 EXTRACTING RISK - Clinical Summary:', sections.clinicalSummary);
+    
+    // Generate AI-based risk assessment from current cycle data
+    const riskLevel = this.extractRiskLevel(sections.clinicalSummary || sections.section1);
+    
+    // Determine cycle irregularity based on AI analysis
+    let cycleIrregularity = 'Normal';
+    if (sections.clinicalSummary && (sections.clinicalSummary.includes('irregular') || sections.clinicalSummary.includes('40 days'))) {
+      cycleIrregularity = 'Long cycles';
+      console.log('✅ Found irregular cycles in clinical summary');
+    } else if (sections.clinicalSummary && sections.clinicalSummary.includes('short')) {
+      cycleIrregularity = 'Short cycles';
+      console.log('✅ Found short cycles in clinical summary');
+    }
+    
+    // Determine anemia risk based on AI analysis
+    let anemiaRisk = 'Low';
+    if (sections.clinicalSummary && (sections.clinicalSummary.includes('heavy') || sections.clinicalSummary.includes('clotting') || sections.clinicalSummary.includes('anemia'))) {
+      anemiaRisk = 'Moderate';
+      console.log('✅ Found anemia risk indicators in clinical summary');
+    }
+    
+    // Determine overall risk based on AI analysis
+    let overallRisk = 'Low';
+    if (sections.clinicalSummary && (sections.clinicalSummary.includes('severe') || sections.clinicalSummary.includes('urgent') || sections.clinicalSummary.includes('immediate'))) {
+      overallRisk = 'High';
+      console.log('✅ Found high risk indicators in clinical summary');
+    } else if (sections.clinicalSummary && (sections.clinicalSummary.includes('moderate') || sections.clinicalSummary.includes('concern') || sections.clinicalSummary.includes('evaluation'))) {
+      overallRisk = 'Moderate';
+      console.log('✅ Found moderate risk indicators in clinical summary');
+    }
+    
+    const result = {
+      cycleIrregularity: cycleIrregularity,
+      anemiaRisk: anemiaRisk,
+      overallRisk: overallRisk
+    };
+    
+    console.log('🔍 FINAL RISK ASSESSMENT:', result);
+    return result;
+  }
+
+  extractRecommendationsFromSections(sections) {
+    const recommendations = [];
+    
+    // Extract from Section 2 lifestyle optimizations
+    if (sections.section2) {
+      const lifestyleMatch = sections.section2.match(/Lifestyle Optimizations:([\s\S]*?)(?=\n\n|\n###|$)/i);
+      if (lifestyleMatch) {
+        const bullets = lifestyleMatch[1].match(/•\s*([^\n]+)/g);
+        if (bullets) {
+          recommendations.push(...bullets.map(b => b.replace('•', '').trim()));
+        }
+      }
+    }
+    
+    return recommendations.length > 0 ? recommendations : ['Continue tracking your cycle'];
+  }
+
+  extractAlertsFromSections(sections) {
+    const riskLevel = this.extractRiskLevel(sections.section1);
+    
+    switch (riskLevel) {
+      case 'RED': return ['Medical evaluation recommended'];
+      case 'YELLOW': return ['Monitor for changes'];
+      default: return ['No immediate alerts'];
+    }
+  }
+
+  extractTipsFromSection3(section3) {
+    if (!section3) return ['Keep tracking for personalized insights'];
+    
+    const tips = [];
+    const bulletMatches = section3.match(/•\s*([^\n]+)/g);
+    if (bulletMatches) {
+      tips.push(...bulletMatches.map(tip => tip.replace('•', '').trim()));
+    }
+    
+    return tips.length > 0 ? tips : ['Keep tracking for personalized insights'];
+  }
+
+  extractPersonalizedTipsFromSections(sections) {
+    const tips = [];
+    
+    console.log('🔍 EXTRACTING TIPS - Personalized Tips Section:', sections.personalizedTips);
+    
+    // Extract from the new Personalized Tips section
+    if (sections.personalizedTips) {
+      // Look for numbered lists (1. 2. 3.)
+      const numberedTips = sections.personalizedTips.match(/\d+\.\s*([^\n]+)/g);
+      if (numberedTips) {
+        console.log('✅ Found numbered tips:', numberedTips);
+        tips.push(...numberedTips.map(t => t.replace(/\d+\.\s*/, '').trim()));
+      }
+      
+      // Look for bullet points or dash lists
+      const bulletPoints = sections.personalizedTips.match(/[-•]\s*([^\n]+)/g);
+      if (bulletPoints) {
+        console.log('✅ Found bullet points in personalized tips:', bulletPoints);
+        tips.push(...bulletPoints.map(b => b.replace(/[-•]\s*/, '').trim()));
+      }
+      
+      // Look for quoted tips
+      const quotedTips = sections.personalizedTips.match(/"([^"]+)"/g);
+      if (quotedTips) {
+        console.log('✅ Found quoted tips:', quotedTips);
+        tips.push(...quotedTips.map(q => q.replace(/"/g, '').trim()));
+      }
+    }
+    
+    // Fallback to Action Plan if no personalized tips section
+    if (tips.length === 0 && sections.actionablePlan) {
+      console.log('🔍 FALLBACK: Extracting from Action Plan');
+      // Look for self-care guidance with **bold** format
+      const selfCareMatch = sections.actionablePlan.match(/\*\*Self-Care Guidance:\*\*([\s\S]*?)(?=\*\*Lifestyle Optimization|\*\*When to see|\*\*Future monitoring|$)/i);
+      if (selfCareMatch) {
+        console.log('✅ Found self-care guidance:', selfCareMatch[1]);
+        // Extract sentences from self-care guidance
+        const sentences = selfCareMatch[1].split(/[.!?]+/).filter(s => s.trim().length > 10);
+        tips.push(...sentences.map(s => s.trim()).slice(0, 2));
+      }
+      
+      // Look for lifestyle optimization with **bold** format
+      const lifestyleMatch = sections.actionablePlan.match(/\*\*Lifestyle Optimization:\*\*([\s\S]*?)(?=\*\*When to see|\*\*Future monitoring|$)/i);
+      if (lifestyleMatch) {
+        console.log('✅ Found lifestyle optimization:', lifestyleMatch[1]);
+        // Extract sentences from lifestyle optimization
+        const sentences = lifestyleMatch[1].split(/[.!?]+/).filter(s => s.trim().length > 10);
+        tips.push(...sentences.map(s => s.trim()).slice(0, 2));
+      }
+    }
+    
+    console.log('🔍 FINAL TIPS EXTRACTED:', tips);
+    
+    // Fallback tips if no specific tips found
+    if (tips.length === 0) {
+      console.log('❌ No tips found, using fallback');
+      tips.push('Continue comprehensive cycle tracking for better insights');
+    }
+    
+    return tips;
+  }
+
+  extractGentleRemindersFromSections(sections) {
+    const reminders = [];
+    
+    console.log('🔍 EXTRACTING REMINDERS - Gentle Reminders Section:', sections.gentleReminders);
+    
+    // Extract from the new Gentle Reminders section
+    if (sections.gentleReminders) {
+      // Look for numbered lists with emojis (1. 🌸 2. 🌼 etc.)
+      const numberedReminders = sections.gentleReminders.match(/\d+\.\s*[🌸🌼]\s*([^\n]+)/g);
+      if (numberedReminders) {
+        console.log('✅ Found numbered reminders with emojis:', numberedReminders);
+        reminders.push(...numberedReminders.map(r => r.replace(/\d+\.\s*[🌸🌼]\s*/, '').trim()));
+      }
+      
+      // Look for emoji reminders without numbers
+      const emojiReminders = sections.gentleReminders.match(/[🌸🌼]\s*([^\n]+)/g);
+      if (emojiReminders) {
+        console.log('✅ Found emoji reminders:', emojiReminders);
+        reminders.push(...emojiReminders.map(r => r.replace(/[🌸🌼]\s*/, '').trim()));
+      }
+      
+      // Look for bullet points or dash lists
+      const bulletPoints = sections.gentleReminders.match(/[-•]\s*([^\n]+)/g);
+      if (bulletPoints) {
+        console.log('✅ Found bullet points in gentle reminders:', bulletPoints);
+        reminders.push(...bulletPoints.map(b => b.replace(/[-•]\s*/, '').trim()));
+      }
+    }
+    
+    // Fallback to existing logic if no gentle reminders section
+    if (reminders.length === 0) {
+      console.log('🔍 FALLBACK: Extracting from other sections');
+      
+      // Extract from Urgency Flag section for gentle reminders
+      if (sections.urgencyFlag) {
+        if (sections.urgencyFlag.includes('schedule') || sections.urgencyFlag.includes('consult')) {
+          reminders.push('🌸 Schedule your medical appointment soon - you deserve timely care');
+          console.log('✅ Added schedule reminder from urgency flag');
+        }
+        if (sections.urgencyFlag.includes('monitor') || sections.urgencyFlag.includes('tracking')) {
+          reminders.push('🌼 Keep tracking your symptoms - this data helps your doctor');
+          console.log('✅ Added tracking reminder from urgency flag');
+        }
+      }
+
+      // Extract from Action Plan section for gentle reminders
+      if (sections.actionablePlan) {
+        if (sections.actionablePlan.includes('blood work') || sections.actionablePlan.includes('ultrasound')) {
+          reminders.push('🌸 Consider the recommended tests - they help provide clarity');
+          console.log('✅ Added test reminder from action plan');
+        }
+        if (sections.actionablePlan.includes('track') || sections.actionablePlan.includes('monitor')) {
+          reminders.push('🌼 Continue your excellent tracking habits');
+          console.log('✅ Added tracking reminder from action plan');
+        }
+        if (sections.actionablePlan.includes('report') || sections.actionablePlan.includes('changes')) {
+          reminders.push('🌸 Trust your body\'s signals and report any changes');
+          console.log('✅ Added report reminder from action plan');
+        }
+      }
+
+      // Extract from Clinical Summary for contextual reminders
+      if (sections.clinicalSummary) {
+        if (sections.clinicalSummary.includes('pain') && sections.clinicalSummary.includes('8')) {
+          reminders.push('🌸 Your pain levels are significant - consider medical evaluation');
+          console.log('✅ Added pain reminder from clinical summary');
+        }
+        if (sections.clinicalSummary.includes('heavy') || sections.clinicalSummary.includes('clotting')) {
+          reminders.push('🌼 Monitor your flow patterns for any concerning changes');
+          console.log('✅ Added flow reminder from clinical summary');
+        }
+        if (sections.clinicalSummary.includes('stress') || sections.clinicalSummary.includes('sleep')) {
+          reminders.push('🌸 Focus on stress management and quality sleep');
+          console.log('✅ Added stress/sleep reminder from clinical summary');
+        }
+      }
+    }
+
+    console.log('🔍 FINAL REMINDERS EXTRACTED:', reminders);
+
+    // Add general supportive reminders if no specific ones found
+    if (reminders.length === 0) {
+      console.log('❌ No specific reminders found, using fallback');
+      reminders.push('🌼 Your detailed tracking provides valuable health insights');
+      reminders.push('🌸 You\'re taking great care of your health by tracking this data');
+    }
+    
+    return reminders.length > 0 ? reminders : ['Continue your excellent tracking habits'];
   }
 
   extractCycleInsights(text, fallback) {
@@ -207,7 +720,14 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
   }
 
   extractSection(text, sectionName, fallback) {
-    // Look for section with emoji + ** markers or regular headers
+    // Look for the new ### SECTION format first
+    const newFormatPattern = new RegExp(`### ${sectionName}[\\s\\S]*?(?=### |$)`, 'i');
+    const newFormatMatch = text.match(newFormatPattern);
+    if (newFormatMatch) {
+      return newFormatMatch[0].trim();
+    }
+    
+    // Fallback to old patterns for backward compatibility
     const patterns = [
       new RegExp(`[📈🩸⚠️📋🎯]\\s*\\*\\*${sectionName}\\*\\*[\\s\\S]*?([^\\*\\n]+)`, 'i'),
       new RegExp(`\\*\\*${sectionName}\\*\\*\\s*\\n([^\\*\\n]+)`, 'i'),
@@ -695,7 +1215,7 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
           confidence: confidence
         },
         aiInsights: [fertilityInsights], // Use extracted fertility insights, not full response
-        riskAssessment: 'Continue tracking to assess fertility patterns and overall health',
+          riskAssessment: 'Continue tracking to assess fertility patterns and overall health',
         recommendations: ['Continue tracking your fertility'],
         medicalAlerts: ['No immediate alerts'],
         personalizedTips: personalizedTips,

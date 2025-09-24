@@ -6,7 +6,7 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   min-height: 100vh;
 }
 
@@ -23,8 +23,8 @@
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e0e7ff;
-  border-top: 4px solid #6366f1;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top: 4px solid #06b6d4;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -36,7 +36,7 @@
 }
 
 .afab-dashboard-loading p {
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 16px;
 }
 
@@ -44,24 +44,24 @@
 .afab-dashboard-error {
   text-align: center;
   padding: 40px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   margin: 20px 0;
 }
 
 .afab-dashboard-error h2 {
-  color: #dc2626;
+  color: #06b6d4;
   margin-bottom: 10px;
 }
 
 .afab-dashboard-error p {
-  color: #7f1d1d;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 20px;
 }
 
 .afab-dashboard-error button {
-  background: #dc2626;
+  background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -71,7 +71,7 @@
 }
 
 .afab-dashboard-error button:hover {
-  background: #b91c1c;
+  background: linear-gradient(45deg, #764ba2, #667eea);
 }
 
 /* Header Section */
@@ -81,7 +81,7 @@
   align-items: flex-start;
   margin-bottom: 30px;
   padding: 30px;
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
@@ -94,9 +94,9 @@
 .afab-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: white;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #06b6d4, #667eea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -104,14 +104,14 @@
 
 .afab-subtitle {
   font-size: 1.25rem;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 10px;
   font-weight: 500;
 }
 
 .afab-description {
   font-size: 1rem;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.6;
 }
 
@@ -123,10 +123,10 @@
 .life-stage-badge {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(102, 126, 234, 0.05));
   padding: 12px 20px;
   border-radius: 25px;
-  border: 2px solid #c7d2fe;
+  border: 2px solid rgba(6, 182, 212, 0.3);
 }
 
 .life-stage-icon {
@@ -142,7 +142,7 @@
 
 /* AI Insights Section */
 .afab-insights {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
   margin-bottom: 30px;
@@ -152,7 +152,7 @@
 .afab-insights h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -192,7 +192,7 @@
 }
 
 .symptoms-analysis h4 {
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7);
   margin: 15px 0 10px 0;
   font-size: 1rem;
   font-weight: 500;
@@ -204,7 +204,7 @@
 }
 
 .symptoms-analysis li {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   padding: 8px 12px;
   margin: 5px 0;
   border-radius: 8px;
@@ -215,7 +215,7 @@
 
 /* Tracking Options Section */
 .afab-tracking-options {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
   margin-bottom: 30px;
@@ -225,7 +225,7 @@
 .afab-tracking-options h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 25px;
   display: flex;
   align-items: center;
@@ -297,19 +297,19 @@
 .option-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 10px;
 }
 
 .option-description {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.5;
 }
 
 /* Medical Alerts Section */
 .afab-medical-alerts {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
   margin-bottom: 30px;
@@ -319,7 +319,7 @@
 .afab-medical-alerts h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -371,7 +371,7 @@
 }
 
 .alert-message {
-  color: #1f2937;
+  color: white;
   font-weight: 500;
   margin-bottom: 5px;
   line-height: 1.5;
@@ -379,13 +379,13 @@
 
 .alert-priority {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7);
   text-transform: capitalize;
 }
 
 /* Recommendations Section */
 .afab-recommendations {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
   margin-bottom: 30px;
@@ -395,7 +395,7 @@
 .afab-recommendations h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -436,7 +436,7 @@
 
 /* Tips Section */
 .afab-tips {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
   margin-bottom: 30px;
@@ -446,7 +446,7 @@
 .afab-tips h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -570,7 +570,7 @@
 /* High contrast mode */
 @media (prefers-contrast: high) {
   .afab-dashboard {
-    background: white;
+    background: rgba(255, 255, 255, 0.05);
   }
   
   .tracking-option {
@@ -613,7 +613,7 @@
   }
   
   .afab-description {
-    color: #9ca3af;
+    color: rgba(255, 255, 255, 0.6);
   }
   
   .tracking-option {

@@ -60,7 +60,8 @@ Provide:
 
 Format as a clinical report suitable for healthcare providers.`;
 
-      const insights = await aiService.generateHealthInsights(prompt);
+      // DISABLED API CALL TO SAVE QUOTA - Use generic insights
+      const insights = "Medical insights are available in individual modules. Navigate to specific health tracking modules for AI-powered analysis.";
       setMedicalInsights(insights);
     } catch (error) {
       console.error('Error generating medical insights:', error);
@@ -90,7 +91,8 @@ Assess risks for:
 
 Provide risk scores (Low/Medium/High) with clinical reasoning.`;
 
-      const assessment = await aiService.generateHealthInsights(prompt);
+      // DISABLED API CALL TO SAVE QUOTA - Use generic assessment
+      const assessment = "Risk assessment is available in individual modules. Navigate to specific health tracking modules for AI-powered analysis.";
       setRiskAssessment(assessment);
     } catch (error) {
       console.error('Error performing risk assessment:', error);
@@ -124,7 +126,8 @@ Flag any:
 
 Format as clinical alerts with severity levels (CRITICAL/HIGH/MEDIUM).`;
 
-      const alerts = await aiService.generateHealthAlerts(prompt);
+      // DISABLED API CALL TO SAVE QUOTA - Use generic alerts
+      const alerts = "Clinical alerts are available in individual modules. Navigate to specific health tracking modules for AI-powered analysis.";
       setClinicalAlerts(alerts);
     } catch (error) {
       console.error('Error checking clinical alerts:', error);

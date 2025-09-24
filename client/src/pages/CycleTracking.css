@@ -1,9 +1,801 @@
-/* Cycle Tracking Page Styles - Consistent Purple/Blue Theme */
+/* Cycle Tracking Page Styles - EXACT REFERENCE MATCH */
 .cycle-tracking-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
   padding: 2rem;
+}
+
+/* FORCE ALL ELEMENTS TO MATCH REFERENCE */
+.cycle-tracking-page * {
+  /* Override ALL colors to match reference */
+  color: white !important;
+}
+
+.cycle-tracking-page h1,
+.cycle-tracking-page h2,
+.cycle-tracking-page h3,
+.cycle-tracking-page h4,
+.cycle-tracking-page h5,
+.cycle-tracking-page h6 {
+  color: #06b6d4 !important;
+}
+
+.cycle-tracking-page a {
+  color: #06b6d4 !important;
+}
+
+.cycle-tracking-page button {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Remove ALL gradient borders and effects */
+.cycle-tracking-page *::before,
+.cycle-tracking-page *::after {
+  display: none !important;
+}
+
+/* Force consistent card styling */
+.cycle-tracking-page .card,
+.cycle-tracking-page .overview-card,
+.cycle-tracking-page .resource-card,
+.cycle-tracking-page .history-item,
+.cycle-tracking-page .insight-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* NUCLEAR OPTION - OVERRIDE EVERYTHING */
+.cycle-tracking-page {
+  /* Force all text to be white */
+  * {
+    color: white !important;
+  }
+  
+  /* Force all headings to be teal/cyan */
+  h1, h2, h3, h4, h5, h6 {
+    color: #06b6d4 !important;
+  }
+  
+  /* Force all links to be teal/cyan */
+  a, a:visited, a:active, a:focus {
+    color: #06b6d4 !important;
+  }
+  
+  /* Force all buttons to be purple gradient */
+  button, .btn, input[type="button"], input[type="submit"] {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+  }
+  
+  /* Force all cards to have consistent styling */
+  .card, .overview-card, .resource-card, .history-item, .insight-card,
+  .comprehensive-health-section, .cycle-summary-section, .insights-section,
+  .gentle-reminders-section, .educational-resources, .cycle-history {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  
+  /* Remove any gradient effects */
+  *::before, *::after {
+    display: none !important;
+  }
+  
+  /* Force consistent input styling */
+  input, textarea, select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+  }
+}
+
+/* Enhanced AI Insights Styling */
+.greeting-card {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(102, 126, 234, 0.1)) !important;
+  border-left: 4px solid #06b6d4 !important;
+}
+
+.clinical-summary {
+  border-left: 4px solid #06b6d4 !important;
+}
+
+.lifestyle-factors {
+  border-left: 4px solid #667eea !important;
+}
+
+.clinical-impression {
+  border-left: 4px solid #764ba2 !important;
+}
+
+.actionable-plan {
+  border-left: 4px solid #06b6d4 !important;
+}
+
+.urgency-flag {
+  border-left: 4px solid #e74c3c !important;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(192, 57, 43, 0.1)) !important;
+}
+
+.summary-box {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)) !important;
+  border-left: 4px solid #667eea !important;
+  border-radius: 16px !important;
+}
+
+/* Enhanced section content styling */
+.section-content {
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+}
+
+.section-content h4,
+.section-content h5 {
+  color: #06b6d4;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-content ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.section-content li {
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.section-content strong {
+  color: #06b6d4;
+  font-weight: 600;
+}
+
+/* Visual Chart Components */
+.cycle-chart {
+  border-left: 4px solid #06b6d4 !important;
+}
+
+.line-chart-container {
+  padding: 1rem;
+}
+
+.chart-title {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #06b6d4;
+  margin-bottom: 1rem;
+}
+
+.line-chart {
+  margin-bottom: 1rem;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.legend-line {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.pain-line {
+  background: #667eea;
+}
+
+.flow-line {
+  background: #e74c3c;
+}
+
+/* Pie Chart Styles */
+.pie-chart-container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pie-chart {
+  margin-bottom: 1rem;
+}
+
+.pie-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.pie-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pie-legend .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Health Score Dashboard */
+.health-score-card {
+  border-left: 4px solid #667eea !important;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.score-item {
+  display: flex;
+  justify-content: center;
+}
+
+.score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(102, 126, 234, 0.2));
+  border: 2px solid #06b6d4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.score-circle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+}
+
+.score-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #06b6d4;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin-top: 0.25rem;
+  line-height: 1.2;
+}
+
+/* Enhanced Symptoms Grid */
+.symptoms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.symptom-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.symptom-option:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: #06b6d4;
+  transform: translateY(-2px);
+}
+
+.symptom-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #06b6d4;
+}
+
+.symptom-option input[type="checkbox"]:checked + span {
+  color: #06b6d4;
+  font-weight: 600;
+}
+
+/* Professional Conversational UI Styles */
+.conversational-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.conversational-header h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.conversational-header p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.toggle-mode-btn {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.toggle-mode-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.conversational-form {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  padding: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  margin-bottom: 2rem;
+}
+
+.conversation-step {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.step-header h3 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #06b6d4;
+}
+
+.step-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1rem;
+}
+
+.step-question {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  line-height: 1.5;
+  background: rgba(6, 182, 212, 0.1);
+  padding: 1rem;
+  border-radius: 12px;
+  border-left: 4px solid #06b6d4;
+}
+
+.step-progress {
+  margin-bottom: 2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  display: block;
+}
+
+.step-fields {
+  margin-bottom: 2rem;
+}
+
+.conversation-field {
+  margin-bottom: 1.5rem;
+}
+
+.conversation-field label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+}
+
+.conversation-field input,
+.conversation-field select,
+.conversation-field textarea {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.conversation-field input:focus,
+.conversation-field select:focus,
+.conversation-field textarea:focus {
+  outline: none;
+  border-color: #06b6d4;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.conversation-field input::placeholder,
+.conversation-field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.symptoms-grid,
+.family-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.symptom-option,
+.family-history-option {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.symptom-option:hover,
+.family-history-option:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: #06b6d4;
+}
+
+.symptom-option input,
+.family-history-option input {
+  margin-right: 0.5rem;
+  width: auto;
+}
+
+.symptom-option span,
+.family-history-option span {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pain-slider,
+.stress-slider,
+.sleep-slider {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  outline: none;
+  margin: 1rem 0;
+}
+
+.pain-slider::-webkit-slider-thumb,
+.stress-slider::-webkit-slider-thumb,
+.sleep-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.3);
+}
+
+.slider-labels,
+.pain-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.5rem;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.prev-btn,
+.next-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.prev-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.prev-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.next-btn {
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  color: white;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.next-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+}
+
+.next-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Professional Insights Display */
+.insights-section {
+  margin: 3rem 0;
+}
+
+/* Fix ALL heading colors to be consistent */
+h1, h2, h3, h4, h5, h6 {
+  color: #06b6d4 !important;
+}
+
+/* Fix specific section headings */
+.educational-resources h2,
+.additional-notes h2,
+.when-to-see h2,
+.cycle-education h2,
+.cycle-resources h2 {
+  color: #06b6d4 !important;
+}
+
+/* Fix all link colors to be consistent */
+a {
+  color: #06b6d4 !important;
+}
+
+a:hover {
+  color: #667eea !important;
+}
+
+/* Fix button colors to match theme */
+.log-cycle-btn,
+.three-cycle-btn,
+.analysis-btn {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Fix card borders to be consistent */
+.overview-card,
+.resource-card,
+.history-item {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Remove any gradient borders */
+.overview-card::before,
+.resource-card::before,
+.history-item::before {
+  display: none !important;
+}
+
+/* Force consistent colors for all elements */
+* {
+  /* Override any pink/purple colors */
+  --pink-color: #06b6d4 !important;
+  --purple-color: #667eea !important;
+  --blue-color: #06b6d4 !important;
+}
+
+/* Fix any remaining color inconsistencies */
+.cycle-tracking-page * {
+  /* Ensure all headings are teal/cyan */
+  h1, h2, h3, h4, h5, h6 {
+    color: #06b6d4 !important;
+  }
+  
+  /* Ensure all links are teal/cyan */
+  a {
+    color: #06b6d4 !important;
+  }
+  
+  /* Ensure all buttons use purple gradient */
+  button {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+  }
+}
+
+.insights-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.insights-header h2 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.insights-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.insights-content {
+  display: grid;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.insight-header {
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.insight-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #06b6d4, #3b82f6);
+  border-radius: 10px;
+}
+
+.insight-header h4 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: white;
+  flex: 1;
+}
+
+.card-badge {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.insight-body {
+  padding: 2rem;
+}
+
+.section-content {
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.section-content h4,
+.section-content h5 {
+  color: #06b6d4;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-content ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.section-content li {
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.clinical-assessment {
+  border-left: 4px solid #06b6d4;
+}
+
+.health-plan {
+  border-left: 4px solid #3b82f6;
 }
 
 .page-header {
@@ -82,7 +874,7 @@
 .date-display, .count-display {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #3b82f6;
+  color: #06b6d4;
   margin: 0;
 }
 
@@ -266,22 +1058,22 @@
 
 /* Insights Section */
 .insights-section {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 2.5rem;
   margin-bottom: 3rem;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .insights-section h2 {
-  color: #3b82f6;
+  color: #06b6d4;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  text-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  text-shadow: 0 2px 4px rgba(6, 182, 212, 0.3);
 }
 
 .insights-content {
@@ -374,22 +1166,22 @@
 
 /* Simple Cycle Summary */
 .cycle-summary-section {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(147, 51, 234, 0.1));
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 2.5rem;
   margin-bottom: 3rem;
-  border: 1px solid rgba(138, 43, 226, 0.3);
-  box-shadow: 0 8px 32px rgba(138, 43, 226, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .cycle-summary-section h2 {
-  color: #8a2be2;
+  color: #06b6d4;
   font-size: 1.8rem;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  text-shadow: 0 2px 4px rgba(138, 43, 226, 0.3);
+  text-shadow: 0 2px 4px rgba(6, 182, 212, 0.3);
   text-align: center;
 }
 
@@ -540,7 +1332,7 @@
 
 .history-date {
   font-weight: 600;
-  color: #3b82f6;
+  color: #06b6d4;
   font-size: 1.1rem;
 }
 
@@ -590,7 +1382,7 @@
 }
 
 .ai-test-section h2 {
-  color: #3b82f6;
+  color: #06b6d4;
   font-size: 1.8rem;
   margin-bottom: 1rem;
 }
@@ -630,7 +1422,7 @@
 }
 
 .ai-enhanced-section h3 {
-  color: #3b82f6;
+  color: #06b6d4;
   font-size: 1.4rem;
   margin-bottom: 1.5rem;
   display: flex;
@@ -984,9 +1776,10 @@
 .gentle-reminders-section {
   margin: 2rem 0;
   padding: 2rem;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(255, 182, 193, 0.05) 100%);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
-  border: 1px solid rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .gentle-reminders-section h2 {
@@ -1704,7 +2497,7 @@
 }
 
 .guidance-header h3 {
-  color: #3b82f6;
+  color: #06b6d4;
   font-size: 1.2rem;
   margin: 0;
 }
@@ -1762,17 +2555,18 @@
 
 /* Comprehensive Health Assessment Section */
 .comprehensive-health-section {
-  background: rgba(6, 182, 212, 0.1);
-  border: 2px solid rgba(6, 182, 212, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 2rem;
   margin: 2rem 0;
+  backdrop-filter: blur(10px);
 }
 
 /* Consistent Color Scheme - Pink Theme */
 .cycle-form-section {
-  background: rgba(6, 182, 212, 0.05);
-  border: 1px solid rgba(6, 182, 212, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 2rem;
   margin: 2rem 0;
@@ -1783,11 +2577,12 @@
 .cycle-health-section,
 .recommendations-section,
 .gentle-reminders-section {
-  background: rgba(6, 182, 212, 0.05);
-  border: 1px solid rgba(6, 182, 212, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 2rem;
   margin: 1.5rem 0;
+  backdrop-filter: blur(10px);
 }
 
 .health-metrics-section,
@@ -1939,7 +2734,7 @@
 }
 
 .analysis-header h2 {
-  color: #3b82f6;
+  color: #06b6d4;
   margin: 0;
 }
 
@@ -1968,7 +2763,7 @@
   border-radius: 20px;
   border: 1px solid rgba(59, 130, 246, 0.3);
   font-size: 0.9rem;
-  color: #3b82f6;
+  color: #06b6d4;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
@@ -2049,11 +2844,11 @@
   background: rgba(59, 130, 246, 0.1);
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #3b82f6;
+  color: #06b6d4;
 }
 
 .status-indicator {
-  color: #3b82f6;
+  color: #06b6d4;
   font-weight: bold;
 }
 

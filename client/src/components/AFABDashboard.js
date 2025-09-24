@@ -79,50 +79,17 @@ const AFABDashboard = () => {
   
   // EMERGENCY FIX: COMPLETELY REMOVED useEffect to prevent infinite loop
   
-  // Handle module selection
+  // Handle module selection - NO API CALLS TO SAVE QUOTA
   const handleModuleSelect = async (moduleId) => {
     setSelectedModule(moduleId);
     
-    // Generate module-specific insights
-    try {
-      let insights = null;
-      
-      switch (moduleId) {
-        case 'cycle':
-          if (afabProfile?.menstrualCycle) {
-            insights = await aiService.generateCycleInsights(afabProfile.menstrualCycle, afabProfile);
-          }
-          break;
-          
-        case 'fertility':
-          if (afabProfile?.fertility) {
-            insights = await aiService.generateFertilityInsights(afabProfile.fertility, afabProfile);
-          }
-          break;
-          
-        case 'pregnancy':
-          if (afabProfile?.pregnancy) {
-            insights = await aiService.generatePregnancyInsights(afabProfile.pregnancy, afabProfile);
-          }
-          break;
-          
-        case 'menopause':
-          if (afabProfile?.menopause) {
-            insights = await aiService.generateMenopauseInsights(afabProfile.menopause, afabProfile);
-          }
-          break;
-          
-        default:
-          insights = {
-            generalInsights: `Selected module: ${moduleId}. Continue tracking your health data for personalized insights.`,
-            recommendations: ['Continue tracking your health', 'Maintain healthy lifestyle', 'Consult healthcare provider if needed']
-          };
-      }
-      
-      setAiInsights(insights);
-    } catch (err) {
-      console.error('Error generating module insights:', err);
-    }
+    // Set generic insights without API calls to save quota
+    const insights = {
+      generalInsights: `Selected module: ${moduleId}. Navigate to the specific module to get AI-powered insights.`,
+      recommendations: ['Continue tracking your health', 'Maintain healthy lifestyle', 'Consult healthcare provider if needed']
+    };
+    
+    setAiInsights(insights);
   };
   
   // Render loading state
