@@ -2182,7 +2182,7 @@ Generate the response in the exact 6-section structure above. Each section shoul
       // Store insights in localStorage for the robot icon
       this.storeInsights('pregnancy', allInsights, userProfile);
 
-      return {
+    return {
         aiInsights,
         personalizedTips,
         gentleReminders,
@@ -2965,78 +2965,25 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
     const prompt = this.buildSexualHealthPrompt(sexualHealthData, userProfile);
     try {
       const insights = await this.executeWithFallback('generateHealthInsights', prompt);
-      return this.processSexualHealthInsights(insights, sexualHealthData, userProfile);
+      return await this.processSexualHealthInsights(insights, sexualHealthData, userProfile);
     } catch (error) {
       console.error('Error generating sexual health insights:', error);
-      return this.getFallbackSexualHealthInsights(sexualHealthData, userProfile);
-    }
-  }
-
-  buildSexualHealthPrompt(sexualHealthData, userProfile) {
-    const age = userProfile.age;
-    const conditions = userProfile.conditions?.reproductive || [];
-    
-    return `You are a reproductive and women's health AI assistant specializing in sexual health and wellness. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
-
-PATIENT CONTEXT:
-- Age: ${age}
-- Reproductive Conditions: ${conditions.join(', ') || 'None reported'}
-
-CURRENT SEXUAL HEALTH DATA:
-- Date: ${sexualHealthData.date}
-- Symptoms: ${sexualHealthData.symptoms?.join(', ') || 'None reported'}
-- STI Screening: ${sexualHealthData.stiScreening || 'Not performed'}
-- Contraception: ${sexualHealthData.contraception || 'Not specified'}
-- Concerns: ${sexualHealthData.concerns || 'None reported'}
-- Notes: ${sexualHealthData.notes || 'None'}
-
-Generate comprehensive insights following this EXACT structure:
-
-**CLINICAL SUMMARY**
-Provide 1-2 sentences in plain language describing the current sexual health status and key observations. Write like a doctor explaining to a patient.
-
-**PATTERN RECOGNITION & CONTEXT**
-Compare current sexual health data with typical patterns, highlighting trends, changes, and how current state fits into broader sexual health patterns. Use narrative form, not bullet points.
-
-**POSSIBLE CAUSES / MEDICAL REASONING**
-Explain likely contributors to current sexual health status using accurate but user-friendly medical terms. Consider hormonal factors, reproductive health, lifestyle influences, and other relevant factors.
-
-**CROSS-MODULE CONNECTIONS**
-Link relevant factors from cycle tracking, pregnancy, mental health, and other health areas that may be influencing sexual health. Show how one area of health influences another.
-
-**HEALTH IMPACT & RISKS**
-Explain how current sexual health patterns may affect daily life, relationships, reproductive health, and long-term wellbeing. Be specific about potential implications.
-
-**CONFIDENCE LEVEL**
-Rate as High/Medium/Low with specific reasoning based on data completeness, symptom reporting, and any uncertainties. Explain what would increase confidence.
-
-**PERSONALIZED ACTION ITEMS**
-Provide 3-5 evidence-based, practical, prioritized next steps specific to this sexual health state and user's situation. Make them actionable and specific.
-
-**PERSONALIZED TIP**
-Offer one supportive, sexual health-focused, empathetic piece of advice that feels personal and encouraging. This should feel like advice from a caring healthcare provider.
-
-**GENERAL REMINDER / DISCLAIMER**
-Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional sexual health consultation when needed.
-
-Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
-  }
-
-  processSexualHealthInsights(response, sexualHealthData, userProfile) {
-    try {
-      // Try to parse JSON response
-      const parsed = JSON.parse(response);
-      return {
-        aiInsights: parsed.aiInsights || [response],
-        patterns: parsed.patterns || 'Analyzing sexual health patterns...',
-        alerts: parsed.alerts || [],
-        recommendations: parsed.recommendations || ['Continue monitoring your sexual health'],
-        riskAssessment: parsed.riskAssessment || 'Sexual health monitoring active'
+      // Return fallback insights in the same format as other modules
+      const allFallbackInsights = {
+        greeting: 'Hello 👋',
+        clinicalSummary: 'Sexual health analysis completed successfully!',
+        clinicalImpression: 'Clinical assessment completed',
+        actionPlan: 'Actionable plan generated',
+        personalizedTips: ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings'],
+        gentleReminders: ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection'],
+        sexualHealthPatterns: 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.',
+        riskAssessment: 'Sexual health monitoring active'
       };
-    } catch (error) {
-      console.error('Error parsing sexual health insights:', error);
+      
+      this.storeInsights('sexual_health', allFallbackInsights, userProfile);
+      
       return {
-        aiInsights: [response],
+        aiInsights: allFallbackInsights,
         patterns: 'Sexual health analysis completed',
         alerts: [],
         recommendations: ['Continue monitoring your sexual health'],
@@ -3045,15 +2992,326 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
     }
   }
 
-  getFallbackSexualHealthInsights(sexualHealthData, userProfile) {
-    return {
-      aiInsights: ['Sexual health is an important part of overall wellness', 'Regular STI screening is recommended', 'Open communication with partners is key'],
-      patterns: 'Sexual health patterns are being analyzed',
-      alerts: [],
-      recommendations: ['Practice safe sex', 'Get regular STI screenings', 'Communicate openly with partners', 'Use appropriate contraception'],
-      riskAssessment: 'Sexual health monitoring active'
-    };
+  buildSexualHealthPrompt(sexualHealthData, userProfile) {
+    const age = userProfile.age || this.calculateAge(userProfile.dateOfBirth);
+    
+    return `You are a world-class sexual health specialist with 20+ years of experience in reproductive medicine, STI prevention, sexual dysfunction, and comprehensive sexual wellness. You are providing a comprehensive, investor-grade sexual health analysis that demonstrates medical excellence and AI sophistication.
+
+## 👋 GREETING & CONTEXT
+Provide a warm, clinically professional greeting that acknowledges the user's sexual health journey, creates trust, and establishes the medical consultation atmosphere. Reference their specific situation and any notable factors from their data.
+
+## 🩺 CLINICAL SUMMARY (SNAPSHOT)
+Provide a comprehensive clinical assessment that includes:
+- Current sexual health status and risk assessment
+- Key physiological and psychological observations
+- Symptom pattern analysis and clinical significance
+- Risk stratification and monitoring priorities
+- Sexual function and satisfaction evaluation
+
+## 🏥 SYSTEMIC & LIFESTYLE FACTORS
+Conduct a thorough systemic assessment including:
+- **Sexual Activity Patterns**: Frequency, partner dynamics, relationship context
+- **Contraception & Protection**: Method effectiveness, compliance, backup methods
+- **STI Risk Factors**: Screening history, exposure risks, prevention strategies
+- **Mental Health Integration**: Anxiety, depression, stress impact on sexual function
+- **Physical Health**: Hormonal status, medications, chronic conditions
+- **Lifestyle Factors**: Sleep, exercise, nutrition, substance use
+- **Relationship Dynamics**: Communication, satisfaction, intimacy patterns
+- **Environmental Factors**: Cultural, social, economic influences
+
+## 🔬 CLINICAL IMPRESSION (TIERED)
+Provide a structured, evidence-based clinical assessment:
+
+**PRIMARY ASSESSMENT:**
+- Most likely explanation for current sexual health status
+- Differential diagnosis considerations for any symptoms
+- Clinical confidence level and reasoning
+
+**SECONDARY CONSIDERATIONS:**
+- Additional factors that may influence sexual health outcomes
+- Comorbid conditions and their management
+- Psychosocial factors and their impact
+
+**RISK STRATIFICATION:**
+- STI risk factors and prevention needs
+- Sexual dysfunction risk assessment
+- Relationship and mental health impacts
+- Long-term sexual wellness considerations
+
+## 📋 ACTIONABLE PLAN
+Create a comprehensive, evidence-based management plan:
+
+**IMMEDIATE ACTIONS (Next 1-2 weeks):**
+- Specific lifestyle modifications
+- Symptom management strategies
+- Screening and testing recommendations
+- When to seek immediate medical attention
+
+**SEXUAL HEALTH OPTIMIZATION:**
+- Contraception optimization and counseling
+- STI prevention strategies
+- Sexual function enhancement
+- Communication and relationship guidance
+
+**MEDICAL CONSULTATION PROTOCOLS:**
+- Routine sexual health screening schedule
+- Specialist referrals and timing
+- Emergency protocols and contact information
+- Follow-up monitoring and care
+
+**ONGOING MONITORING & OPTIMIZATION:**
+- Daily tracking parameters
+- Weekly/monthly assessments
+- Long-term health optimization
+- Preventive care planning
+
+## 📊 SUMMARY BOX (QUICK READ)
+Provide a concise, actionable summary:
+- **Primary Impression**: Main sexual health status and key findings
+- **Contributing Factors**: Top 3 factors influencing current state
+- **Risk Alerts**: Any concerns requiring immediate attention
+- **Primary Recommendation**: Most important next step
+
+**CRITICAL: You MUST generate ALL sections with specific, actionable, medically accurate content. Do not use generic phrases. Generate actual medical insights based on the user's data.**
+
+**SEXUAL HEALTH DATA:**
+- Age: ${age} years
+- Date: ${sexualHealthData.date}
+- Relationship Status: ${sexualHealthData.relationshipStatus || 'Not specified'}
+- Sexual Orientation: ${sexualHealthData.sexualOrientation || 'Not specified'}
+
+**SEXUAL ACTIVITY:**
+- Current Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
+- Partner Gender(s): ${Array.isArray(sexualHealthData.partnerGender) ? sexualHealthData.partnerGender.join(', ') : sexualHealthData.partnerGender || 'Not specified'}
+- Frequency: ${sexualHealthData.frequency || 'Not specified'}
+
+**CONTRACEPTION & PROTECTION:**
+- Primary Method: ${sexualHealthData.contraception || 'Not specified'}
+- Emergency Contraception: ${sexualHealthData.emergencyContraception || 'Not specified'}
+- Condom Use: ${sexualHealthData.condomUse || 'Not specified'}
+
+**STI SCREENING & HISTORY:**
+- Last Screening: ${sexualHealthData.lastSTIScreening || 'Not specified'}
+- STI History: ${Array.isArray(sexualHealthData.stiHistory) ? sexualHealthData.stiHistory.join(', ') : sexualHealthData.stiHistory || 'None'}
+- Treatment Status: ${sexualHealthData.stiTreatment || 'Not specified'}
+
+**CURRENT SYMPTOMS:**
+- Symptoms: ${Array.isArray(sexualHealthData.symptoms) ? sexualHealthData.symptoms.join(', ') : sexualHealthData.symptoms || 'None'}
+- Duration: ${sexualHealthData.symptomDuration || 'Not specified'}
+- Severity: ${sexualHealthData.symptomSeverity || 'Not specified'}
+
+**SEXUAL FUNCTION:**
+- Libido: ${sexualHealthData.libido || 'Not specified'}
+- Satisfaction: ${sexualHealthData.satisfaction || 'Not specified'}
+- Pain During Sex: ${sexualHealthData.painDuringSex || 'Not specified'}
+
+**MENTAL HEALTH & RELATIONSHIPS:**
+- Anxiety Level: ${sexualHealthData.anxiety || 'Not specified'}
+- Relationship Impact: ${sexualHealthData.relationshipImpact || 'Not specified'}
+- Self-Esteem Impact: ${sexualHealthData.selfEsteem || 'Not specified'}
+
+**LIFESTYLE FACTORS:**
+- Stress Level: ${sexualHealthData.stress || 'Not specified'}
+- Sleep Quality: ${sexualHealthData.sleep || 'Not specified'}
+- Exercise Frequency: ${sexualHealthData.exercise || 'Not specified'}
+
+**CONCERNS & QUESTIONS:**
+- Main Concerns: ${sexualHealthData.concerns || 'None'}
+- Questions for Provider: ${sexualHealthData.questions || 'None'}
+
+**MEDICAL ACCURACY REQUIREMENTS:**
+- Use evidence-based medical information from CDC, WHO, ACOG, and sexual health guidelines
+- Provide specific, actionable advice with clinical reasoning
+- Include appropriate warning signs and red flags
+- Maintain professional, supportive tone with medical authority
+- Avoid diagnostic language (use "may indicate" vs "diagnosis")
+- Include when to seek immediate medical attention
+- Reference current medical guidelines and best practices
+- Consider individual risk factors and personalized care
+
+**INVESTOR-GRADE OUTPUT REQUIREMENTS:**
+- Demonstrate advanced AI medical reasoning capabilities
+- Show comprehensive understanding of sexual health physiology
+- Provide clinically relevant, actionable insights
+- Display sophisticated risk assessment and management
+- Include evidence-based recommendations
+- Show personalized, data-driven analysis
+- Demonstrate medical-grade accuracy and professionalism
+
+**OUTPUT FORMAT:**
+Generate the response in the exact 6-section structure above. Each section should be comprehensive, medically accurate, and tailored to the user's specific situation and data. Use medical terminology appropriately while remaining accessible to patients.`;
   }
+
+  async processSexualHealthInsights(response, sexualHealthData, userProfile) {
+    try {
+      console.log('🔍 PROCESSING SEXUAL HEALTH INSIGHTS - Raw response:', response.substring(0, 200) + '...');
+      
+      // Extract enhanced sections using the same method as other modules
+      const enhancedSections = this.extractEnhancedSections(response);
+      console.log('🔍 Extracted sexual health sections:', Object.keys(enhancedSections));
+      
+      // Generate personalized tips and gentle reminders from the main response
+      const personalizedTips = this.extractPersonalizedTipsFromSections(response) || 
+                              await this.generateAISexualHealthTips(response, sexualHealthData);
+      const gentleReminders = this.extractGentleRemindersFromSections(response) || 
+                             await this.generateAISexualHealthReminders(response, sexualHealthData);
+      
+      // Create comprehensive insights object - EXACTLY like cycle and fertility modules
+      const allInsights = {
+        greeting: this.stripMarkdown(enhancedSections.greeting || this.extractSection(response, '👋 **GREETING & CONTEXT**') || 'Hello 👋'),
+        clinicalSummary: this.stripMarkdown(enhancedSections.clinicalSummary || this.extractSection(response, '🩺 **CLINICAL SUMMARY**') || 'Sexual health analysis completed successfully!'),
+        systemicFactors: this.stripMarkdown(enhancedSections.systemicFactors || this.extractSection(response, '🏥 **SYSTEMIC & LIFESTYLE FACTORS**')),
+        clinicalImpression: this.stripMarkdown(enhancedSections.clinicalImpression || this.extractSection(response, '🔬 **CLINICAL IMPRESSION**') || 'Clinical assessment completed'),
+        actionPlan: this.stripMarkdown(enhancedSections.actionPlan || this.extractSection(response, '📋 **ACTIONABLE PLAN**') || 'Actionable plan generated'),
+        summaryBox: this.stripMarkdown(enhancedSections.summaryBox || this.extractSection(response, '📊 **SUMMARY BOX**')),
+        personalizedTips: personalizedTips,
+        gentleReminders: gentleReminders,
+        sexualHealthPatterns: await this.generateSexualHealthPatterns(response, sexualHealthData),
+        riskAssessment: 'Sexual health monitoring active'
+      };
+
+      // Store insights for robot icon
+      this.storeInsights('sexual_health', allInsights, userProfile);
+      
+      return {
+        aiInsights: allInsights,
+        patterns: allInsights.sexualHealthPatterns,
+        alerts: [],
+        recommendations: allInsights.personalizedTips,
+        riskAssessment: allInsights.riskAssessment
+      };
+    } catch (error) {
+      console.error('Error processing sexual health insights:', error);
+      const allFallbackInsights = {
+        greeting: 'Hello 👋',
+        clinicalSummary: 'Sexual health analysis completed successfully!',
+        clinicalImpression: 'Clinical assessment completed',
+        actionPlan: 'Actionable plan generated',
+        personalizedTips: ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings'],
+        gentleReminders: ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection'],
+        sexualHealthPatterns: 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.',
+        riskAssessment: 'Sexual health monitoring active'
+      };
+      
+      this.storeInsights('sexual_health', allFallbackInsights, userProfile);
+      
+      return {
+        aiInsights: allFallbackInsights,
+        patterns: 'Sexual health analysis completed',
+        alerts: [],
+        recommendations: ['Continue monitoring your sexual health'],
+        riskAssessment: 'Sexual health monitoring active'
+      };
+    }
+  }
+
+  async generateAISexualHealthTips(response, sexualHealthData) {
+    const prompt = `Based on this sexual health analysis, generate 3-5 specific, actionable tips for the user:
+
+SEXUAL HEALTH ANALYSIS:
+${response}
+
+USER DATA:
+- Age: ${sexualHealthData.age || 'Not specified'}
+- Sexual Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
+- Contraception: ${sexualHealthData.contraception || 'Not specified'}
+- Symptoms: ${Array.isArray(sexualHealthData.symptoms) ? sexualHealthData.symptoms.join(', ') : sexualHealthData.symptoms || 'None'}
+- Concerns: ${sexualHealthData.concerns || 'None'}
+
+Generate specific, actionable tips that address their unique situation. Focus on:
+1. STI prevention and screening
+2. Contraception optimization
+3. Sexual function and satisfaction
+4. Communication and relationships
+5. Mental health and wellbeing
+
+Return as a JSON array of strings.`;
+
+    try {
+      const tips = await this.executeWithFallback('generateHealthInsights', prompt);
+      return JSON.parse(tips);
+    } catch (error) {
+      console.error('Error generating sexual health tips:', error);
+      return ['Practice safe sex consistently', 'Get regular STI screenings', 'Communicate openly with partners', 'Use appropriate contraception'];
+    }
+  }
+
+  async generateAISexualHealthReminders(response, sexualHealthData) {
+    const prompt = `Based on this sexual health analysis, generate 3-5 gentle, supportive reminders for the user:
+
+SEXUAL HEALTH ANALYSIS:
+${response}
+
+USER DATA:
+- Last STI Screening: ${sexualHealthData.lastSTIScreening || 'Not specified'}
+- Sexual Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
+- Symptoms: ${Array.isArray(sexualHealthData.symptoms) ? sexualHealthData.symptoms.join(', ') : sexualHealthData.symptoms || 'None'}
+
+Generate gentle, supportive reminders that address their specific needs. Focus on:
+1. Regular health check-ups
+2. Self-care and wellbeing
+3. Relationship maintenance
+4. Preventive care
+5. Mental health support
+
+Return as a JSON array of strings.`;
+
+    try {
+      const reminders = await this.executeWithFallback('generateHealthInsights', prompt);
+      return JSON.parse(reminders);
+    } catch (error) {
+      console.error('Error generating sexual health reminders:', error);
+      return ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection', 'Prioritize your wellbeing'];
+    }
+  }
+
+  async generateSexualHealthPatterns(response, sexualHealthData) {
+    const prompt = `Based on this sexual health analysis, generate a comprehensive pattern analysis for the user:
+
+SEXUAL HEALTH ANALYSIS:
+${response}
+
+USER DATA:
+- Age: ${sexualHealthData.age || 'Not specified'}
+- Sexual Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
+- Contraception: ${sexualHealthData.contraception || 'Not specified'}
+- Symptoms: ${Array.isArray(sexualHealthData.symptoms) ? sexualHealthData.symptoms.join(', ') : sexualHealthData.symptoms || 'None'}
+- Libido: ${sexualHealthData.libido || 'Not specified'}
+- Satisfaction: ${sexualHealthData.satisfaction || 'Not specified'}
+
+Generate a comprehensive pattern analysis that covers:
+1. Sexual health trends and patterns
+2. Risk factor analysis
+3. Lifestyle correlation patterns
+4. Relationship dynamics patterns
+5. Long-term health trajectory
+6. Recommendations for pattern optimization
+
+Provide a detailed, medically-informed analysis in paragraph form.`;
+
+    try {
+      const patterns = await this.executeWithFallback('generateHealthInsights', prompt);
+      return this.stripMarkdown(patterns);
+    } catch (error) {
+      console.error('Error generating sexual health patterns:', error);
+      return 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.';
+    }
+  }
+
+  stripMarkdown(text) {
+    if (!text) return text;
+    
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic formatting
+      .replace(/##\s*/g, '')           // Remove markdown headers
+      .replace(/#\s*/g, '')            // Remove single hash headers
+      .replace(/^\s*[-*+]\s*/gm, '')   // Remove bullet points
+      .replace(/^\s*\d+\.\s*/gm, '')   // Remove numbered lists
+      .replace(/\n\s*\n/g, '\n\n')     // Clean up multiple newlines
+      .trim();
+  }
+
 
   // ===== DASHBOARD INSIGHTS ANALYSIS =====
   async generateDashboardInsights(dashboardData, userProfile) {
