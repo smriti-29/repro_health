@@ -15,7 +15,7 @@ class AFABAIService extends AIServiceManager {
     try {
       // Use the parent class's executeWithFallback method for seamless fallback
       const insights = await this.executeWithFallback('generateHealthInsights', prompt);
-      return this.processCycleInsights(insights, cycleData, userProfile);
+      return await this.processCycleInsights(insights, cycleData, userProfile);
     } catch (error) {
       console.error('Error generating cycle insights:', error);
       return this.getFallbackCycleInsights(cycleData, userProfile);
@@ -24,7 +24,17 @@ class AFABAIService extends AIServiceManager {
 
   // ===== MEDICATION NLP PARSING =====
   parseMedicationInfo(medicationText) {
-    if (!medicationText || medicationText.trim() === '') {
+    // Handle both string and array inputs
+    let medicationString = '';
+    if (Array.isArray(medicationText)) {
+      medicationString = medicationText.join(', ');
+    } else if (typeof medicationText === 'string') {
+      medicationString = medicationText;
+    } else {
+      medicationString = '';
+    }
+    
+    if (!medicationString || medicationString.trim() === '') {
       return {
         medications: [],
         parsedText: 'No medications reported',
@@ -33,7 +43,7 @@ class AFABAIService extends AIServiceManager {
     }
 
     const medications = [];
-    const text = medicationText.toLowerCase();
+    const text = medicationString.toLowerCase();
     
     // Common medication patterns
     const medicationPatterns = [
@@ -304,24 +314,6 @@ Friendly intro: "Hello 👋 I've reviewed your cycle data. Here's your personali
 
 ---
 
-### 💡 Personalized Tips for You
-Generate exactly 3 actionable tips based on the user's specific data. Each tip should be one complete sentence:
-
-1. [First tip based on flow intensity - e.g., "Change your pad every 1-2 hours if flow is heavy to prevent infection"]
-2. [Second tip based on pain level - e.g., "Apply a heating pad for 15-20 minutes every 2 hours to reduce cramping"]  
-3. [Third tip based on lifestyle factors - e.g., "Aim for 7-9 hours of sleep nightly to improve cycle regularity"]
-
----
-
-### 🌸 Gentle Reminders
-Generate exactly 4 empathetic reminders based on current symptoms. Each reminder should be one complete sentence with emoji:
-
-1. 🌸 [Flow-based reminder - e.g., "Change your pad every 2-3 hours to stay comfortable and prevent irritation"]
-2. 🌼 [Pain-based reminder - e.g., "Apply heat therapy for 15 minutes when cramps start"]  
-3. 🌸 [Hydration reminder - e.g., "Drink 8-10 glasses of water daily to reduce bloating and fatigue"]
-4. 🌼 [Supportive reminder - e.g., "Listen to your body and rest when you need it - you're doing great"]
-
----
 
 ### 📊 Data Visualization Suggestions (JSON block)
 Provide structured data for charts (local rendering, no extra API cost):
@@ -335,7 +327,7 @@ Provide structured data for charts (local rendering, no extra API cost):
 Remember: This should feel like a real doctor's consultation note - professional, personalized, and actionable. Use their actual data throughout, not generic advice.`;
   }
 
-  processCycleInsights(insights, cycleData, userProfile) {
+  async processCycleInsights(insights, cycleData, userProfile) {
     try {
       // Parse the structured 6-section response
       const textInsights = insights.toString();
@@ -359,8 +351,8 @@ Remember: This should feel like a real doctor's consultation note - professional
         riskAssessment: this.extractRiskFromSections(sections),
         recommendations: this.extractRecommendationsFromSections(sections),
         medicalAlerts: this.extractAlertsFromSections(sections),
-        personalizedTips: this.extractPersonalizedTipsFromSections(sections),
-        gentleReminders: this.extractGentleRemindersFromSections(sections)
+        personalizedTips: await this.generateDedicatedPersonalizedTips(cycleData, userProfile),
+        gentleReminders: await this.generateDedicatedGentleReminders(cycleData, userProfile)
       };
     } catch (error) {
       console.error('Error processing cycle insights:', error);
@@ -380,9 +372,8 @@ Remember: This should feel like a real doctor's consultation note - professional
     sections.urgencyFlag = this.extractSection(text, '⚠️ Urgency Flag');
     sections.summaryBox = this.extractSection(text, '📦 Summary Box');
     
-    // Extract the new specific sections for tips and reminders
-    sections.personalizedTips = this.extractSection(text, '💡 Personalized Tips for You');
-    sections.gentleReminders = this.extractSection(text, '🌸 Gentle Reminders');
+    // Note: Personalized Tips and Gentle Reminders are now generated separately
+    // and not included in the main Dr. AI analysis
     
     // Extract JSON data visualization
     sections.dataVisualization = this.extractJSONSection(text);
@@ -956,7 +947,7 @@ Remember: This should feel like a real doctor's consultation note - professional
       console.log('🔍 FERTILITY: Insights length:', insights?.length);
       console.log('🔍 FERTILITY: Raw insights content:', insights);
       
-      return this.processFertilityInsights(insights, fertilityData, userProfile);
+      return await this.processFertilityInsights(insights, fertilityData, userProfile);
     } catch (error) {
       console.error('❌ FERTILITY: Error generating fertility insights:', error);
       console.error('❌ FERTILITY: Error details:', error.message);
@@ -965,261 +956,738 @@ Remember: This should feel like a real doctor's consultation note - professional
   }
 
   buildFertilityPrompt(fertilityData, userProfile) {
-    const age = userProfile.age;
-    const conditions = userProfile.conditions?.reproductive || [];
-    const familyHistory = userProfile.familyHistory?.womensConditions || [];
+  // Add calculateAge helper method
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return 25; // Default age
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+  
+  // Calculate fertility health score (0-10)
+  const calculateFertilityHealthScore = (fertilityEntry, age) => {
+    let score = 5; // Base score
     
-    // Get the latest fertility entry to determine tracking mode and available data
+    // Age factor (optimal fertility 20-30)
+    if (age >= 20 && age <= 30) score += 2;
+    else if (age >= 31 && age <= 35) score += 1;
+    else if (age >= 36 && age <= 40) score -= 1;
+    else if (age > 40) score -= 2;
+    
+    // Lifestyle factors
+    const stressLevel = fertilityEntry.stressLevel || 5;
+    const sleepQuality = fertilityEntry.sleepQuality || 5;
+    const exerciseFreq = fertilityEntry.exerciseFrequency || 'moderate';
+    const dietQuality = fertilityEntry.dietQuality || 'good';
+    
+    // Stress (lower is better)
+    if (stressLevel <= 3) score += 1.5;
+    else if (stressLevel <= 5) score += 0.5;
+    else if (stressLevel >= 8) score -= 1.5;
+    
+    // Sleep (higher is better)
+    if (sleepQuality >= 8) score += 1.5;
+    else if (sleepQuality >= 6) score += 0.5;
+    else if (sleepQuality <= 3) score -= 1.5;
+    
+    // Exercise
+    if (exerciseFreq === 'high') score += 1;
+    else if (exerciseFreq === 'moderate') score += 0.5;
+    else if (exerciseFreq === 'low') score -= 0.5;
+    
+    // Diet
+    if (dietQuality === 'excellent') score += 1;
+    else if (dietQuality === 'good') score += 0.5;
+    else if (dietQuality === 'poor') score -= 1;
+    
+    // Fertility indicators
+    const bbt = parseFloat(fertilityEntry.bbt);
+    if (bbt && bbt >= 97.0 && bbt <= 99.0) score += 0.5; // Normal BBT range
+    
+    const cervicalMucus = fertilityEntry.cervicalMucus;
+    if (cervicalMucus === 'egg-white' || cervicalMucus === 'watery') score += 1; // Fertile mucus
+    
+    // Previous pregnancies (positive indicator)
+    const pregnancies = fertilityEntry.previousPregnancies || 0;
+    if (pregnancies > 0) score += 0.5;
+    
+    // Previous miscarriages (negative indicator)
+    const miscarriages = fertilityEntry.previousMiscarriages || 0;
+    if (miscarriages > 0) score -= 0.5;
+    
+    // Ensure score is between 0-10
+    return Math.max(0, Math.min(10, Math.round(score * 10) / 10));
+  };
+    
     const latestEntry = fertilityData[fertilityData.length - 1];
-    const trackingMode = latestEntry?.trackingMode || 'beginner';
+    const age = userProfile.age || calculateAge(userProfile.dateOfBirth);
     
-    // Get cycle data to understand the current cycle context
+      // Get cycle data for integration
     const cycleData = localStorage.getItem('afabCycleData');
-    let currentCycleInfo = '';
+      let cycleInfo = '';
+      let cycleDay = 1;
+      let cycleLength = 28;
+      let cyclePhase = 'follicular';
+      let fertilityStatus = 'low';
+      
     if (cycleData) {
       const cycles = JSON.parse(cycleData);
       if (cycles.length > 0) {
-        // Sort cycles by cycleStartDate (chronologically) to find the most recent cycle
-        const sortedCycles = cycles.sort((a, b) => {
-          const dateA = new Date(a.cycleStartDate || a.lastPeriod);
-          const dateB = new Date(b.cycleStartDate || b.lastPeriod);
-          return dateB - dateA; // Most recent first
-        });
-        const latestCycle = sortedCycles[0];
-        currentCycleInfo = `Current cycle: ${latestCycle.cycleLength || 28}-day cycle starting ${new Date(latestCycle.cycleStartDate || latestCycle.lastPeriod).toLocaleDateString()}`;
+          const latestCycle = cycles[cycles.length - 1]; // Use latest cycle
+          cycleLength = latestCycle.cycleLength || 28;
+          const cycleStart = new Date(latestCycle.lastPeriod);
+          const today = new Date();
+          cycleDay = Math.ceil((today - cycleStart) / (1000 * 60 * 60 * 24)) + 1;
+          
+          // Update the fertility entry with correct cycle data
+          if (fertilityData.length > 0) {
+            const latestFertilityEntry = fertilityData[fertilityData.length - 1];
+            latestFertilityEntry.cycleLength = cycleLength;
+            latestFertilityEntry.cycleDay = cycleDay;
+          }
+          
+          // Determine cycle phase (more accurate based on cycle length)
+          const follicularLength = Math.max(10, cycleLength - 14); // Follicular phase varies
+          const ovulationWindow = Math.min(3, Math.max(1, Math.floor(cycleLength * 0.1))); // 1-3 days
+          
+          if (cycleDay <= 5) {
+            cyclePhase = 'menstrual';
+            fertilityStatus = 'low';
+          } else if (cycleDay <= follicularLength) {
+            cyclePhase = 'follicular';
+            fertilityStatus = cycleDay > follicularLength - 3 ? 'rising' : 'low';
+          } else if (cycleDay <= follicularLength + ovulationWindow) {
+            cyclePhase = 'ovulation';
+            fertilityStatus = 'peak';
+          } else {
+            cyclePhase = 'luteal';
+            fertilityStatus = 'low';
+          }
+          
+          cycleInfo = `${cycleLength}-day cycle, Day ${cycleDay} (${cyclePhase} phase)`;
+        }
       }
-    }
     
-    // Analyze fertility patterns from recent data
-    const recentEntries = fertilityData.slice(-7); // Last 7 entries
-    const bbtData = recentEntries.filter(e => e.bbt && parseFloat(e.bbt) > 0);
-    const mucusData = recentEntries.filter(e => e.cervicalMucus && e.cervicalMucus !== 'none');
-    const testData = recentEntries.filter(e => e.ovulationTest && e.ovulationTest !== 'not-tested');
+    // Parse medication info
+    const medicationInfo = this.parseMedicationInfo(latestEntry.medicationUse || []);
     
-    // Calculate BBT trends
-    let bbtTrend = 'No BBT data';
-    if (bbtData.length >= 2) {
-      const latestBbt = parseFloat(bbtData[bbtData.length - 1].bbt);
-      const previousBbt = parseFloat(bbtData[bbtData.length - 2].bbt);
-      const change = latestBbt - previousBbt;
-      if (change > 0.2) bbtTrend = `BBT rising (+${change.toFixed(1)}°F) - possible ovulation`;
-      else if (change < -0.2) bbtTrend = `BBT declining (${change.toFixed(1)}°F) - post-ovulation`;
-      else bbtTrend = `BBT stable (${change.toFixed(1)}°F change)`;
-    }
+    // Calculate fertility health score (FIXED)
+    const fertilityScore = calculateFertilityHealthScore(latestEntry, age);
     
-    // Analyze mucus patterns
-    let mucusPattern = 'No mucus data';
-    if (mucusData.length > 0) {
-      const latestMucus = mucusData[mucusData.length - 1];
-      if (latestMucus.cervicalMucus === 'egg-white') mucusPattern = 'Egg-white mucus detected - peak fertility';
-      else if (latestMucus.cervicalMucus === 'watery') mucusPattern = 'Watery mucus - approaching fertile window';
-      else if (latestMucus.cervicalMucus === 'creamy') mucusPattern = 'Creamy mucus - early fertile phase';
-      else mucusPattern = `${latestMucus.cervicalMucus} mucus - non-fertile phase`;
-    }
+    // Goal-specific prompts for TTC vs NFP
+    const fertilityGoal = latestEntry.fertilityGoal || 'ttc';
     
-    // Analyze test results
-    let testResults = 'No test data';
-    if (testData.length > 0) {
-      const latestTest = testData[testData.length - 1];
-      if (latestTest.ovulationTest === 'positive' || latestTest.ovulationTest === 'peak') {
-        testResults = 'LH surge detected - ovulation imminent';
-      } else if (latestTest.ovulationTest === 'negative') {
-        testResults = 'LH test negative - not in fertile window';
-      }
-    }
-    
-    // Calculate confidence level
-    let confidenceFactors = [];
-    if (bbtData.length >= 3) confidenceFactors.push('BBT tracking');
-    if (mucusData.length >= 2) confidenceFactors.push('Mucus patterns');
-    if (testData.length >= 1) confidenceFactors.push('LH testing');
-    if (trackingMode === 'advanced') confidenceFactors.push('Advanced tracking');
-    
-    const confidenceLevel = confidenceFactors.length >= 3 ? 'High' : 
-                           confidenceFactors.length >= 2 ? 'Medium' : 'Low';
-    const confidencePercent = Math.min(95, 40 + (confidenceFactors.length * 15));
-    
-    // Build data summary based on tracking mode
-    let dataSummary = '';
-    if (trackingMode === 'beginner') {
-      dataSummary = `
-      Tracking Mode: Beginner (Basic fertility indicators)
-      ${currentCycleInfo}
-      Recent Data Analysis:
-      - BBT Trend: ${bbtTrend}
-      - Test Results: ${testResults}
-      - Libido Level: ${latestEntry?.libido || 'Not recorded'}/10
-      - Symptoms: ${latestEntry?.symptoms?.length || 0} recorded
-      - Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
-      Note: Cervical mucus tracking is only available in Advanced mode
-      `;
-    } else {
-      dataSummary = `
-      Tracking Mode: Advanced (Comprehensive fertility indicators)
-      ${currentCycleInfo}
-      Recent Data Analysis:
-      - BBT Trend: ${bbtTrend}
-      - Mucus Pattern: ${mucusPattern}
-      - Test Results: ${testResults}
-      - Cervical Position: ${latestEntry?.cervicalPosition || 'Not recorded'}
-      - Cervical Texture: ${latestEntry?.cervicalTexture || 'Not recorded'}
-      - Libido Level: ${latestEntry?.libido || 'Not recorded'}/10
-      - Symptoms: ${latestEntry?.symptoms?.length || 0} recorded
-      - Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
-      `;
-    }
-    
-    return `You are an advanced AI assistant specializing in reproductive health and fertility analysis, with expertise in fertility awareness methods, conception optimization, and natural family planning. Generate rich, interconnected, narrative insights that feel like a personalized medical briefing.
+    if (fertilityGoal === 'ttc') {
+      return `You are a highly advanced AI assistant specializing in reproductive health, fertility analysis, and cycle tracking.
 
-IMPORTANT: Do not introduce yourself as any specific doctor or use any doctor names. Start directly with the analysis content.
+Your task is to generate a professional, medically safe, empathetic, and user-friendly fertility dashboard output tailored for a user whose fertility goal is TTC (Trying to Conceive).
+All insights must be data-driven, cycle-specific, and actionable.
 
-PATIENT CONTEXT:
+USER DATA:
+- Fertility Goal: TTC
+- Conception Timeline: ${latestEntry.conceptionTimeline || 'Not specified'}
+- Tracking Mode: ${latestEntry.trackingMode || 'beginner'} (Beginner/Advanced)
 - Age: ${age} years
-- Medical History: ${conditions.join(', ') || 'None reported'}
-- Family History: ${familyHistory.join(', ') || 'None reported'}
-- Tracking Mode: ${trackingMode} (${trackingMode === 'advanced' ? 'Full fertility indicators' : 'Basic indicators only'})
+- Cycle Day: ${cycleDay} of ${cycleLength}-day cycle
+- Current Phase: ${cyclePhase} (${fertilityStatus})
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F at ${latestEntry.bbtTime || 'Not specified'}
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'} - ${latestEntry.mucusAmount || 'Not recorded'} - ${latestEntry.mucusStretch || 0}cm stretch
+- Cervical Position: ${latestEntry.cervicalPosition || 'Not recorded'} - ${latestEntry.cervicalTexture || 'Not recorded'} - ${latestEntry.cervicalOpenness || 'Not recorded'}
+- OPK Test: ${latestEntry.ovulationTest || 'Not tested'} - LH Level: ${latestEntry.lhLevel || 'Not recorded'}
+- Intercourse: ${latestEntry.intercourse ? 'Yes' : 'No'} - Last Intercourse: ${latestEntry.intercourseTime || 'Not recorded'} - Intercourse Data: ${latestEntry.intercourse ? `Last intercourse: ${latestEntry.intercourseTime}` : 'No intercourse recorded'}
+- Previous Pregnancies: ${latestEntry.previousPregnancies || 0} - Miscarriages: ${latestEntry.previousMiscarriages || 0}
+- Fertility Treatments: ${Array.isArray(latestEntry.fertilityTreatments) ? latestEntry.fertilityTreatments.join(', ') : latestEntry.fertilityTreatments || 'None'}
+- Lifestyle: Stress ${latestEntry.stressLevel || 5}/10, Sleep ${latestEntry.sleepQuality || 5}/10, Exercise ${latestEntry.exerciseFrequency || 'Moderate'}, Diet ${latestEntry.dietQuality || 'Good'}
+- Cycle Data: ${cycleInfo}, Flow ${latestEntry.flowIntensity || 'Medium'}, Pain ${latestEntry.pain || 0}/10
+- Supplements: ${Array.isArray(latestEntry.supplements) ? latestEntry.supplements.join(', ') : latestEntry.supplements || 'None'}
+- Medications: ${medicationInfo.parsedText}
+- Family History: ${Array.isArray(latestEntry.familyHistory) ? latestEntry.familyHistory.join(', ') : latestEntry.familyHistory || 'None reported'}
 
-FERTILITY GOAL & CONTEXT:
-- Primary Goal: ${latestEntry?.fertilityGoal || 'Not specified'}
-- Conception Timeline: ${latestEntry?.conceptionTimeline || 'Not specified'}
-- Previous Pregnancies: ${latestEntry?.previousPregnancies || 0}
-- Previous Miscarriages: ${latestEntry?.previousMiscarriages || 0}
-- Fertility Treatments: ${latestEntry?.fertilityTreatments?.join(', ') || 'None'}
-- Contraception Method: ${latestEntry?.contraceptionPreference || 'None'}
+RULES (TTC Specific):
+1. Prioritize fertile window prediction & ovulation timing.
+2. Give conception optimization strategies (timing, intercourse frequency, lifestyle support).
+3. Do not mention contraception or safe sex.
+4. Personalize all insights based on user's cycle phase, indicators, and TTC status.
+5. Generate **definitive conclusions** — do not give multiple possibilities.
+6. All guidance must be **medically safe** and **actionable**.
+7. **INTEGRATE CYCLE PHASES** - Determine current cycle phase and provide phase-specific guidance.
+8. **INTERCOURSE DATA INTERPRETATION** - If intercourse is marked as "Yes" and intercourseTime is provided, use this data. Do not say "intercourse is not recorded" if the data is provided.
+9. **BBT DATA INTEGRATION** - Always consider and reference BBT data when provided. Use BBT for ovulation confirmation and cycle phase determination.
 
-CURRENT FERTILITY DATA:
-${dataSummary}
+OUTPUT STRUCTURE (TTC):
 
-ANALYSIS SUMMARY:
-- BBT Pattern: ${bbtTrend}
-${trackingMode === 'advanced' ? `- Cervical Mucus: ${mucusPattern}` : ''}
-- LH Testing: ${testResults}
-- Confidence Factors: ${confidenceFactors.join(', ') || 'Limited data'}
-- Assessment Confidence: ${confidenceLevel} (${confidencePercent}%)
+### 👋 Greeting
+"Hello 👋 I've analyzed your fertility data for conception optimization. Here is your personalized, professional fertility assessment."
 
-Provide comprehensive fertility analysis in these EXACT sections with emojis, tailored to the user's specific fertility goal:
+### 🩺 Clinical Summary
+Provide a medically excellent, definitive clinical assessment focused on conception:
+- SPECIFIC analysis of BBT pattern, cervical mucus quality, cervical position, OPK results, and intercourse timing
+- CYCLE PHASE DETERMINATION: "You are currently in your [Follicular/Ovulation/Luteal/Menstrual] phase (Day ${cycleDay} of ${cycleLength}-day cycle)"
+- FERTILE WINDOW STATUS: Clear indication of fertile window, ovulation timing, or post-ovulation phase
+- CONCEPTION TIMING: Immediate actionable insights for optimal conception timing
+- MEDICAL-GRADE assessment of fertility indicators for conception
 
-🩺 **CLINICAL SUMMARY**
-Provide 1-2 sentences in plain language describing the current fertility status and key observations. Write like a healthcare professional explaining to a patient.
+### 🧬 Lifestyle & Systemic Factors
+Provide medically excellent evaluation of systemic factors for conception optimization:
+- SPECIFIC assessment of stress levels (${latestEntry.stressLevel}/10), sleep quality (${latestEntry.sleepQuality}/10), exercise frequency, and diet quality
+- MEDICAL correlation between lifestyle factors and conception outcomes
+- DIETARY FERTILITY ASSESSMENT: Specific evaluation of current diet for conception optimization
+- EVIDENCE-BASED recommendations for lifestyle modifications to support conception
+- MEDICATION and supplement impact on conception
 
-📊 **INTELLIGENT PATTERN RECOGNITION & CONTEXT**
-Compare current fertility data with past entries, highlighting trends, changes, and patterns. Reference historical context and how this entry fits into the broader fertility pattern. Include specific bullet points with data analysis:
-- BBT trends: "Your temperature has [risen/fallen/remained stable] from [X]°F to [Y]°F"
-- Mucus patterns: "Your cervical mucus shows [pattern] which indicates [fertility status]"
-- Ovulation timing: "Based on your data, ovulation likely occurred [timing]"
-- Cycle regularity: "Your cycles have been [regular/irregular] with [X] day variation"
-- Fertility window: "Your fertile window appears to be [timing] based on [indicators]"
-Use both narrative and bullet points for clarity.
+### 🔬 Clinical Impression
+Provide definitive, medically excellent clinical assessment for conception:
+- SINGLE definitive fertility status based on cycle phase and indicators
+- CYCLE PHASE EXPLANATION: Medical explanation of current phase and conception implications
+- RISK ASSESSMENT: Age-specific risk factors, cycle irregularity patterns, family history implications for conception
+- CONCEPTION STRATEGIES: 
+  - Specific timing recommendations for optimal conception
+  - Intercourse frequency optimization
+  - Lifestyle optimization for conception support
+  - Fertility enhancement strategies
 
-🔍 **POSSIBLE CAUSES / MEDICAL REASONING**
-Explain likely contributors using accurate but user-friendly medical terms. Consider hormonal factors, cycle phase, lifestyle influences, and other relevant factors. Make it educational but accessible.
+### 📋 Action Plan
+Provide specific, actionable steps for conception optimization:
 
-🔗 **CROSS-MODULE CONNECTIONS**
-Link relevant factors from cycle tracking, health monitoring, and other health areas that may be influencing fertility. Show how one area of health influences another.
+IMMEDIATE ACTIONS (Next 3-7 days):
+- [Specific BBT tracking schedule based on current cycle day and phase]
+- [Specific cervical mucus monitoring instructions for current phase]
+- [Specific intercourse timing recommendations based on cycle phase and fertility status]
+- [Specific lifestyle modifications based on current stress/sleep/diet data]
 
-⚠️ **FERTILITY IMPACT & OPTIMIZATION**
-Explain how current fertility patterns may affect conception chances, cycle health, and overall reproductive wellbeing. Be specific about potential implications and optimization strategies.
+THIS CYCLE STRATEGIES:
+- [Specific dates for optimal conception based on predicted ovulation]
+- [Specific intercourse frequency and timing for maximum fertility]
+- [Specific dietary changes to support conception]
+- [Specific exercise and stress management recommendations]
 
-🎯 **CONFIDENCE LEVEL**
-Rate as High/Medium/Low with specific reasoning based on data completeness, pattern consistency, and any uncertainties. Explain what would increase confidence.
+MEDICAL CONSULTATION:
+- [Specific criteria for when to seek medical help based on age, cycle patterns, and TTC duration]
+- [Specific tests or evaluations to consider if conception doesn't occur within expected timeframe]
 
-💡 **INTELLIGENT PERSONALIZED ACTION ITEMS**
-Based on the user's specific fertility data, age, and goals, provide 3-5 evidence-based, practical, prioritized next steps. Tailor recommendations to their fertility goal:
+ONGOING MONITORING:
+- [Specific tracking schedule for next cycle]
+- [Specific pattern recognition goals]
+- [Specific optimization strategies for future cycles]
 
-FOR TRYING TO CONCEIVE (TTC):
-- "Try intercourse on [specific dates] based on your fertile window"
-- "Your peak fertility window is [dates] - optimal timing for conception"
-- "Consider tracking additional indicators for maximum conception chances"
-- "Based on your timeline, consider [specific medical advice]"
+### ⚠️ Urgency Flag
+Provide medically excellent urgency assessment for conception:
+- IMMEDIATE ACTION NEEDED: Specific concerning symptoms, irregular patterns, or medical red flags affecting conception
+- MONITORING TIMELINE: Specific follow-up schedule and consultation triggers for conception
+- MEDICAL CONSULTATION: Specific criteria for seeking medical attention for conception support
+- RISK STRATIFICATION: Clear risk level assessment with specific action items for conception
 
-FOR NATURAL FAMILY PLANNING (NFP):
-- "Your safe period begins [date] and continues until [date]"
-- "Avoid intercourse during fertile window: [dates]"
-- "Your BBT rise indicates ovulation occurred - safe period begins in 3 days"
-- "Consider backup contraception during uncertain periods"
+### 📦 Summary Box (Quick-Read)
+Provide concise, medically excellent summary for conception:
+- PRIMARY IMPRESSION: Specific fertility status and conception readiness
+- CONTRIBUTING FACTORS: Key BBT, cervical mucus, timing, and lifestyle factors for conception
+- RISK ASSESSMENT: Age-specific risks, cycle irregularity, and medical history implications for conception
+- RECOMMENDATION: Specific next steps for conception timing, monitoring, or medical care
 
-FOR HEALTH MONITORING:
-- "Your BBT pattern suggests [health status] - consider discussing with healthcare provider"
-- "Track consistently to detect any concerning changes early"
-- "Your cycle patterns indicate [health insights]"
-- "Consider lifestyle modifications based on your patterns"
 
-FOR CYCLE AWARENESS:
-- "Continue tracking to better understand your unique patterns"
-- "Your cycle shows [specific characteristics]"
-- "Consider tracking additional indicators for comprehensive awareness"
-- "Your patterns suggest [cycle insights]"
 
-Make each recommendation specific to their actual data and goals.
+### 📊 Data Visualization Suggestions (JSON block)
+Provide structured data for charts (local rendering, no extra API cost):
+{
+  "bbt_trend": { "current": ${latestEntry.bbt || 0}, "pattern": "rising/falling/stable" },
+  "cycle_phase": { "current": "${cyclePhase}", "day": ${cycleDay}, "fertility_status": "${fertilityStatus}" },
+  "fertility_score": ${fertilityScore}/10,
+  "fertile_window": { "start": "date", "end": "date" },
+  "conception_timing": { "optimal_dates": ["date1", "date2"], "ovulation_predicted": "date" },
+  "risk_flags": ${age > 35 ? '["Age factor", "Consider fertility evaluation"]' : '["Continue monitoring"]'}
+}
 
-🌟 **CONTEXTUAL PERSONALIZED TIP**
-Based on their specific fertility data, age, and goals, offer one targeted piece of advice. For example:
-- If peak fertility detected: "Your egg-white mucus and BBT rise confirm peak fertility - optimal timing for conception"
-- If post-ovulation: "Your BBT rise indicates ovulation occurred - safe period begins in 3 days"
-- If irregular patterns: "Your cycle variation may benefit from stress management and consistent tracking"
-Make it feel like personalized medical advice from a caring healthcare professional.
+Remember: Every section must be **professional, data-driven, empathetic, and actionable**, just like a consultation from a fertility specialist. **FOCUS ON CONCEPTION OPTIMIZATION** and provide **DEFINITIVE, TTC-SPECIFIC GUIDANCE**.`;
+    } else if (fertilityGoal === 'nfp') {
+      return `You are a highly advanced AI assistant specializing in reproductive health, fertility analysis, and cycle tracking.
 
-🌸 **INTELLIGENT CONTEXTUAL REMINDERS**
-Based on the user's specific fertility data and goals, provide 3-4 contextual reminders. For example:
-- If trying to conceive: "Continue tracking for optimal timing, consider prenatal vitamins, maintain healthy lifestyle"
-- If using NFP: "Track consistently for maximum effectiveness, consider backup methods during uncertain periods"
-- If monitoring health: "Regular tracking helps detect changes early, discuss patterns with healthcare provider"
-- If irregular cycles: "Consistent tracking improves pattern recognition, consider lifestyle factors"
-Make each reminder specific to their actual data and goals.
+Your task is to generate a professional, medically safe, empathetic, and user-friendly fertility dashboard output tailored for a user whose fertility goal is NFP (Natural Family Planning / Safe Sex).
+All insights must be data-driven, cycle-specific, and actionable.
 
-⚖️ **MEDICAL DISCLAIMER**
-Include appropriate medical disclaimer about these insights being based on tracking data, not medical diagnosis. Encourage professional consultation when needed.
+USER DATA:
+- Fertility Goal: NFP
+- Tracking Mode: ${latestEntry.trackingMode || 'beginner'} (Beginner/Advanced)
+- Age: ${age} years
+- Cycle Day: ${cycleDay} of ${cycleLength}-day cycle
+- Current Phase: ${cyclePhase} (${fertilityStatus})
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F at ${latestEntry.bbtTime || 'Not specified'}
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'} - ${latestEntry.mucusAmount || 'Not recorded'} - ${latestEntry.mucusStretch || 0}cm stretch
+- Cervical Position: ${latestEntry.cervicalPosition || 'Not recorded'} - ${latestEntry.cervicalTexture || 'Not recorded'} - ${latestEntry.cervicalOpenness || 'Not recorded'}
+- OPK Test: ${latestEntry.ovulationTest || 'Not tested'} - LH Level: ${latestEntry.lhLevel || 'Not recorded'}
+- Intercourse: ${latestEntry.intercourse ? 'Yes' : 'No'} - Last Intercourse: ${latestEntry.intercourseTime || 'Not recorded'} - Intercourse Data: ${latestEntry.intercourse ? `Last intercourse: ${latestEntry.intercourseTime}` : 'No intercourse recorded'}
+- Contraception: ${latestEntry.contraceptionPreference || 'None'}
+- Previous Pregnancies: ${latestEntry.previousPregnancies || 0} - Miscarriages: ${latestEntry.previousMiscarriages || 0}
+- Fertility Treatments: ${Array.isArray(latestEntry.fertilityTreatments) ? latestEntry.fertilityTreatments.join(', ') : latestEntry.fertilityTreatments || 'None'}
+- Lifestyle: Stress ${latestEntry.stressLevel || 5}/10, Sleep ${latestEntry.sleepQuality || 5}/10, Exercise ${latestEntry.exerciseFrequency || 'Moderate'}, Diet ${latestEntry.dietQuality || 'Good'}
+- Cycle Data: ${cycleInfo}, Flow ${latestEntry.flowIntensity || 'Medium'}, Pain ${latestEntry.pain || 0}/10
+- Supplements: ${Array.isArray(latestEntry.supplements) ? latestEntry.supplements.join(', ') : latestEntry.supplements || 'None'}
+- Medications: ${medicationInfo.parsedText}
+- Family History: ${Array.isArray(latestEntry.familyHistory) ? latestEntry.familyHistory.join(', ') : latestEntry.familyHistory || 'None reported'}
 
-Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
+RULES (NFP Specific):
+1. Prioritize identifying fertile vs safe phases.
+2. Clearly indicate when unprotected sex is low/high risk.
+3. Include contraception and abstinence guidance.
+4. Do not mention conception optimization.
+5. Personalize based on user's cycle phase, indicators, and NFP status.
+6. Generate **definitive conclusions** — do not give multiple possibilities.
+7. All guidance must be **medically safe** and **actionable**.
+8. **INTEGRATE CYCLE PHASES** - Determine current cycle phase and provide phase-specific guidance.
+9. **INTERCOURSE DATA INTERPRETATION** - If intercourse is marked as "Yes" and intercourseTime is provided, use this data. Do not say "intercourse is not recorded" if the data is provided.
+
+OUTPUT STRUCTURE (NFP):
+
+### 👋 Greeting
+"Hello 👋 I've analyzed your fertility data for natural family planning. Here is your personalized, professional fertility assessment."
+
+### 🩺 Clinical Summary
+Provide a medically excellent, definitive clinical assessment focused on safe sex planning:
+- SPECIFIC analysis of BBT pattern, cervical mucus quality, cervical position, OPK results, and intercourse timing
+- CYCLE PHASE DETERMINATION: "You are currently in your [Follicular/Ovulation/Luteal/Menstrual] phase (Day ${cycleDay} of ${cycleLength}-day cycle)"
+- FERTILE vs SAFE WINDOW: Clear indication of fertile window vs safe window for unprotected sex
+- CONTRACEPTION GUIDANCE: Immediate actionable insights for safe sex timing
+- MEDICAL-GRADE assessment of fertility indicators for natural family planning
+
+### 🧬 Lifestyle & Systemic Factors
+Provide medically excellent evaluation of systemic factors for cycle stability:
+- SPECIFIC assessment of stress levels (${latestEntry.stressLevel}/10), sleep quality (${latestEntry.sleepQuality}/10), exercise frequency, and diet quality
+- MEDICAL correlation between lifestyle factors and cycle regularity
+- DIETARY CYCLE ASSESSMENT: Specific evaluation of current diet for cycle stability
+- EVIDENCE-BASED recommendations for lifestyle modifications to support cycle regularity
+- MEDICATION and supplement impact on cycle tracking accuracy
+
+### 🔬 Clinical Impression
+Provide definitive, medically excellent clinical assessment for natural family planning:
+- SINGLE definitive fertility status based on cycle phase and indicators
+- CYCLE PHASE EXPLANATION: Medical explanation of current phase and safe sex implications
+- RISK ASSESSMENT: Age-specific risk factors, cycle irregularity patterns, family history implications for unintended pregnancy
+- SAFE SEX STRATEGIES: 
+  - Specific safe period identification
+  - Fertile window avoidance strategies
+  - Backup contraception recommendations
+  - Cycle tracking accuracy improvements
+
+### 📋 Action Plan
+Provide specific, actionable steps for natural family planning:
+
+IMMEDIATE ACTIONS (Next 3-7 days):
+- [Specific BBT tracking schedule based on current cycle day and phase]
+- [Specific cervical mucus monitoring instructions for current phase]
+- [Specific safe vs fertile period identification based on current cycle phase]
+- [Specific contraception recommendations based on current fertility status]
+
+THIS CYCLE STRATEGIES:
+- [Specific safe period dates for unprotected intercourse]
+- [Specific fertile window dates requiring protection or abstinence]
+- [Specific backup contraception methods during fertile periods]
+- [Specific lifestyle modifications for cycle stability]
+
+MEDICAL CONSULTATION:
+- [Specific criteria for when to seek medical help based on cycle irregularities]
+- [Specific signs of cycle problems that require medical attention]
+
+ONGOING MONITORING:
+- [Specific tracking schedule for accurate cycle prediction]
+- [Specific pattern recognition goals for safe period identification]
+- [Specific cycle stability optimization strategies]
+
+### ⚠️ Urgency Flag
+Provide medically excellent urgency assessment for natural family planning:
+- IMMEDIATE ACTION NEEDED: Specific concerning symptoms, irregular patterns, or medical red flags affecting cycle tracking
+- MONITORING TIMELINE: Specific follow-up schedule and consultation triggers for cycle irregularities
+- MEDICAL CONSULTATION: Specific criteria for seeking medical attention for cycle issues
+- RISK STRATIFICATION: Clear risk level assessment with specific action items for safe sex planning
+
+### 📦 Summary Box (Quick-Read)
+Provide concise, medically excellent summary for natural family planning:
+- PRIMARY IMPRESSION: Specific fertility status and safe sex recommendations
+- CONTRIBUTING FACTORS: Key BBT, cervical mucus, timing, and lifestyle factors for cycle tracking
+- RISK ASSESSMENT: Age-specific risks, cycle irregularity, and medical history implications for unintended pregnancy
+- RECOMMENDATION: Specific next steps for safe sex timing, monitoring, or medical care
+
+### 🏥 Your Cycle Health
+Provide medically excellent cycle health assessment for natural family planning:
+- CYCLE IRREGULARITY: Specific risk assessment based on cycle length consistency and patterns
+- CYCLE STABILITY: Assessment of cycle regularity for natural family planning accuracy
+- OVERALL RISK: Comprehensive risk assessment based on age, symptoms, patterns, and family history
+- FERTILITY HEALTH SCORE: ${fertilityScore}/10 with specific explanation of score factors for cycle tracking
+
+
+### 📊 Data Visualization Suggestions (JSON block)
+Provide structured data for charts (local rendering, no extra API cost):
+{
+  "bbt_trend": { "current": ${latestEntry.bbt || 0}, "pattern": "rising/falling/stable" },
+  "cycle_phase": { "current": "${cyclePhase}", "day": ${cycleDay}, "fertility_status": "${fertilityStatus}" },
+  "fertility_score": ${fertilityScore}/10,
+  "safe_window": { "start": "date", "end": "date" },
+  "fertile_window": { "start": "date", "end": "date" },
+  "risk_flags": ${age > 35 ? '["Age factor", "Consider fertility evaluation"]' : '["Continue monitoring"]'}
+}
+
+Remember: Every section must be **professional, data-driven, empathetic, and actionable**, just like a consultation from a fertility specialist. **FOCUS ON SAFE SEX PLANNING** and provide **DEFINITIVE, NFP-SPECIFIC GUIDANCE**.`;
+    } else {
+      // Default prompt for other goals (Health Monitoring, Cycle Awareness)
+      return `You are a highly advanced AI assistant specializing in reproductive health, fertility analysis, and cycle tracking.
+
+Your task is to generate a **professional, market-level, user-friendly fertility dashboard output** using the user's input data. 
+All insights must be **medically safe, data-driven, empathetic, and actionable**.
+
+USER DATA:
+- Fertility Goal: ${latestEntry.fertilityGoal || 'Not specified'} (Health Monitoring/Cycle Awareness)
+- Tracking Mode: ${latestEntry.trackingMode || 'beginner'} (Beginner/Advanced)
+- Age: ${age} years
+    - Cycle Day: ${cycleDay} of ${cycleLength}-day cycle
+    - Current Phase: ${cyclePhase} (${fertilityStatus} fertility)
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F at ${latestEntry.bbtTime || 'Not specified'}
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'} - ${latestEntry.mucusAmount || 'Not recorded'} - ${latestEntry.mucusStretch || 0}cm stretch
+- Cervical Position: ${latestEntry.cervicalPosition || 'Not recorded'} - ${latestEntry.cervicalTexture || 'Not recorded'} - ${latestEntry.cervicalOpenness || 'Not recorded'}
+- OPK Test: ${latestEntry.ovulationTest || 'Not tested'} - LH Level: ${latestEntry.lhLevel || 'Not recorded'}
+- Intercourse: ${latestEntry.intercourse ? 'Yes' : 'No'} - Last Intercourse: ${latestEntry.intercourseTime || 'Not recorded'} - Intercourse Data: ${latestEntry.intercourse ? `Last intercourse: ${latestEntry.intercourseTime}` : 'No intercourse recorded'}
+- Contraception: ${latestEntry.contraceptionPreference || 'None'}
+- Previous Pregnancies: ${latestEntry.previousPregnancies || 0} - Miscarriages: ${latestEntry.previousMiscarriages || 0}
+- Fertility Treatments: ${Array.isArray(latestEntry.fertilityTreatments) ? latestEntry.fertilityTreatments.join(', ') : latestEntry.fertilityTreatments || 'None'}
+- Lifestyle: Stress ${latestEntry.stressLevel || 5}/10, Sleep ${latestEntry.sleepQuality || 5}/10, Exercise ${latestEntry.exerciseFrequency || 'Moderate'}, Diet ${latestEntry.dietQuality || 'Good'}
+- Cycle Data: ${cycleInfo}, Flow ${latestEntry.flowIntensity || 'Medium'}, Pain ${latestEntry.pain || 0}/10
+- Supplements: ${Array.isArray(latestEntry.supplements) ? latestEntry.supplements.join(', ') : latestEntry.supplements || 'None'}
+- Medications: ${medicationInfo.parsedText}
+- Family History: ${Array.isArray(latestEntry.familyHistory) ? latestEntry.familyHistory.join(', ') : latestEntry.familyHistory || 'None reported'}
+
+RULES:
+1. Generate **definitive conclusions** — do not give multiple possibilities.
+2. Sections must be clearly structured, readable, and user-friendly.
+3. Personalized Tips and Gentle Reminders must be **AI-generated from the user's actual inputs**.
+4. All guidance must be **medically safe** and **actionable**.
+5. Avoid generic statements or vague language.
+6. **INTEGRATE CYCLE PHASES** - Determine current cycle phase and provide phase-specific guidance.
+7. **INTERCOURSE DATA INTERPRETATION** - If intercourse is marked as "Yes" and intercourseTime is provided, use this data. Do not say "intercourse is not recorded" if the data is provided.
+
+OUTPUT STRUCTURE:
+
+### 👋 Greeting
+"Hello 👋 I've analyzed your fertility data. Here is your personalized, professional fertility assessment."
+
+### 🩺 Clinical Summary
+Provide a medically excellent, definitive clinical assessment:
+- SPECIFIC analysis of BBT pattern, cervical mucus quality, cervical position, OPK results, and intercourse timing
+- CYCLE PHASE DETERMINATION: "You are currently in your [Follicular/Ovulation/Luteal/Menstrual] phase (Day ${cycleDay} of ${cycleLength}-day cycle)"
+- CLEAR fertility status: fertile window, ovulation timing, or post-ovulation phase
+- IMMEDIATE actionable insights based on current cycle day and phase
+- MEDICAL-GRADE assessment of fertility indicators
+
+### 🧬 Lifestyle & Systemic Factors
+Provide medically excellent evaluation of systemic factors:
+- SPECIFIC assessment of stress levels (${latestEntry.stressLevel}/10), sleep quality (${latestEntry.sleepQuality}/10), exercise frequency, and diet quality
+- MEDICAL correlation between lifestyle factors and fertility outcomes
+- DIETARY FERTILITY ASSESSMENT: Specific evaluation of current diet for fertility optimization
+- EVIDENCE-BASED recommendations for lifestyle modifications
+- MEDICATION and supplement impact on fertility
+
+### 🔬 Clinical Impression
+Provide definitive, medically excellent clinical assessment:
+- SINGLE definitive fertility status based on cycle phase and indicators
+- CYCLE PHASE EXPLANATION: Medical explanation of current phase and fertility implications
+- RISK ASSESSMENT: Age-specific risk factors, cycle irregularity patterns, family history implications
+- GOAL-SPECIFIC STRATEGIES: 
+  - TTC: Specific timing recommendations and optimization strategies
+  - NFP: Safe period identification and contraception timing
+  - Health Monitoring: Tracking adjustments and pattern recognition
+  - Cycle Awareness: Educational insights about current phase
+
+### 📋 Action Plan
+Provide specific, actionable steps for health monitoring and cycle awareness:
+
+IMMEDIATE ACTIONS (Next 3-7 days):
+- [Specific BBT tracking schedule based on current cycle day and phase]
+- [Specific cervical mucus monitoring instructions for current phase]
+- [Specific lifestyle modifications based on current stress/sleep/diet data]
+- [Specific cycle awareness activities for current phase]
+
+THIS CYCLE STRATEGIES:
+- [Specific tracking schedule for comprehensive health monitoring]
+- [Specific pattern recognition goals for cycle understanding]
+- [Specific lifestyle optimization strategies for reproductive health]
+- [Specific educational activities for body awareness]
+
+MEDICAL CONSULTATION:
+- [Specific criteria for when to seek medical help based on cycle patterns]
+- [Specific signs of reproductive health concerns that require attention]
+
+ONGOING MONITORING:
+- [Specific tracking schedule for health insights]
+- [Specific pattern analysis goals]
+- [Specific optimization strategies for reproductive health]
+
+### ⚠️ Urgency Flag
+Provide medically excellent urgency assessment:
+- IMMEDIATE ACTION NEEDED: Specific concerning symptoms, irregular patterns, or medical red flags
+- MONITORING TIMELINE: Specific follow-up schedule and consultation triggers
+- MEDICAL CONSULTATION: Specific criteria for seeking medical attention based on age, cycle patterns, and fertility goals
+- RISK STRATIFICATION: Clear risk level assessment with specific action items
+
+### 📦 Summary Box (Quick-Read)
+Provide concise, medically excellent summary:
+- PRIMARY IMPRESSION: Specific fertility status based on cycle phase and indicators
+- CONTRIBUTING FACTORS: Key BBT, cervical mucus, timing, and lifestyle factors
+- RISK ASSESSMENT: Age-specific risks, cycle irregularity, and medical history implications
+- RECOMMENDATION: Specific next steps for timing, monitoring, or medical care
+
+### 🏥 Your Cycle Health
+Provide medically excellent cycle health assessment:
+- CYCLE IRREGULARITY: Specific risk assessment based on cycle length consistency and patterns
+- ANEMIA RISK: Specific risk assessment based on flow intensity, symptoms, and medical history
+- OVERALL RISK: Comprehensive risk assessment based on age, symptoms, patterns, and family history
+- FERTILITY HEALTH SCORE: ${fertilityScore}/10 with specific explanation of score factors
+
+
+### 📊 Data Visualization Suggestions (JSON block)
+Provide structured data for charts (local rendering, no extra API cost):
+{
+  "bbt_trend": { "current": ${latestEntry.bbt || 0}, "pattern": "rising/falling/stable" },
+  "cycle_phase": { "current": "${cyclePhase}", "day": ${cycleDay}, "fertility_status": "${fertilityStatus}" },
+      "fertility_score": ${fertilityScore}/10,
+  "fertile_window": { "start": "date", "end": "date" },
+  "risk_flags": ${age > 35 ? '["Age factor", "Consider fertility evaluation"]' : '["Continue monitoring"]'}
+}
+
+Remember: Every section must be **professional, data-driven, empathetic, and actionable**, just like a consultation from a fertility specialist. **INTEGRATE CYCLE PHASES** and provide **DEFINITIVE, GOAL-SPECIFIC GUIDANCE**.
+
+**CRITICAL: You MUST generate ALL sections including Action Plan, Urgency Flag, and Summary Box with specific, actionable content. Do not use generic phrases like "being developed" or "will be provided". Generate actual medical insights based on the user's data.**
+
+**CRITICAL: You MUST generate ALL sections including Action Plan, Urgency Flag, and Summary Box with specific, actionable content. Do not use generic phrases like "being developed" or "will be provided". Generate actual medical insights based on the user's data.**`;
+    }
   }
 
-  processFertilityInsights(insights, fertilityData, userProfile) {
+  async generateDedicatedPersonalizedTips(fertilityData, userProfile) {
+    try {
+      const latestEntry = fertilityData[fertilityData.length - 1];
+      const age = userProfile.age || this.calculateAge(userProfile.dateOfBirth);
+      const fertilityGoal = latestEntry.fertilityGoal || 'ttc';
+      
+      // Get cycle data from cycle tracking module
+      const cycleData = localStorage.getItem('afabCycleData');
+      let cycleDay = latestEntry.cycleDay || 1;
+      let cycleLength = latestEntry.cycleLength || 28;
+      
+      if (cycleData) {
+        const cycles = JSON.parse(cycleData);
+        if (cycles.length > 0) {
+          const latestCycle = cycles[cycles.length - 1];
+          cycleLength = latestCycle.cycleLength || 28;
+          const cycleStart = new Date(latestCycle.lastPeriod);
+          const today = new Date();
+          cycleDay = Math.ceil((today - cycleStart) / (1000 * 60 * 60 * 24)) + 1;
+        }
+      }
+      
+      const prompt = `You are a fertility specialist. Generate exactly 3 personalized, actionable tips for a user with fertility goal: ${fertilityGoal.toUpperCase()}.
+
+USER DATA:
+- Age: ${age} years
+- Cycle Day: ${cycleDay} of ${cycleLength}-day cycle (from cycle tracking module)
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'}
+- Stress Level: ${latestEntry.stressLevel || 5}/10
+- Sleep Quality: ${latestEntry.sleepQuality || 5}/10
+- Exercise: ${latestEntry.exerciseFrequency || 'Moderate'}
+- Diet: ${latestEntry.dietQuality || 'Good'}
+
+Generate 3 specific, actionable tips as a numbered list:
+1. [Specific tip based on current cycle phase and fertility goal]
+2. [Specific tip based on lifestyle factors and health data]
+3. [Specific tip based on tracking and optimization strategies]
+
+Each tip must be medically accurate, specific to their data, and actionable.`;
+
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      const tips = response.match(/\d+\.\s*([^\n]+)/g) || [];
+      return tips.map(tip => tip.replace(/^\d+\.\s*/, ''));
+    } catch (error) {
+      console.error('Error generating personalized tips:', error);
+      return ['Continue tracking for personalized insights', 'Maintain healthy lifestyle habits', 'Monitor cycle patterns regularly'];
+    }
+  }
+
+  async generateDedicatedGentleReminders(fertilityData, userProfile) {
+    try {
+      const latestEntry = fertilityData[fertilityData.length - 1];
+      const age = userProfile.age || this.calculateAge(userProfile.dateOfBirth);
+      const fertilityGoal = latestEntry.fertilityGoal || 'ttc';
+      
+      // Get cycle data from cycle tracking module
+      const cycleData = localStorage.getItem('afabCycleData');
+      let cycleDay = latestEntry.cycleDay || 1;
+      let cycleLength = latestEntry.cycleLength || 28;
+      
+      if (cycleData) {
+      const cycles = JSON.parse(cycleData);
+        if (cycles.length > 0) {
+      const latestCycle = cycles[cycles.length - 1];
+          cycleLength = latestCycle.cycleLength || 28;
+          const cycleStart = new Date(latestCycle.lastPeriod);
+          const today = new Date();
+          cycleDay = Math.ceil((today - cycleStart) / (1000 * 60 * 60 * 24)) + 1;
+        }
+      }
+      
+      const prompt = `You are a fertility specialist. Generate exactly 4 gentle, empathetic reminders for a user with fertility goal: ${fertilityGoal.toUpperCase()}.
+
+USER DATA:
+- Age: ${age} years
+- Cycle Day: ${cycleDay} of ${cycleLength}-day cycle (from cycle tracking module)
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'}
+- Stress Level: ${latestEntry.stressLevel || 5}/10
+- Sleep Quality: ${latestEntry.sleepQuality || 5}/10
+
+Generate 4 gentle reminders as a numbered list with emojis:
+1. 🌸 [Phase-specific reminder based on current cycle phase]
+2. 🌼 [Timing-specific reminder based on fertility goal]
+3. 🌸 [Lifestyle-specific reminder based on health data]
+4. 🌼 [Supportive reminder for their journey]
+
+Each reminder must be empathetic, medically informed, and one complete sentence.`;
+
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      const reminders = response.match(/\d+\.\s*([^\n]+)/g) || [];
+      return reminders.map(reminder => reminder.replace(/^\d+\.\s*/, ''));
+    } catch (error) {
+      console.error('Error generating gentle reminders:', error);
+      return ['Continue tracking for better insights', 'Maintain healthy lifestyle habits', 'Stay consistent with your tracking', 'You\'re doing great with your health journey'];
+    }
+  }
+
+  async generateFertilityPatterns(fertilityData, userProfile) {
+    try {
+      const latestEntry = fertilityData[fertilityData.length - 1];
+      const age = userProfile.age || this.calculateAge(userProfile.dateOfBirth);
+      const fertilityGoal = latestEntry.fertilityGoal || 'ttc';
+      
+      // Get cycle data from cycle tracking module
+      const cycleData = localStorage.getItem('afabCycleData');
+      let cycleDay = latestEntry.cycleDay || 1;
+      let cycleLength = latestEntry.cycleLength || 28;
+      
+      if (cycleData) {
+      const cycles = JSON.parse(cycleData);
+        if (cycles.length > 0) {
+      const latestCycle = cycles[cycles.length - 1];
+          cycleLength = latestCycle.cycleLength || 28;
+          const cycleStart = new Date(latestCycle.lastPeriod);
+          const today = new Date();
+          cycleDay = Math.ceil((today - cycleStart) / (1000 * 60 * 60 * 24)) + 1;
+        }
+      }
+      
+      const prompt = `You are a fertility specialist. Generate short, precise insights for Fertility Patterns section. This should be different from the main Dr. AI analysis.
+
+USER DATA:
+- Fertility Goal: ${fertilityGoal.toUpperCase()}
+- Age: ${age} years
+- Cycle Day: ${cycleDay} of ${cycleLength}-day cycle (from cycle tracking module)
+- BBT: ${latestEntry.bbt || 'Not recorded'}°F
+- Cervical Mucus: ${latestEntry.cervicalMucus || 'Not recorded'}
+- OPK: ${latestEntry.ovulationTest || 'Not tested'}
+
+Generate 4 short, precise insights (one sentence each):
+1. OVULATION ASSESSMENT: [Short assessment of ovulation status and timing]
+2. FERTILITY EVALUATION: [Brief evaluation of current fertility indicators]
+3. ACTION ITEM: [One specific action to take based on current phase and goal]
+4. CONFIDENCE LEVEL: [Brief confidence assessment based on data quality and patterns]
+
+Keep each insight under 20 words. Be specific and actionable.`;
+
+      const response = await this.executeWithFallback('generateHealthInsights', prompt);
+      
+      // Parse the response to extract the 4 insights
+      const lines = response.split('\n').filter(line => line.trim());
+      const insights = {
+        ovulationAssessment: 'Ovulation patterns analyzed',
+        fertilityEvaluation: 'Fertility indicators evaluated', 
+        actionItem: 'Continue tracking for comprehensive insights',
+        confidence: 'Moderate'
+      };
+      
+      // Try to extract specific insights from the response
+      lines.forEach(line => {
+        if (line.includes('OVULATION ASSESSMENT:')) {
+          insights.ovulationAssessment = line.replace('OVULATION ASSESSMENT:', '').trim();
+        } else if (line.includes('FERTILITY EVALUATION:')) {
+          insights.fertilityEvaluation = line.replace('FERTILITY EVALUATION:', '').trim();
+        } else if (line.includes('ACTION ITEM:')) {
+          insights.actionItem = line.replace('ACTION ITEM:', '').trim();
+        } else if (line.includes('CONFIDENCE LEVEL:')) {
+          insights.confidence = line.replace('CONFIDENCE LEVEL:', '').trim();
+        }
+      });
+      
+      return insights;
+    } catch (error) {
+      console.error('Error generating fertility patterns:', error);
+      return {
+        ovulationAssessment: 'Ovulation patterns analyzed',
+        fertilityEvaluation: 'Fertility indicators evaluated',
+        actionItem: 'Continue tracking for comprehensive insights',
+        confidence: 'Moderate'
+      };
+    }
+  }
+
+  async processFertilityInsights(insights, fertilityData, userProfile) {
     try {
       // Try to parse JSON response from AI (SAME AS CYCLE TRACKING)
       const parsedInsights = JSON.parse(insights);
       
       return {
-        quickCheck: {
-          ovulationAssessment: parsedInsights.quickCheck?.ovulationAssessment || 'Ovulation patterns analyzed',
-          fertilityEvaluation: parsedInsights.quickCheck?.fertilityEvaluation || 'Fertility indicators evaluated',
-          actionItem: parsedInsights.quickCheck?.actionItem || 'Continue tracking for comprehensive insights',
-          confidence: parsedInsights.quickCheck?.confidence || 'Moderate'
-        },
+        quickCheck: await this.generateFertilityPatterns(fertilityData, userProfile),
         aiInsights: parsedInsights.aiInsights || [insights],
         riskAssessment: parsedInsights.riskAssessment || 'Continue tracking to assess fertility patterns and overall health',
         recommendations: parsedInsights.recommendations || ['Continue tracking your fertility'],
         medicalAlerts: parsedInsights.medicalAlerts || ['No immediate alerts'],
-        personalizedTips: parsedInsights.personalizedTips || ['Keep tracking for personalized insights'],
-        gentleReminders: parsedInsights.gentleReminders || ['Continue tracking fertility indicators for better insights']
+        personalizedTips: await this.generateDedicatedPersonalizedTips(fertilityData, userProfile),
+        gentleReminders: await this.generateDedicatedGentleReminders(fertilityData, userProfile)
       };
     } catch (error) {
-      // If JSON parsing fails, parse text response for specific sections (SAME AS CYCLE TRACKING)
+      // If JSON parsing fails, parse text response for new 6-section format (SAME AS CYCLE TRACKING)
       const textInsights = insights.toString();
       
-      // Extract Fertility Insights (unique insights - predictions, trends, user journey)
-      const fertilityInsights = this.extractFertilityInsights(textInsights, insights);
+      console.log('🔍 FERTILITY: Processing text insights:', textInsights.substring(0, 200) + '...');
       
-      // Extract specific sections for Fertility Patterns
-      const ovulationAssessment = this.extractSection(textInsights, 'OVULATION ASSESSMENT', 'Ovulation patterns analyzed');
-      const fertilityEvaluation = this.extractSection(textInsights, 'FERTILITY EVALUATION', 'Fertility indicators evaluated');
-      const actionItem = this.extractSection(textInsights, 'ACTION ITEM', 'Continue tracking for comprehensive insights');
-      const confidence = this.extractSection(textInsights, 'CONFIDENCE LEVEL', 'Moderate');
-      const personalizedTips = this.extractTips(textInsights, 'PERSONALIZED TIPS');
-      const gentleReminders = this.extractTips(textInsights, 'GENTLE REMINDERS');
+      // Extract new 6-section format
+      const enhancedSections = this.extractEnhancedSections(textInsights);
+      const dataVisualization = this.extractJSONSection(textInsights);
+      
+      console.log('🔍 FERTILITY: Enhanced sections:', enhancedSections);
+      
+      // Generate dedicated Personalized Tips and Gentle Reminders
+      const personalizedTips = await this.generateDedicatedPersonalizedTips(fertilityData, userProfile);
+      const gentleReminders = await this.generateDedicatedGentleReminders(fertilityData, userProfile);
+      const riskAssessment = this.extractRiskFromSections(enhancedSections);
+      
+      console.log('🔍 FERTILITY: Personalized tips:', personalizedTips);
+      console.log('🔍 FERTILITY: Gentle reminders:', gentleReminders);
       
       return {
-        quickCheck: {
-          ovulationAssessment: ovulationAssessment,
-          fertilityEvaluation: fertilityEvaluation,
-          actionItem: actionItem,
-          confidence: confidence
+        quickCheck: await this.generateFertilityPatterns(fertilityData, userProfile),
+        aiInsights: {
+          greeting: enhancedSections.greeting || 'Hello! I\'ve reviewed your fertility data and prepared a comprehensive assessment.',
+          clinicalSummary: enhancedSections.clinicalSummary || 'Your fertility data is being analyzed for clinical assessment.',
+          lifestyleFactors: enhancedSections.lifestyleFactors || 'Lifestyle factors are being evaluated for their impact on your fertility.',
+          clinicalImpression: enhancedSections.clinicalImpression || 'Clinical impression is being determined based on your data.',
+          actionPlan: enhancedSections.actionablePlan || enhancedSections.actionPlan || 'Continue tracking your fertility indicators for personalized recommendations.',
+          urgencyFlag: enhancedSections.urgencyFlag || 'Continue monitoring your cycle patterns for any changes.',
+          summaryBox: enhancedSections.summaryBox || 'Your fertility data is being analyzed for comprehensive insights.',
         },
-        aiInsights: [fertilityInsights], // Use extracted fertility insights, not full response
-          riskAssessment: 'Continue tracking to assess fertility patterns and overall health',
+        riskAssessment: riskAssessment,
         recommendations: ['Continue tracking your fertility'],
         medicalAlerts: ['No immediate alerts'],
         personalizedTips: personalizedTips,
-        gentleReminders: gentleReminders
+        gentleReminders: gentleReminders,
+        dataVisualization: dataVisualization
       };
     }
   }
