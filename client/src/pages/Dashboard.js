@@ -247,17 +247,11 @@ const Dashboard = () => {
         case 'menopause':
           navigate('/menopause-support');
           break;
-        case 'pcos':
-          navigate('/condition-specific');
+        case 'advanced-conditions':
+          navigate('/advanced-conditions');
           break;
-        case 'endometriosis':
-          navigate('/condition-specific');
-          break;
-        case 'breast-health':
-          navigate('/breast-health');
-          break;
-        case 'mental-health':
-          navigate('/mental-health');
+        case 'advanced-tracking':
+          navigate('/advanced-tracking');
           break;
         case 'sexual-health':
           navigate('/sexual-health');
@@ -1627,75 +1621,75 @@ Be medically accurate, inclusive for all gender identities, and provide specific
                 </button>
               </div>
 
-              {/* PCOS Management */}
+              {/* Sexual Health */}
               <div className="module-card">
                 <div className="module-header">
-                  <span className="module-icon">🦋</span>
-                  <h3>PCOS Management</h3>
+                  <span className="module-icon">💕</span>
+                  <h3>Sexual Health</h3>
                 </div>
                 <div className="module-content">
-                  <p>Track PCOS symptoms and manage treatment</p>
-                  <div className="module-status">
-                    <span className="status-dot warning"></span>
-                    <span>Monitor symptoms</span>
-                  </div>
-                </div>
-                <button className="module-action" onClick={() => handleAFABModule('pcos')}>
-                  Manage PCOS
-                </button>
-              </div>
-
-              {/* Endometriosis Care */}
-              <div className="module-card">
-                <div className="module-header">
-                  <span className="module-icon">🌺</span>
-                  <h3>Endometriosis Care</h3>
-                </div>
-                <div className="module-content">
-                  <p>Track endometriosis symptoms and pain levels</p>
-                  <div className="module-status">
-                    <span className="status-dot inactive"></span>
-                    <span>No diagnosis</span>
-                  </div>
-                </div>
-                <button className="module-action" onClick={() => handleAFABModule('endometriosis')}>
-                  Track Symptoms
-                </button>
-              </div>
-
-              {/* Breast Health */}
-              <div className="module-card">
-                <div className="module-header">
-                  <span className="module-icon">🌸</span>
-                  <h3>Breast Health</h3>
-                </div>
-                <div className="module-content">
-                  <p>Track breast health and screening reminders</p>
+                  <p>Track sexual health, STI screenings, and intimate wellness</p>
                   <div className="module-status">
                     <span className="status-dot active"></span>
                     <span>Next screening: Due</span>
                   </div>
                 </div>
-                <button className="module-action" onClick={() => handleAFABModule('breast-health')}>
+                <button className="module-action" onClick={() => handleAFABModule('sexual-health')}>
                   Track Health
                 </button>
               </div>
 
-              {/* Mental Health */}
+              {/* Advanced Conditions */}
               <div className="module-card">
                 <div className="module-header">
-                  <span className="module-icon">🧠</span>
-                  <h3>Mental Health</h3>
+                  <span className="module-icon">🏥</span>
+                  <h3>Advanced Conditions</h3>
                 </div>
                 <div className="module-content">
-                  <p>Track mood, anxiety, and mental wellness</p>
+                  <p>PCOS, Endometriosis, Fibroids management</p>
                   <div className="module-status">
-                    <span className="status-dot active"></span>
-                    <span>Last check: Today</span>
+                    <span className="status-dot warning"></span>
+                    <span>Specialized care</span>
                   </div>
                 </div>
-                <button className="module-action" onClick={() => handleAFABModule('mental-health')}>
-                  Track Mood
+                <button className="module-action" onClick={() => handleComingSoon('Advanced Conditions')}>
+                  Coming Soon
+                </button>
+              </div>
+
+              {/* Cancer Prevention */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">🎗️</span>
+                  <h3>Cancer Prevention</h3>
+                </div>
+                <div className="module-content">
+                  <p>Breast health, Ovarian & Cervix cancer tracking</p>
+                  <div className="module-status">
+                    <span className="status-dot active"></span>
+                    <span>Preventive care</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleComingSoon('Cancer Prevention')}>
+                  Coming Soon
+                </button>
+              </div>
+
+              {/* Post Natal Care */}
+              <div className="module-card">
+                <div className="module-header">
+                  <span className="module-icon">👶</span>
+                  <h3>Post Natal Care</h3>
+                </div>
+                <div className="module-content">
+                  <p>Postpartum recovery, breastfeeding support, and newborn care</p>
+                  <div className="module-status">
+                    <span className="status-dot inactive"></span>
+                    <span>Postpartum support</span>
+                  </div>
+                </div>
+                <button className="module-action" onClick={() => handleComingSoon('Post Natal Care')}>
+                  Coming Soon
                 </button>
               </div>
             </>
@@ -1778,39 +1772,6 @@ Be medically accurate, inclusive for all gender identities, and provide specific
           )}
 
           {/* Universal Modules */}
-          <div className="module-card">
-            <div className="module-header">
-              <span className="module-icon">😴</span>
-              <h3>Sleep Tracking</h3>
-            </div>
-            <div className="module-content">
-              <p>Monitor your sleep quality and patterns</p>
-              <div className="module-status">
-                <span className="status-dot active"></span>
-                <span>Last night: 7.5 hours</span>
-              </div>
-            </div>
-                              <button className="module-action" onClick={() => handleComingSoon('Sleep Tracker')}>
-                   Coming Soon
-                 </button>
-          </div>
-
-          <div className="module-card">
-            <div className="module-header">
-              <span className="module-icon">💕</span>
-              <h3>Sexual Health</h3>
-            </div>
-            <div className="module-content">
-              <p>Track sexual health, STI screenings, and intimate wellness</p>
-              <div className="module-status">
-                <span className="status-dot active"></span>
-                <span>Next screening: Due</span>
-              </div>
-            </div>
-                              <button className="module-action" onClick={() => handleAFABModule('sexual-health')}>
-                   Track Health
-                 </button>
-          </div>
         </div>
       </section>
       </>

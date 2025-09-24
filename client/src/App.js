@@ -20,7 +20,8 @@ import PregnancyTracking from './pages/PregnancyTracking';
 import MenopauseSupport from './pages/MenopauseSupport';
 import ConditionSpecific from './pages/ConditionSpecific';
 import BreastHealth from './pages/BreastHealth';
-import MentalHealth from './pages/MentalHealth';
+import AdvancedConditions from './pages/AdvancedConditions';
+import AdvancedTracking from './pages/AdvancedTracking';
 
 import './App.css';
 
@@ -73,7 +74,8 @@ const AppRoutes = () => {
               <Route path="/menopause-support" element={<ProtectedRoute><MenopauseSupport /></ProtectedRoute>} />
               <Route path="/condition-specific" element={<ProtectedRoute><ConditionSpecific /></ProtectedRoute>} />
               <Route path="/breast-health" element={<ProtectedRoute><BreastHealth /></ProtectedRoute>} />
-              <Route path="/mental-health" element={<ProtectedRoute><MentalHealth /></ProtectedRoute>} />
+              <Route path="/advanced-conditions" element={<ProtectedRoute><AdvancedConditions /></ProtectedRoute>} />
+              <Route path="/advanced-tracking" element={<ProtectedRoute><AdvancedTracking /></ProtectedRoute>} />
             </Routes>
           </div>
         </Router>
