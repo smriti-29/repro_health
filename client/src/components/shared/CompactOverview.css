@@ -1,0 +1,59 @@
+/* Shared Compact Overview Styles */
+.compact-overview {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 15px;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 80px;
+  transition: all 0.3s ease;
+  --item-color: #4ecdc4;
+}
+
+.overview-item:hover {
+  transform: translateY(-2px);
+}
+
+.overview-icon {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+
+.overview-label {
+  font-size: 0.8rem;
+  color: var(--item-color);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.overview-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .compact-overview {
+    grid-template-columns: repeat(2, 1fr);
+    display: grid;
+  }
+  
+  .overview-item {
+    min-width: auto;
+  }
+}
+

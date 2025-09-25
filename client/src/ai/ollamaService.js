@@ -22,10 +22,10 @@ class OllamaService {
       if (response.ok) {
         console.log('✅ Ollama is running locally');
       } else {
-        console.warn('⚠️ Ollama might not be running');
+        // Silently return false for fallback service
       }
     } catch (error) {
-      console.warn('⚠️ Ollama not accessible - make sure it\'s running');
+      // Silently return false for fallback service - no console warnings
     }
   }
 
@@ -33,9 +33,12 @@ class OllamaService {
     try {
       console.log('🤖 Using Ollama for health insights...');
 
-      // Create timeout controller
+      // Create timeout controller with longer timeout for local model
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Ollama request timeout, aborting...');
+        controller.abort();
+      }, 60000); // 60 second timeout for local model
 
       const response = await fetch(`${this.baseURL}/generate`, {
         method: 'POST',
@@ -44,12 +47,12 @@ class OllamaService {
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: `Analyze cycle data: ${prompt}. Provide 3 medical insights.`,
+          prompt: prompt, // Use the full enhanced prompt directly
           stream: false,
           options: {
             temperature: 0.7,
             top_p: 0.9,
-            max_tokens: 100
+            num_predict: 500 // Increased token limit for comprehensive response
           }
         }),
         signal: controller.signal
@@ -58,21 +61,23 @@ class OllamaService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('✅ Ollama response:', data);
+      console.log('✅ Ollama response received');
 
       const content = data.response || '';
-      console.log('Ollama content:', content);
+      console.log('📝 Ollama content length:', content.length);
 
-      // Parse the response into individual insights
-      const insights = content.split('\n').filter(line => line.trim().length > 0);
-      console.log('Parsed insights:', insights);
-
-      return insights;
+      // Return the full content as a single string for the enhanced parser
+      return content;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('❌ Ollama request timed out after 60 seconds');
+        throw new Error('Request timeout: Ollama model is taking too long to respond');
+      }
       console.error('❌ Error generating health insights:', error);
       throw error;
     }
@@ -311,6 +316,11 @@ Please provide comprehensive fertility insights with recommendations and trackin
 }
 
 export default OllamaService;
+
+
+
+
+
 
 
 

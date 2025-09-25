@@ -8,6 +8,9 @@ class GeminiService {
     this.model = 'gemini-1.5-flash';
     this.configured = !!this.apiKey;
     
+    console.log('🔍 DEBUG: API Key loaded:', this.apiKey ? 'YES' : 'NO');
+    console.log('🔍 DEBUG: API Key value:', this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'MISSING');
+    
     if (this.configured) {
       console.log('🔧 Gemini Pro configured and ready');
     } else {
@@ -59,6 +62,14 @@ ${prompt}`
             errorMessage.includes('RESOURCE_EXHAUSTED')) {
           console.warn('🚫 Gemini Pro quota/rate limit exceeded, switching to fallback');
           throw new Error('QUOTA_EXCEEDED: ' + errorMessage);
+        }
+        
+        // Check for model overload errors
+        if (response.status === 503 || 
+            errorMessage.includes('overloaded') ||
+            errorMessage.includes('temporarily unavailable')) {
+          console.warn('⚠️ Gemini model temporarily overloaded, switching to fallback');
+          throw new Error('MODEL_OVERLOADED: ' + errorMessage);
         }
         
         throw new Error(`Gemini API error: ${response.status} - ${errorMessage}`);

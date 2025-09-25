@@ -1,0 +1,499 @@
+/* Health Charts Styles */
+.chart-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Advanced Chart Styles */
+.advanced-chart {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(69, 183, 209, 0.1) 100%);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.advanced-chart:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(78, 205, 196, 0.5);
+}
+
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Gauge Chart Styles */
+.gauge-chart {
+  position: relative;
+}
+
+.gauge-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
+}
+
+.gauge-score {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.gauge-label {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+/* Trend Indicator Styles */
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 10px 0;
+  transition: all 0.3s ease;
+}
+
+.trend-indicator:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.trend-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.trend-content {
+  flex: 1;
+}
+
+.trend-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trend-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.trend-status {
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.chart-container h3 {
+  color: #4ecdc4;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.no-data {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  padding: 40px 20px;
+}
+
+/* Line Chart Styles */
+.line-chart {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.line-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.data-point {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.data-point:hover {
+  r: 2;
+  filter: brightness(1.2);
+}
+
+.chart-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.y-axis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.x-axis {
+  position: absolute;
+  bottom: 0;
+  left: 30px;
+  right: 0;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Bar Chart Styles */
+.bar-chart {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.bars {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  height: 100%;
+  gap: 5px;
+}
+
+.bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.bar {
+  width: 100%;
+  min-height: 10px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.bar:hover {
+  filter: brightness(1.2);
+  transform: scaleY(1.05);
+}
+
+.bar-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+  text-align: center;
+  word-break: break-word;
+}
+
+/* Radar Chart Styles */
+.radar-chart {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.radar-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.radar-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.radar-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Pie Chart Styles */
+.pie-chart {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.pie-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pie-segment {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.pie-segment:hover {
+  filter: brightness(1.2);
+  stroke-width: 2;
+}
+
+.pie-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Gauge Chart Styles */
+.gauge-chart {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.gauge-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-progress {
+  transition: all 0.5s ease;
+}
+
+.gauge-value {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.gauge-max {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Trend Indicator Styles */
+.trend-indicator {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.trend-indicator h3 {
+  color: #4ecdc4;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.trend-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.trend-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+}
+
+.trend-change {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.trend-period {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Health Score Styles */
+.health-score {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.health-score h3 {
+  color: #4ecdc4;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.score-circle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.score-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  line-height: 1;
+}
+
+.score-max {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chart-container {
+    padding: 15px;
+  }
+  
+  .bars {
+    gap: 2px;
+  }
+  
+  .bar-label {
+    font-size: 0.7rem;
+  }
+  
+  .pie-legend {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .radar-chart,
+  .pie-chart,
+  .gauge-chart {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .score-circle {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .score-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Animation Effects */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-container {
+  animation: fadeInUp 0.6s ease;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.data-point:hover,
+.bar:hover,
+.pie-segment:hover {
+  animation: pulse 1s infinite;
+}

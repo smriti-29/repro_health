@@ -130,9 +130,18 @@ export const validateOnboardingStep = (step) => {
         .isArray({ min: 1 })
         .withMessage('Please select at least one reproductive anatomy option'),
       
-      body('reproductiveAnatomy.*')
-        .isIn(['Uterus & ovaries', 'Vagina', 'Penis', 'Testes', 'Prostate', 'Other'])
-        .withMessage('Please select valid anatomy options'),
+      body('reproductiveAnatomy')
+        .custom((value) => {
+          if (Array.isArray(value)) {
+            const validOptions = ['Uterus & ovaries', 'Vagina', 'Penis', 'Testes', 'Prostate', 'Other'];
+            for (const item of value) {
+              if (!validOptions.includes(item)) {
+                throw new Error('Please select valid anatomy options');
+              }
+            }
+          }
+          return true;
+        }),
       
       body('reproductiveSurgeries')
         .optional()
@@ -321,14 +330,23 @@ export const validateOnboardingStep = (step) => {
         .isArray({ min: 1 })
         .withMessage('Please select at least one current concern'),
       
-      body('currentConcerns.*')
-        .isIn([
-          'Pain or discomfort', 'Irregular cycles/bleeding', 'Fertility support',
-          'Pregnancy support', 'Postpartum care', 'Contraception guidance',
-          'Menopause/andropause support', 'Sexual wellness', 'STI concerns',
-          'Hormone therapy management', 'General preventive check-up', 'Other'
-        ])
-        .withMessage('Please select valid current concerns')
+      body('currentConcerns')
+        .custom((value) => {
+          if (Array.isArray(value)) {
+            const validOptions = [
+              'Pain or discomfort', 'Irregular cycles/bleeding', 'Fertility support',
+              'Pregnancy support', 'Postpartum care', 'Contraception guidance',
+              'Menopause/andropause support', 'Sexual wellness', 'STI concerns',
+              'Hormone therapy management', 'General preventive check-up', 'Other'
+            ];
+            for (const item of value) {
+              if (!validOptions.includes(item)) {
+                throw new Error('Please select valid current concerns');
+              }
+            }
+          }
+          return true;
+        })
     ],
     
     10: [
@@ -336,14 +354,23 @@ export const validateOnboardingStep = (step) => {
         .isArray({ min: 1 })
         .withMessage('Please select at least one goal'),
       
-      body('goals.*')
-        .isIn([
-          'Cycle/menstrual tracking', 'Contraceptive management', 'Fertility & conception',
-          'Pregnancy & postpartum support', 'Menopause/andropause care',
-          'Gender-affirming health support', 'Sexual health tracking',
-          'Chronic condition management', 'General wellness & lifestyle support'
-        ])
-        .withMessage('Please select valid goals')
+      body('goals')
+        .custom((value) => {
+          if (Array.isArray(value)) {
+            const validOptions = [
+              'Cycle/menstrual tracking', 'Contraceptive management', 'Fertility & conception',
+              'Pregnancy & postpartum support', 'Menopause/andropause care',
+              'Gender-affirming health support', 'Sexual health tracking',
+              'Chronic condition management', 'General wellness & lifestyle support'
+            ];
+            for (const item of value) {
+              if (!validOptions.includes(item)) {
+                throw new Error('Please select valid goals');
+              }
+            }
+          }
+          return true;
+        })
     ],
     
     11: [
