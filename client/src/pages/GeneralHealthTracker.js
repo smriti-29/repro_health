@@ -1516,7 +1516,7 @@ Focus on reproductive health, hormone balance, and fertility optimization. Keep 
         {healthInsights && (
           <div className="insights-section">
             <div className="insights-header">
-              <h2>🤖 AI Health Insights</h2>
+            <h2>🤖 AI Health Insights</h2>
               <button 
                 className="save-insights-btn"
                 onClick={() => saveInsights(healthInsights)}
@@ -1528,8 +1528,8 @@ Focus on reproductive health, hormone balance, and fertility optimization. Keep 
             
             <div className="insights-content">
               {parseInsightsIntoBoxes(healthInsights)}
-            </div>
-          </div>
+                    </div>
+                  </div>
         )}
 
         {/* Doctor Referral Triggers */}
@@ -1538,7 +1538,7 @@ Focus on reproductive health, hormone balance, and fertility optimization. Keep 
             <div className="referral-header">
               <h2>🚨 When to See a Doctor</h2>
               <p className="referral-subtitle">Based on your recent health patterns, consider consulting a healthcare provider for these concerns:</p>
-            </div>
+              </div>
             
             <div className="referral-triggers">
               {analyzeHealthPatterns().map((trigger, index) => (
@@ -1566,7 +1566,7 @@ Focus on reproductive health, hormone balance, and fertility optimization. Keep 
                 <span className="saved-insights-icon">💾</span>
                 <span className="saved-insights-title">Saved Health Insights</span>
                 <span className="saved-insights-count">({savedInsights.length} saved)</span>
-              </div>
+                  </div>
               <button 
                 className="view-insights-btn"
                 onClick={() => setShowSavedInsights(!showSavedInsights)}

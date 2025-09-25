@@ -444,13 +444,13 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
   return (
     <div className="hormonal-health-container">
       <div className="hormonal-health-content">
-        <div className="page-header">
+      <div className="page-header">
           <button onClick={() => navigate('/dashboard')} className="back-button">
-            ← Back to Dashboard
-          </button>
-          <h1>⚡ Hormonal Health</h1>
+          ← Back to Dashboard
+        </button>
+        <h1>⚡ Hormonal Health</h1>
           <p>Track and optimize your hormonal balance for peak performance</p>
-        </div>
+      </div>
         <div className="health-form-section">
           <h2>Log Your Hormonal Health Data</h2>
           <form onSubmit={handleSubmit} className="health-form">
@@ -467,15 +467,15 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                   onChange={(e) => setHormonalForm({...hormonalForm, date: e.target.value})}
                   title="Date of this health entry"
                 />
-              </div>
-            </div>
-
+          </div>
+          </div>
+          
             {/* Energy & Vitality */}
             <div className="question-box energy-vitality">
               <div className="form-section-header">
                 <h3>⚡ Energy & Vitality</h3>
-              </div>
-            
+          </div>
+          
             <div className="form-row">
               <div className="form-group">
                 <div className="checkbox-group">
@@ -487,13 +487,13 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                     />
                     <span>Do you often feel tired even after a good night's sleep?</span>
                   </label>
-                </div>
-              </div>
-              
-              <div className="form-group">
+          </div>
+        </div>
+
+            <div className="form-group">
                 <div className="checkbox-group">
                   <label className="checkbox-item">
-                    <input
+              <input
                       type="checkbox"
                       checked={hormonalForm.afternoonCrashes}
                       onChange={(e) => setHormonalForm({...hormonalForm, afternoonCrashes: e.target.checked})}
@@ -503,7 +503,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                 </div>
               </div>
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <div className="checkbox-group">
@@ -567,7 +567,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                 />
               </div>
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <div className="checkbox-group">
@@ -681,7 +681,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                 </div>
               </div>
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="irritability">Irritability Level (1-10)</label>
@@ -710,7 +710,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                 />
               </div>
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="depression">Depression Level (1-10)</label>
@@ -816,21 +816,21 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                 />
               </div>
             </div>
-            
+
             <div className="form-row">
-              <div className="form-group">
+            <div className="form-group">
                 <label htmlFor="alcohol-consumption">Alcohol Consumption (drinks/week)</label>
-                <input
+              <input
                   id="alcohol-consumption"
                   name="alcohol-consumption"
-                  type="number"
-                  min="0"
+                type="number"
+                min="0"
                   max="50"
                   value={hormonalForm.alcoholConsumption}
                   onChange={(e) => setHormonalForm({...hormonalForm, alcoholConsumption: safeParseInt(e.target.value, 0)})}
                   title="Number of alcoholic drinks per week"
-                />
-              </div>
+              />
+            </div>
               <div className="form-group">
                 <label htmlFor="smoking-status">Smoking Status</label>
                 <select
@@ -853,7 +853,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
               <div className="form-section-header">
                 <h3>📝 Additional Information</h3>
               </div>
-            
+
             <div className="form-group">
               <label htmlFor="notes">Additional Notes</label>
               <textarea
@@ -886,7 +886,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                   title="Hormonal Balance Index"
                   height={180}
                 />
-              </div>
+                    </div>
               
               {/* Current Metrics Bar Chart */}
               <div className="compact-metrics">
@@ -930,7 +930,7 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
               >
                 💾 Save Insights
               </button>
-            </div>
+                  </div>
             
             <div className="insights-content">
               {parseInsightsIntoBoxes(insights)}
@@ -972,14 +972,14 @@ Long-Term (3-6 months): ${hormonalForm.stressLevel > 7 ? 'High stress will conti
                         >
                           🗑️
                         </button>
-                      </div>
+            </div>
                       <div className="saved-insight-content">
                         <p>{insight.insights}</p>
-                      </div>
-                    </div>
+            </div>
+            </div>
                   ))}
-                </div>
-              </div>
+            </div>
+            </div>
             )}
           </div>
         )}

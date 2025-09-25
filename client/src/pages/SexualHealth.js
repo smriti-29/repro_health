@@ -746,8 +746,8 @@ Focus on comprehensive sexual, urological, and reproductive health. Provide medi
                     onChange={(e) => setSexualHealthForm({...sexualHealthForm, libido: parseInt(e.target.value) || 5})}
                     title="Rate your current libido/sex drive on a scale of 1-10"
                   />
-          </div>
-        </div>
+              </div>
+            </div>
 
             <div className="form-row">
               <div className="form-group">
