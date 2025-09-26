@@ -3,60 +3,44 @@
 
 class GeminiService {
   constructor() {
-    // API Key Rotation System - 6 keys for high availability
+    // 3 API keys for maximum reliability and quota distribution
     this.apiKeys = [
-      'AIzaSyAhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX4', // Key 1
-      'AIzaSyBhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX5', // Key 2
-      'AIzaSyChtc2jceqb7klb2sKT0ZkOOIsDB2o_RX6', // Key 3
-      'AIzaSyDhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX7', // Key 4
-      'AIzaSyEhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX8', // Key 5
-      'AIzaSyFhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX9'  // Key 6
+      process.env.REACT_APP_GEMINI_API_KEY || 'AIzaSyAhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX4', // Key 1
+      'AIzaSyACLccKOQOHEMtfw9IDhXalE2yIaO0GFcY', // Key 2
+      'AIzaSyDcz_uayb2q5ShAkxWAQNsTHg5X9d5HFnU'  // Key 3
     ];
-    
     this.currentKeyIndex = 0;
-    this.failedKeys = new Set();
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    this.model = 'gemini-1.5-flash';
-    this.configured = this.apiKeys.length > 0;
+    this.model = 'gemini-2.0-flash'; // Using 2.0-flash for all keys (most reliable)
+    this.configured = this.apiKeys.some(key => !!key);
     
     if (this.configured) {
-      console.log(`🔧 Gemini (Free) configured with ${this.apiKeys.length} API keys for rotation`);
+      console.log('🔧 Gemini configured with 3 API keys for maximum reliability');
     } else {
-      console.log('⚠️ Gemini (Free) not configured - No API keys available');
+      console.log('⚠️ Gemini not configured - API keys missing');
     }
   }
 
-  // Get current API key with rotation
   getCurrentApiKey() {
     return this.apiKeys[this.currentKeyIndex];
   }
 
-  // Rotate to next API key
-  rotateApiKey() {
-    this.failedKeys.add(this.currentKeyIndex);
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    
-    // If all keys failed, reset failed keys set
-    if (this.failedKeys.size >= this.apiKeys.length) {
-      console.log('🔄 All API keys exhausted, resetting failed keys');
-      this.failedKeys.clear();
+  getCurrentModel() {
+    return this.model; // All keys use the same model
+  }
+
+  switchToNextKey() {
+    const nextIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    if (nextIndex !== this.currentKeyIndex) {
+      this.currentKeyIndex = nextIndex;
+      console.log(`🔄 Switched to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+      return true;
     }
-    
-    console.log(`🔄 Rotated to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+    return false;
   }
 
   isConfigured() {
     return this.configured;
-  }
-
-  // Get API key status for debugging
-  getApiKeyStatus() {
-    return {
-      totalKeys: this.apiKeys.length,
-      currentKey: this.currentKeyIndex + 1,
-      failedKeys: Array.from(this.failedKeys).map(i => i + 1),
-      availableKeys: this.apiKeys.length - this.failedKeys.size
-    };
   }
 
   async generateHealthInsights(prompt) {
@@ -64,15 +48,10 @@ class GeminiService {
       throw new Error('Gemini Pro not configured - API key missing');
     }
 
-    // Try with current API key, rotate if it fails
-    let attempts = 0;
-    const maxAttempts = this.apiKeys.length;
-    
-    while (attempts < maxAttempts) {
+    try {
       const currentKey = this.getCurrentApiKey();
-      
-      try {
-        const response = await fetch(`${this.baseUrl}/models/${this.model}:generateContent?key=${currentKey}`, {
+      const currentModel = this.getCurrentModel();
+      const response = await fetch(`${this.baseUrl}/models/${currentModel}:generateContent?key=${currentKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,45 +88,39 @@ ${prompt}`
         })
       });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.error?.message || 'Unknown error';
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error?.message || 'Unknown error';
+        
+        // Check for quota/rate limit errors or 404 errors
+        if (response.status === 429 || 
+            response.status === 404 ||
+            errorMessage.includes('quota') || 
+            errorMessage.includes('exceeded') ||
+            errorMessage.includes('rate limit') ||
+            errorMessage.includes('RESOURCE_EXHAUSTED') ||
+            errorMessage.includes('not found') ||
+            errorMessage.includes('does not have access')) {
           
-          // Check for quota/rate limit/overload errors - rotate API key
-          if (response.status === 429 || 
-              response.status === 503 ||
-              errorMessage.includes('quota') || 
-              errorMessage.includes('exceeded') ||
-              errorMessage.includes('rate limit') ||
-              errorMessage.includes('overloaded') ||
-              errorMessage.includes('RESOURCE_EXHAUSTED')) {
-            
-            console.warn(`🚫 API key ${this.currentKeyIndex + 1} failed: ${errorMessage}`);
-            this.rotateApiKey();
-            attempts++;
-            continue; // Try next API key
+          // Try switching to next key if available
+          if (this.switchToNextKey()) {
+            console.warn('🔄 Current key failed, retrying with next key...');
+            return this.generateHealthInsights(prompt); // Retry with next key
+          } else {
+            console.warn('🚫 All API keys exhausted, switching to fallback');
+            throw new Error('QUOTA_EXCEEDED: ' + errorMessage);
           }
-          
-          throw new Error(`Gemini API error: ${response.status} - ${errorMessage}`);
         }
-
-        const data = await response.json();
-        console.log(`✅ API key ${this.currentKeyIndex + 1} success`);
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
         
-      } catch (error) {
-        console.warn(`⚠️ API key ${this.currentKeyIndex + 1} failed: ${error.message}`);
-        this.rotateApiKey();
-        attempts++;
-        
-        if (attempts >= maxAttempts) {
-          console.error('❌ All API keys exhausted');
-          throw new Error('All Gemini API keys exhausted');
-        }
+        throw new Error(`Gemini API error: ${response.status} - ${errorMessage}`);
       }
+
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      throw error;
     }
-    
-    throw new Error('All API keys failed');
   }
 
   async generateHealthAlerts(prompt) {
@@ -172,7 +145,12 @@ ${prompt}`
       configured: true, 
       service: 'Gemini Pro',
       status: 'healthy',
-      apiKey: this.apiKey ? 'configured' : 'missing'
+      totalKeys: this.apiKeys.length,
+      activeKey: this.currentKeyIndex + 1,
+      key1: this.apiKeys[0] ? 'configured' : 'missing',
+      key2: this.apiKeys[1] ? 'configured' : 'missing',
+      key3: this.apiKeys[2] ? 'configured' : 'missing',
+      currentModel: this.getCurrentModel()
     };
   }
 }

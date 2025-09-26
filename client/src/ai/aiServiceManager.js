@@ -16,49 +16,104 @@ class AIServiceManager {
     console.log('🔧 Primary service configured:', this.primaryService.isConfigured());
     console.log('🔧 Fallback service configured:', this.fallbackService.isConfigured());
     console.log('🔧 Active service:', this.service.constructor.name);
-          this.quotaExceeded = false;
-          this.requestCount = 0;
-          this.maxRequestsPerHour = 1500; // Gemini daily limit
-          this.requestTimeout = 45000; // 45 second timeout for complex pregnancy analysis
+    
+    // DEMO-READY API MANAGEMENT
+    this.quotaExceeded = false;
+    this.requestCount = 0;
+    this.maxRequestsPerDay = 1500; // Gemini daily limit across all keys
+    this.maxRequestsPerMinute = 15; // Prevent rapid-fire requests
+    this.requestTimeout = 30000; // 30 second timeout for faster fallback
     this.lastRequestTime = 0;
     this.requestHistory = [];
+    this.responseCache = new Map(); // Cache responses to avoid duplicate calls
+    this.pendingRequests = new Set(); // Track pending requests to prevent duplicates
     
-    console.log('🤖 AI Service Manager initialized - Gemini 1.5 Flash Primary');
+    console.log('🤖 AI Service Manager initialized - DEMO-READY with caching');
     console.log('🔧 Primary provider: Gemini 1.5 Flash (Google)');
     console.log('🔧 Fallback provider: Ollama + LLaVA (Local)');
     console.log('🔧 Active service:', this.service.constructor.name);
     console.log('🔧 Service configured:', this.service.isConfigured());
-          console.log('⏱️ Rate limit: 1500 requests per day (Gemini daily limit)');
+    console.log('⏱️ Rate limit: 1500 requests per day (Gemini daily limit)');
+    console.log('🚀 DEMO MODE: Caching enabled, throttling active');
   }
 
   // ===== HELPER METHOD FOR FALLBACK LOGIC =====
   
-  // Reset quota (for testing/demo purposes)
+  // DEMO-READY: Reset quota and clear cache (for testing/demo purposes)
   resetQuota() {
     this.quotaExceeded = false;
     this.requestCount = 0;
     this.requestHistory = [];
+    this.responseCache.clear();
+    this.pendingRequests.clear();
     console.log('🔄 AI quota reset - Gemini ready for new requests');
+    console.log('🧹 Cache cleared - fresh start for demo');
+  }
+
+  // DEMO-READY: Clear cache only (keep quota tracking)
+  clearCache() {
+    this.responseCache.clear();
+    this.pendingRequests.clear();
+    console.log('🧹 Cache cleared - fresh AI responses');
   }
   
-  // Check if we can make a request based on rate limiting
+  // DEMO-READY: Enhanced rate limiting with caching
   canMakeRequest() {
     const now = Date.now();
-    const oneHourAgo = now - (60 * 60 * 1000);
+    const oneMinuteAgo = now - (60 * 1000);
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
     
     // Clean old requests from history
-    this.requestHistory = this.requestHistory.filter(time => time > oneHourAgo);
+    this.requestHistory = this.requestHistory.filter(time => time > oneDayAgo);
     
-    // Check if we're under the rate limit
-    if (this.requestHistory.length >= this.maxRequestsPerHour) {
-      console.warn(`🚫 Rate limit reached: ${this.requestHistory.length}/${this.maxRequestsPerHour} requests in the last hour`);
+    // Check daily limit
+    if (this.requestHistory.length >= this.maxRequestsPerDay) {
+      console.warn(`🚫 Daily rate limit reached: ${this.requestHistory.length}/${this.maxRequestsPerDay} requests today`);
+      return false;
+    }
+    
+    // Check per-minute limit (prevent rapid-fire requests)
+    const recentRequests = this.requestHistory.filter(time => time > oneMinuteAgo);
+    if (recentRequests.length >= this.maxRequestsPerMinute) {
+      console.warn(`🚫 Per-minute rate limit reached: ${recentRequests.length}/${this.maxRequestsPerMinute} requests in the last minute`);
       return false;
     }
     
     return true;
   }
 
+  // DEMO-READY: Generate cache key for request deduplication
+  generateCacheKey(methodName, prompt) {
+    const promptHash = prompt.substring(0, 100).replace(/\s+/g, ''); // First 100 chars, no spaces
+    return `${methodName}_${promptHash}`;
+  }
+
+  // DEMO-READY: Check if request is already pending (prevent duplicates)
+  isRequestPending(methodName, prompt) {
+    const cacheKey = this.generateCacheKey(methodName, prompt);
+    return this.pendingRequests.has(cacheKey);
+  }
+
+  // DEMO-READY: Enhanced executeWithFallback with caching and deduplication
   async executeWithFallback(methodName, prompt) {
+    const cacheKey = this.generateCacheKey(methodName, prompt);
+    
+    // Check if we have a cached response
+    if (this.responseCache.has(cacheKey)) {
+      console.log(`🚀 Using cached response for ${methodName}`);
+      return this.responseCache.get(cacheKey);
+    }
+    
+    // Check if request is already pending (prevent duplicates)
+    if (this.isRequestPending(methodName, prompt)) {
+      console.log(`⏳ Request already pending for ${methodName}, waiting...`);
+      // Wait for the pending request to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (this.responseCache.has(cacheKey)) {
+        return this.responseCache.get(cacheKey);
+      }
+    }
+    
     console.log(`🚀 Gemini 1.5 Flash AI request: ${methodName}`);
     console.log(`🔍 Service configured: ${this.service.isConfigured()}`);
     console.log(`🔍 Can make request: ${this.canMakeRequest()}`);
@@ -69,7 +124,8 @@ class AIServiceManager {
       return await this.tryFallback(methodName, prompt, 'Rate limit exceeded');
     }
     
-    // Record this request
+    // Mark request as pending
+    this.pendingRequests.add(cacheKey);
     this.requestHistory.push(Date.now());
     
     try {
@@ -84,6 +140,10 @@ class AIServiceManager {
       
       console.log(`✅ Gemini 1.5 Flash success`);
       console.log(`🔍 Result length: ${result?.length} chars`);
+      
+      // Cache the successful response
+      this.responseCache.set(cacheKey, result);
+      
       return result;
     } catch (error) {
       console.warn(`⚠️ Gemini failed: ${error.message}`);
@@ -97,11 +157,18 @@ class AIServiceManager {
           error.message.includes('timeout')) {
         
         console.warn('🔄 Total failure detected, trying Ollama + LLaVA fallback');
-        return await this.tryFallback(methodName, prompt, error.message);
+        const fallbackResult = await this.tryFallback(methodName, prompt, error.message);
+        
+        // Cache fallback response too
+        this.responseCache.set(cacheKey, fallbackResult);
+        return fallbackResult;
       }
       
       // For other errors, throw immediately
       throw error;
+    } finally {
+      // Remove from pending requests
+      this.pendingRequests.delete(cacheKey);
     }
   }
 
@@ -194,7 +261,35 @@ class AIServiceManager {
       fallbackConfigured: this.fallbackService.isConfigured(),
       quotaExceeded: this.quotaExceeded,
       requestCount: this.requestCount,
-      maxRequests: this.maxRequests
+      maxRequests: this.maxRequestsPerDay,
+      cacheSize: this.responseCache.size,
+      pendingRequests: this.pendingRequests.size,
+      recentRequests: this.requestHistory.length
+    };
+  }
+
+  // DEMO-READY: Get detailed cache and rate limiting info
+  getDemoStatus() {
+    const now = Date.now();
+    const oneMinuteAgo = now - (60 * 1000);
+    const recentRequests = this.requestHistory.filter(time => time > oneMinuteAgo);
+    
+    return {
+      status: 'DEMO-READY',
+      cache: {
+        size: this.responseCache.size,
+        pending: this.pendingRequests.size
+      },
+      rateLimiting: {
+        daily: `${this.requestHistory.length}/${this.maxRequestsPerDay}`,
+        perMinute: `${recentRequests.length}/${this.maxRequestsPerMinute}`,
+        canMakeRequest: this.canMakeRequest()
+      },
+      services: {
+        primary: this.primaryService.isConfigured(),
+        fallback: this.fallbackService.isConfigured(),
+        active: this.service.constructor.name
+      }
     };
   }
 

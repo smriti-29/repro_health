@@ -268,6 +268,7 @@ const SexualHealth = () => {
       const aiInsights = await aiService.generateSexualHealthInsights(sexualHealthEntry, userProfile);
       
       if (aiInsights) {
+        // Set structured insights for display
         setInsights(aiInsights.aiInsights || aiInsights);
         setSexualHealthPatterns(aiInsights.patterns);
         setHealthAlerts(aiInsights.alerts || []);
@@ -553,7 +554,7 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
       
       // Set all the comprehensive AI sexual health insights (SAME STRUCTURE AS CYCLE TRACKING)
       if (aiInsights) {
-        // AI Insights - detailed medical analysis
+        // AI Insights - detailed medical analysis with structured format
         setInsights(aiInsights.aiInsights || ['AI sexual health analysis completed successfully!']);
         
         // Store AI insights with the sexual health data

@@ -6,8 +6,9 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
   min-height: 100vh;
+  color: white;
 }
 
 /* Header */
@@ -15,17 +16,19 @@
   text-align: center;
   margin-bottom: 30px;
   padding: 30px;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .pregnancy-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: white !important;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -33,7 +36,7 @@
 
 .pregnancy-header p {
   font-size: 1.125rem;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 /* Content Sections */
@@ -51,10 +54,12 @@
 .complications-section,
 .save-section,
 .ai-insights-section {
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   border-radius: 16px;
   padding: 25px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .pregnancy-progress-section h2,
@@ -66,7 +71,7 @@
 .ai-insights-section h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #ff6b9d !important;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -205,7 +210,7 @@
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   color: #6b7280;
   font-weight: 500;
   cursor: pointer;
@@ -250,7 +255,7 @@
   padding: 10px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 20px;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   color: #6b7280;
   font-weight: 500;
   cursor: pointer;
@@ -350,7 +355,7 @@
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   color: #6b7280;
   font-weight: 500;
   cursor: pointer;
@@ -511,7 +516,7 @@
 .tip-item {
   display: flex;
   align-items: flex-start;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
   padding: 15px;
   border-radius: 10px;
   border-left: 3px solid #6366f1;

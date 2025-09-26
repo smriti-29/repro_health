@@ -2204,15 +2204,20 @@ Analysis Date: ${new Date().toLocaleDateString()}
               {fertilityInsights?.aiInsights?.personalizedTips && (
                 <div className="insight-card">
                   <h3>💡 Personalized Tips for You</h3>
-                  <div 
-                    className="insight-text"
-                    dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.personalizedTips
-                        .replace(/### 💡 Personalized Tips for You/g, '')
-                        .replace(/\*\*(.*?)\*\*/g, '$1')
-                        .replace(/\*(.*?)\*/g, '$1')
-                    }}
-                  />
+                  <div className="insight-text">
+                    {Array.isArray(fertilityInsights.aiInsights.personalizedTips) ? 
+                      fertilityInsights.aiInsights.personalizedTips.map((tip, index) => (
+                        <div key={index} className="tip-item">
+                          <span className="tip-icon">✨</span>
+                          <span className="tip-text">{tip}</span>
+                        </div>
+                      )) : (
+                        <div className="tip-item">
+                          <span className="tip-icon">✨</span>
+                          <span className="tip-text">{fertilityInsights.aiInsights.personalizedTips}</span>
+                        </div>
+                      )}
+                  </div>
                 </div>
               )}
               
@@ -2220,15 +2225,20 @@ Analysis Date: ${new Date().toLocaleDateString()}
               {fertilityInsights?.aiInsights?.gentleReminders && (
                 <div className="insight-card">
                   <h3>🌸 Gentle Reminders</h3>
-                  <div 
-                    className="insight-text"
-                    dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.gentleReminders
-                        .replace(/### 🌸 Gentle Reminders/g, '')
-                        .replace(/\*\*(.*?)\*\*/g, '$1')
-                        .replace(/\*(.*?)\*/g, '$1')
-                    }}
-                  />
+                  <div className="insight-text">
+                    {Array.isArray(fertilityInsights.aiInsights.gentleReminders) ? 
+                      fertilityInsights.aiInsights.gentleReminders.map((reminder, index) => (
+                        <div key={index} className="reminder-item">
+                          <span className="reminder-icon">🌸</span>
+                          <span className="reminder-text">{reminder}</span>
+                        </div>
+                      )) : (
+                        <div className="reminder-item">
+                          <span className="reminder-icon">🌸</span>
+                          <span className="reminder-text">{fertilityInsights.aiInsights.gentleReminders}</span>
+                        </div>
+                      )}
+                  </div>
                 </div>
               )}
             </div>

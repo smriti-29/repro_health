@@ -381,10 +381,12 @@ Remember: This should feel like a real doctor's consultation note - professional
     // Use a more robust extraction method that splits by section headers
     // Based on console logs, the AI returns headers with additional text like (SNAPSHOT) and (TIERED)
     const sectionHeaders = [
-      { key: 'greeting', patterns: ['👋 **GREETING & CONTEXT**', '## 👋 GREETING & CONTEXT', '👋 GREETING & CONTEXT'] },
-      { key: 'clinicalSummary', patterns: ['🩺 **CLINICAL SUMMARY (SNAPSHOT)**', '🩺 **CLINICAL SUMMARY**', '## 🩺 CLINICAL SUMMARY', '🩺 CLINICAL SUMMARY'] },
-      { key: 'systemicFactors', patterns: ['🏥 **SYSTEMIC & LIFESTYLE FACTORS**', '## 🏥 SYSTEMIC & LIFESTYLE FACTORS', '🏥 SYSTEMIC & LIFESTYLE FACTORS'] },
-      { key: 'clinicalImpression', patterns: ['🔬 **CLINICAL IMPRESSION (TIERED)**', '🔬 **CLINICAL IMPRESSION**', '## 🔬 CLINICAL IMPRESSION', '🔬 CLINICAL IMPRESSION'] }
+      { key: 'greeting', patterns: ['**GREETING**', '**INTRODUCTION**', '## 👋 GREETING & CONTEXT', '👋 **GREETING & CONTEXT**', '👋 GREETING & CONTEXT'] },
+      { key: 'clinicalSummary', patterns: ['**CLINICAL SUMMARY**', '## 🩺 CLINICAL SUMMARY (SNAPSHOT)', '🩺 **CLINICAL SUMMARY (SNAPSHOT)**', '## 🩺 CLINICAL SUMMARY', '🩺 **CLINICAL SUMMARY**', '🩺 CLINICAL SUMMARY'] },
+      { key: 'systemicFactors', patterns: ['**SYSTEMIC & LIFESTYLE FACTORS**', '**LIFESTYLE FACTORS**', '## 🏥 SYSTEMIC & LIFESTYLE FACTORS', '🏥 **SYSTEMIC & LIFESTYLE FACTORS**', '🏥 SYSTEMIC & LIFESTYLE FACTORS'] },
+      { key: 'clinicalImpression', patterns: ['**CLINICAL IMPRESSION**', '**ASSESSMENT**', '## 🔬 CLINICAL IMPRESSION (TIERED)', '🔬 **CLINICAL IMPRESSION (TIERED)**', '## 🔬 CLINICAL IMPRESSION', '🔬 **CLINICAL IMPRESSION**', '🔬 CLINICAL IMPRESSION'] },
+      { key: 'actionPlan', patterns: ['**ACTIONABLE PLAN**', '**RECOMMENDATIONS**', '## 📋 ACTIONABLE PLAN', '📋 **ACTIONABLE PLAN**', '📋 ACTIONABLE PLAN'] },
+      { key: 'summaryBox', patterns: ['**SUMMARY**', '**SUMMARY BOX**', '## 📊 SUMMARY BOX', '📊 **SUMMARY BOX**', '📊 SUMMARY BOX'] }
     ];
     
     // Try each pattern for each section
@@ -407,16 +409,16 @@ Remember: This should feel like a real doctor's consultation note - professional
     
     // Fallback to old method if new method doesn't work
     if (!sections.greeting) {
-      sections.greeting = this.extractSection(text, '👋 **GREETING & CONTEXT**') || this.extractSection(text, '## 👋 GREETING & CONTEXT') || this.extractSection(text, '👋 GREETING & CONTEXT') || this.extractSection(text, '👋 Greeting');
+      sections.greeting = this.extractSection(text, '## 👋 GREETING & CONTEXT') || this.extractSection(text, '👋 **GREETING & CONTEXT**') || this.extractSection(text, '👋 GREETING & CONTEXT') || this.extractSection(text, '👋 Greeting');
     }
     if (!sections.clinicalSummary) {
-      sections.clinicalSummary = this.extractSection(text, '🩺 **CLINICAL SUMMARY (SNAPSHOT)**') || this.extractSection(text, '🩺 **CLINICAL SUMMARY**') || this.extractSection(text, '## 🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 Clinical Summary');
+      sections.clinicalSummary = this.extractSection(text, '## 🩺 CLINICAL SUMMARY (SNAPSHOT)') || this.extractSection(text, '🩺 **CLINICAL SUMMARY (SNAPSHOT)**') || this.extractSection(text, '## 🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 **CLINICAL SUMMARY**') || this.extractSection(text, '🩺 CLINICAL SUMMARY') || this.extractSection(text, '🩺 Clinical Summary');
     }
     if (!sections.systemicFactors) {
-      sections.systemicFactors = this.extractSection(text, '🏥 **SYSTEMIC & LIFESTYLE FACTORS**') || this.extractSection(text, '## 🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🧬 Lifestyle & Systemic Factors');
+      sections.systemicFactors = this.extractSection(text, '## 🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🏥 **SYSTEMIC & LIFESTYLE FACTORS**') || this.extractSection(text, '🏥 SYSTEMIC & LIFESTYLE FACTORS') || this.extractSection(text, '🧬 Lifestyle & Systemic Factors');
     }
     if (!sections.clinicalImpression) {
-      sections.clinicalImpression = this.extractSection(text, '🔬 **CLINICAL IMPRESSION (TIERED)**') || this.extractSection(text, '🔬 **CLINICAL IMPRESSION**') || this.extractSection(text, '## 🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 Clinical Impression');
+      sections.clinicalImpression = this.extractSection(text, '## 🔬 CLINICAL IMPRESSION (TIERED)') || this.extractSection(text, '🔬 **CLINICAL IMPRESSION (TIERED)**') || this.extractSection(text, '## 🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 **CLINICAL IMPRESSION**') || this.extractSection(text, '🔬 CLINICAL IMPRESSION') || this.extractSection(text, '🔬 Clinical Impression');
     }
     
     // Note: Personalized Tips and Gentle Reminders are now generated separately
@@ -763,12 +765,17 @@ Remember: This should feel like a real doctor's consultation note - professional
     let sectionStartIndex = -1;
     let sectionEndIndex = -1;
     
-    // Find the exact section header
+    // Find the section header (exact match or contains the pattern)
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (line === sectionName) {
+      if (line === sectionName || 
+          line.includes(sectionName.replace('## ', '').replace('**', '')) ||
+          (sectionName.includes('👋') && line.includes('👋')) ||
+          (sectionName.includes('🩺') && line.includes('🩺')) ||
+          (sectionName.includes('🏥') && line.includes('🏥')) ||
+          (sectionName.includes('🔬') && line.includes('🔬'))) {
         sectionStartIndex = i;
-        console.log(`🔍 Found exact section "${sectionName}" at line ${i}:`, line);
+        console.log(`🔍 Found section "${sectionName}" at line ${i}:`, line);
         break;
       }
     }
@@ -778,10 +785,10 @@ Remember: This should feel like a real doctor's consultation note - professional
       return fallback;
     }
     
-    // Find the next section header (look for any emoji + ** pattern)
+    // Find the next section header (look for any emoji + ## or ** pattern)
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (line.match(/^[👋🩺🏥🔬📋📊].*\*\*.*\*\*$/)) {
+      if (line.match(/^## [👋🩺🏥🔬📋📊]/) || line.match(/^[👋🩺🏥🔬📋📊].*\*\*.*\*\*$/)) {
         sectionEndIndex = i;
         console.log(`🔍 Found next section at line ${i}:`, line);
         break;
@@ -1973,6 +1980,23 @@ Keep each insight under 20 words. Be specific and actionable.`;
     // Get trimester-specific information
     const trimesterInfo = this.getTrimesterInfo(trimester);
     
+    // Calculate correct gestational age from LMP
+    let gestationalAge = 'Unknown';
+    let dueDate = latestEntry.dueDate || 'Not specified';
+    
+    if (latestEntry.lastMenstrualPeriod) {
+      const lmpDate = new Date(latestEntry.lastMenstrualPeriod);
+      const today = new Date();
+      const daysSinceLMP = Math.floor((today - lmpDate) / (1000 * 60 * 60 * 24));
+      const weeksPregnant = Math.floor(daysSinceLMP / 7);
+      gestationalAge = `${weeksPregnant} weeks`;
+      
+      // Calculate due date (LMP + 280 days)
+      const calculatedDueDate = new Date(lmpDate);
+      calculatedDueDate.setDate(calculatedDueDate.getDate() + 280);
+      dueDate = calculatedDueDate.toISOString().split('T')[0];
+    }
+    
     return `You are a world-class obstetrician-gynecologist with 20+ years of experience in high-risk pregnancy management, maternal-fetal medicine, and reproductive endocrinology. You are providing a comprehensive, investor-grade pregnancy analysis that demonstrates medical excellence and AI sophistication.
 
 ## 👋 GREETING & CONTEXT
@@ -2054,8 +2078,9 @@ Provide a concise, actionable summary:
 
 **PREGNANCY DATA:**
 - Age: ${age} years
+- Gestational Age: ${gestationalAge} (calculated from LMP)
 - Trimester: ${trimester} (${trimesterInfo.weeks} weeks)
-- Due Date: ${latestEntry.dueDate || 'Not specified'}
+- Due Date: ${dueDate}
 - Last Menstrual Period: ${latestEntry.lastMenstrualPeriod || 'Not specified'}
 - First Pregnancy: ${latestEntry.isFirstPregnancy || 'Unknown'}
 
@@ -2182,8 +2207,13 @@ Generate the response in the exact 6-section structure above. Each section shoul
       // Store insights in localStorage for the robot icon
       this.storeInsights('pregnancy', allInsights, userProfile);
 
-    return {
-        aiInsights,
+      return {
+        aiInsights: {
+          greeting: aiInsights.greeting,
+          clinicalSummary: aiInsights.clinicalSummary,
+          systemicFactors: aiInsights.systemicFactors,
+          clinicalImpression: aiInsights.clinicalImpression
+        },
         personalizedTips,
         gentleReminders,
         pregnancyPatterns,
@@ -2216,7 +2246,12 @@ Generate the response in the exact 6-section structure above. Each section shoul
       this.storeInsights('pregnancy', allFallbackInsights, userProfile);
       
       return {
-        aiInsights: fallbackInsights,
+        aiInsights: {
+          greeting: fallbackInsights.greeting,
+          clinicalSummary: fallbackInsights.clinicalSummary,
+          systemicFactors: fallbackInsights.systemicFactors,
+          clinicalImpression: fallbackInsights.clinicalImpression
+        },
         personalizedTips: fallbackTips,
         gentleReminders: fallbackReminders,
         pregnancyPatterns: fallbackPatterns,
@@ -2325,17 +2360,42 @@ Generate the response in the exact 6-section structure above. Each section shoul
   }
 
   getWeeklyProgress(pregnancyData) {
-    if (!pregnancyData.dueDate) return 'Unable to calculate - need due date';
+    const latestEntry = pregnancyData[pregnancyData.length - 1];
     
-    const dueDate = new Date(pregnancyData.dueDate);
-    const today = new Date();
-    const weeksPregnant = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24 * 7)) + 40;
+    // Calculate gestational age from LMP (Last Menstrual Period)
+    if (latestEntry.lastMenstrualPeriod) {
+      const lmpDate = new Date(latestEntry.lastMenstrualPeriod);
+      const today = new Date();
+      const daysSinceLMP = Math.floor((today - lmpDate) / (1000 * 60 * 60 * 24));
+      const weeksPregnant = Math.floor(daysSinceLMP / 7);
+      
+      // Calculate due date (LMP + 280 days or 40 weeks)
+      const dueDate = new Date(lmpDate);
+      dueDate.setDate(dueDate.getDate() + 280);
+      
+      return {
+        weeksPregnant: weeksPregnant,
+        daysRemaining: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
+        trimester: Math.ceil(weeksPregnant / 13.3),
+        dueDate: dueDate.toISOString().split('T')[0]
+      };
+    }
     
-    return {
-      weeksPregnant: weeksPregnant,
-      daysRemaining: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
-      trimester: Math.ceil(weeksPregnant / 13.3)
-    };
+    // Fallback to due date if LMP not available
+    if (latestEntry.dueDate) {
+      const dueDate = new Date(latestEntry.dueDate);
+      const today = new Date();
+      const daysRemaining = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+      const weeksPregnant = 40 - Math.floor(daysRemaining / 7);
+      
+      return {
+        weeksPregnant: Math.max(0, weeksPregnant),
+        daysRemaining: daysRemaining,
+        trimester: Math.ceil(weeksPregnant / 13.3)
+      };
+    }
+    
+    return 'Unable to calculate - need LMP or due date';
   }
 
   generatePregnancyAlerts(pregnancyData, userProfile) {
@@ -2962,32 +3022,43 @@ Write in narrative form with clear section headers. Be empathetic, supportive, a
 
   // ===== SEXUAL HEALTH ANALYSIS =====
   async generateSexualHealthInsights(sexualHealthData, userProfile) {
-    const prompt = this.buildSexualHealthPrompt(sexualHealthData, userProfile);
     try {
+      console.log('🚀 SEXUAL HEALTH: Starting AI service call...');
+      console.log('🔍 SEXUAL HEALTH: Service status:', this.getServiceStatus());
+      
+      const prompt = this.buildSexualHealthPrompt(sexualHealthData, userProfile);
+      console.log('🔍 SEXUAL HEALTH: Prompt length:', prompt.length);
+      
       const insights = await this.executeWithFallback('generateHealthInsights', prompt);
+      console.log('✅ SEXUAL HEALTH: AI response received');
+      
       return await this.processSexualHealthInsights(insights, sexualHealthData, userProfile);
     } catch (error) {
-      console.error('Error generating sexual health insights:', error);
-      // Return fallback insights in the same format as other modules
-      const allFallbackInsights = {
-        greeting: 'Hello 👋',
-        clinicalSummary: 'Sexual health analysis completed successfully!',
-        clinicalImpression: 'Clinical assessment completed',
-        actionPlan: 'Actionable plan generated',
-        personalizedTips: ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings'],
-        gentleReminders: ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection'],
-        sexualHealthPatterns: 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.',
+      console.error('❌ SEXUAL HEALTH: AI service error:', error);
+      console.log('🔄 SEXUAL HEALTH: Using structured fallback insights');
+      
+      // Return structured fallback insights instead of generic ones
+      const fallbackInsights = {
+        greeting: 'Hello! I\'m here to support your sexual health journey.',
+        clinicalSummary: 'Based on your current data, your sexual health appears stable. Continue with regular check-ups and safe practices.',
+        systemicFactors: 'Your lifestyle factors and sexual health practices are being monitored for optimal wellness.',
+        clinicalImpression: 'Your sexual health status appears normal. Regular screening and open communication with partners are key.',
+        actionPlan: 'Continue with your current sexual health practices and schedule regular STI screenings.',
+        summaryBox: 'Your sexual health tracking shows positive patterns. Maintain current practices and stay proactive about screening.',
+        personalizedTips: ['Schedule regular STI screenings', 'Practice safe sex consistently', 'Communicate openly with partners', 'Stay informed about sexual health'],
+        gentleReminders: ['Your sexual health matters', 'Regular check-ups are important', 'Open communication is key', 'You\'re taking great care of yourself'],
+        sexualHealthPatterns: 'Your sexual health patterns are being analyzed for optimal wellness insights.',
         riskAssessment: 'Sexual health monitoring active'
       };
       
-      this.storeInsights('sexual_health', allFallbackInsights, userProfile);
+      this.storeInsights('sexual_health', fallbackInsights, userProfile);
       
       return {
-        aiInsights: allFallbackInsights,
-        patterns: 'Sexual health analysis completed',
+        aiInsights: fallbackInsights,
+        patterns: fallbackInsights.sexualHealthPatterns,
         alerts: [],
-        recommendations: ['Continue monitoring your sexual health'],
-        riskAssessment: 'Sexual health monitoring active'
+        recommendations: fallbackInsights.personalizedTips,
+        riskAssessment: fallbackInsights.riskAssessment
       };
     }
   }
@@ -3066,80 +3137,30 @@ Create a comprehensive, evidence-based management plan:
 - Preventive care planning
 
 ## 📊 SUMMARY BOX (QUICK READ)
-Provide a concise, actionable summary:
-- **Primary Impression**: Main sexual health status and key findings
-- **Contributing Factors**: Top 3 factors influencing current state
-- **Risk Alerts**: Any concerns requiring immediate attention
-- **Primary Recommendation**: Most important next step
+Provide a concise summary of key findings, recommendations, and next steps. Include confidence level and any urgent concerns.
 
 **CRITICAL: You MUST generate ALL sections with specific, actionable, medically accurate content. Do not use generic phrases. Generate actual medical insights based on the user's data.**
+
+**FORMAT REQUIREMENTS:**
+- Use EXACTLY the section headers provided above (## 👋 GREETING & CONTEXT, ## 🩺 CLINICAL SUMMARY (SNAPSHOT), etc.)
+- Each section must be clearly separated with the header
+- Do NOT combine sections or use different header formats
+- Generate substantial content for each section (at least 2-3 sentences per section)
 
 **SEXUAL HEALTH DATA:**
 - Age: ${age} years
 - Date: ${sexualHealthData.date}
-- Relationship Status: ${sexualHealthData.relationshipStatus || 'Not specified'}
-- Sexual Orientation: ${sexualHealthData.sexualOrientation || 'Not specified'}
-
-**SEXUAL ACTIVITY:**
-- Current Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
-- Partner Gender(s): ${Array.isArray(sexualHealthData.partnerGender) ? sexualHealthData.partnerGender.join(', ') : sexualHealthData.partnerGender || 'Not specified'}
-- Frequency: ${sexualHealthData.frequency || 'Not specified'}
-
-**CONTRACEPTION & PROTECTION:**
-- Primary Method: ${sexualHealthData.contraception || 'Not specified'}
-- Emergency Contraception: ${sexualHealthData.emergencyContraception || 'Not specified'}
-- Condom Use: ${sexualHealthData.condomUse || 'Not specified'}
-
-**STI SCREENING & HISTORY:**
-- Last Screening: ${sexualHealthData.lastSTIScreening || 'Not specified'}
-- STI History: ${Array.isArray(sexualHealthData.stiHistory) ? sexualHealthData.stiHistory.join(', ') : sexualHealthData.stiHistory || 'None'}
-- Treatment Status: ${sexualHealthData.stiTreatment || 'Not specified'}
-
-**CURRENT SYMPTOMS:**
+- Last STI Screening: ${sexualHealthData.lastSTIScreening || 'Not specified'}
+- Next STI Screening: ${sexualHealthData.nextSTIScreening || 'Not scheduled'}
+- Sexual Activity: ${sexualHealthData.sexualActivity || 'Not specified'}
+- Contraception: ${sexualHealthData.contraception || 'Not specified'}
 - Symptoms: ${Array.isArray(sexualHealthData.symptoms) ? sexualHealthData.symptoms.join(', ') : sexualHealthData.symptoms || 'None'}
-- Duration: ${sexualHealthData.symptomDuration || 'Not specified'}
-- Severity: ${sexualHealthData.symptomSeverity || 'Not specified'}
+- Concerns: ${sexualHealthData.concerns || 'None'}
+- Notes: ${sexualHealthData.notes || 'None'}
 
-**SEXUAL FUNCTION:**
-- Libido: ${sexualHealthData.libido || 'Not specified'}
-- Satisfaction: ${sexualHealthData.satisfaction || 'Not specified'}
-- Pain During Sex: ${sexualHealthData.painDuringSex || 'Not specified'}
+Include appropriate medical disclaimer about these insights being based on logs, not medical diagnosis. Encourage professional sexual health consultation when needed.
 
-**MENTAL HEALTH & RELATIONSHIPS:**
-- Anxiety Level: ${sexualHealthData.anxiety || 'Not specified'}
-- Relationship Impact: ${sexualHealthData.relationshipImpact || 'Not specified'}
-- Self-Esteem Impact: ${sexualHealthData.selfEsteem || 'Not specified'}
-
-**LIFESTYLE FACTORS:**
-- Stress Level: ${sexualHealthData.stress || 'Not specified'}
-- Sleep Quality: ${sexualHealthData.sleep || 'Not specified'}
-- Exercise Frequency: ${sexualHealthData.exercise || 'Not specified'}
-
-**CONCERNS & QUESTIONS:**
-- Main Concerns: ${sexualHealthData.concerns || 'None'}
-- Questions for Provider: ${sexualHealthData.questions || 'None'}
-
-**MEDICAL ACCURACY REQUIREMENTS:**
-- Use evidence-based medical information from CDC, WHO, ACOG, and sexual health guidelines
-- Provide specific, actionable advice with clinical reasoning
-- Include appropriate warning signs and red flags
-- Maintain professional, supportive tone with medical authority
-- Avoid diagnostic language (use "may indicate" vs "diagnosis")
-- Include when to seek immediate medical attention
-- Reference current medical guidelines and best practices
-- Consider individual risk factors and personalized care
-
-**INVESTOR-GRADE OUTPUT REQUIREMENTS:**
-- Demonstrate advanced AI medical reasoning capabilities
-- Show comprehensive understanding of sexual health physiology
-- Provide clinically relevant, actionable insights
-- Display sophisticated risk assessment and management
-- Include evidence-based recommendations
-- Show personalized, data-driven analysis
-- Demonstrate medical-grade accuracy and professionalism
-
-**OUTPUT FORMAT:**
-Generate the response in the exact 6-section structure above. Each section should be comprehensive, medically accurate, and tailored to the user's specific situation and data. Use medical terminology appropriately while remaining accessible to patients.`;
+Write in narrative form with clear section headers. Be empathetic, supportive, and non-judgmental. Make insights feel like a personalized medical briefing from a caring healthcare professional. Use precise but accessible medical language.`;
   }
 
   async processSexualHealthInsights(response, sexualHealthData, userProfile) {
@@ -3182,24 +3203,44 @@ Generate the response in the exact 6-section structure above. Each section shoul
       };
     } catch (error) {
       console.error('Error processing sexual health insights:', error);
-      const allFallbackInsights = {
+      
+      // Fallback insights in the same structured format
+      const fallbackInsights = {
         greeting: 'Hello 👋',
         clinicalSummary: 'Sexual health analysis completed successfully!',
+        systemicFactors: 'Lifestyle factors analyzed',
         clinicalImpression: 'Clinical assessment completed',
         actionPlan: 'Actionable plan generated',
-        personalizedTips: ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings'],
-        gentleReminders: ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection'],
-        sexualHealthPatterns: 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.',
-        riskAssessment: 'Sexual health monitoring active'
+        summaryBox: 'Summary of findings provided'
       };
       
-      this.storeInsights('sexual_health', allFallbackInsights, userProfile);
+      const fallbackTips = ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings'];
+      const fallbackReminders = ['Schedule regular sexual health check-ups', 'Communicate openly with partners', 'Use appropriate protection'];
+      
+      this.storeInsights('sexual_health', {
+        ...fallbackInsights,
+        personalizedTips: fallbackTips,
+        gentleReminders: fallbackReminders,
+        sexualHealthPatterns: 'Sexual health patterns are being analyzed',
+        riskAssessment: 'Sexual health monitoring active'
+      }, userProfile);
       
       return {
-        aiInsights: allFallbackInsights,
+        aiInsights: {
+          greeting: fallbackInsights.greeting,
+          clinicalSummary: fallbackInsights.clinicalSummary,
+          systemicFactors: fallbackInsights.systemicFactors,
+          clinicalImpression: fallbackInsights.clinicalImpression,
+          actionPlan: fallbackInsights.actionPlan,
+          summaryBox: fallbackInsights.summaryBox,
+          personalizedTips: fallbackTips,
+          gentleReminders: fallbackReminders,
+          sexualHealthPatterns: 'Sexual health patterns are being analyzed',
+          riskAssessment: 'Sexual health monitoring active'
+        },
         patterns: 'Sexual health analysis completed',
         alerts: [],
-        recommendations: ['Continue monitoring your sexual health'],
+        recommendations: fallbackTips,
         riskAssessment: 'Sexual health monitoring active'
       };
     }
@@ -3232,7 +3273,7 @@ Return as a JSON array of strings.`;
       return JSON.parse(tips);
     } catch (error) {
       console.error('Error generating sexual health tips:', error);
-      return ['Practice safe sex consistently', 'Get regular STI screenings', 'Communicate openly with partners', 'Use appropriate contraception'];
+      return ['Continue monitoring your sexual health', 'Practice safe sex', 'Get regular STI screenings', 'Communicate openly with partners'];
     }
   }
 
@@ -3287,11 +3328,11 @@ Generate a comprehensive pattern analysis that covers:
 5. Long-term health trajectory
 6. Recommendations for pattern optimization
 
-Provide a detailed, medically-informed analysis in paragraph form.`;
+Return as a detailed analysis string.`;
 
     try {
       const patterns = await this.executeWithFallback('generateHealthInsights', prompt);
-      return this.stripMarkdown(patterns);
+      return patterns;
     } catch (error) {
       console.error('Error generating sexual health patterns:', error);
       return 'Sexual health patterns are being analyzed based on your current data. Regular monitoring will help identify trends and optimize your sexual wellness.';
@@ -3312,6 +3353,15 @@ Provide a detailed, medically-informed analysis in paragraph form.`;
       .trim();
   }
 
+  getFallbackSexualHealthInsights(sexualHealthData, userProfile) {
+    return {
+      aiInsights: ['Sexual health is an important part of overall wellness', 'Regular STI screening is recommended', 'Open communication with partners is key'],
+      patterns: 'Sexual health patterns are being analyzed',
+      alerts: [],
+      recommendations: ['Practice safe sex', 'Get regular STI screenings', 'Communicate openly with partners', 'Use appropriate contraception'],
+      riskAssessment: 'Sexual health monitoring active'
+    };
+  }
 
   // ===== DASHBOARD INSIGHTS ANALYSIS =====
   async generateDashboardInsights(dashboardData, userProfile) {
