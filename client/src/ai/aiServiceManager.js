@@ -17,16 +17,18 @@ class AIServiceManager {
     console.log('🔧 Fallback service configured:', this.fallbackService.isConfigured());
     console.log('🔧 Active service:', this.service.constructor.name);
     
-    // DEMO-READY API MANAGEMENT
+    // DEMO-READY API MANAGEMENT - OPTIMIZED FOR GEMINI
     this.quotaExceeded = false;
     this.requestCount = 0;
     this.maxRequestsPerDay = 1500; // Gemini daily limit across all keys
-    this.maxRequestsPerMinute = 15; // Prevent rapid-fire requests
-    this.requestTimeout = 30000; // 30 second timeout for faster fallback
+    this.maxRequestsPerMinute = 10; // Reduced to prevent overload
+    this.requestTimeout = 45000; // 45 second timeout for Gemini
     this.lastRequestTime = 0;
     this.requestHistory = [];
     this.responseCache = new Map(); // Cache responses to avoid duplicate calls
     this.pendingRequests = new Set(); // Track pending requests to prevent duplicates
+    this.retryCount = 0;
+    this.maxRetries = 3;
     
     console.log('🤖 AI Service Manager initialized - DEMO-READY with caching');
     console.log('🔧 Primary provider: Gemini 1.5 Flash (Google)');
@@ -46,8 +48,131 @@ class AIServiceManager {
     this.requestHistory = [];
     this.responseCache.clear();
     this.pendingRequests.clear();
+    this.retryCount = 0;
+    this.lastRequestTime = 0;
     console.log('🔄 AI quota reset - Gemini ready for new requests');
     console.log('🧹 Cache cleared - fresh start for demo');
+  }
+  
+  // DEMO-READY: Force reset for demo (bypass all limits)
+  forceResetForDemo() {
+    this.quotaExceeded = false;
+    this.requestCount = 0;
+    this.requestHistory = [];
+    this.responseCache.clear();
+    this.pendingRequests.clear();
+    this.retryCount = 0;
+    this.lastRequestTime = 0;
+    this.maxRequestsPerMinute = 5; // Very conservative for demo
+    console.log('🚀 DEMO MODE: All limits reset for smooth demo experience');
+  }
+
+  // DEMO EMERGENCY MODE - Keep trying Gemini harder
+  async generateHealthInsightsWithEmergencyRetry(prompt, userProfile) {
+    console.log('🚨 DEMO EMERGENCY MODE: Aggressive Gemini retry strategy');
+    
+    // Try up to 10 times with increasing delays
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        console.log(`🚨 Emergency attempt ${attempt + 1}/10 for Gemini...`);
+        
+        // Wait before retry (exponential backoff)
+        if (attempt > 0) {
+          const delay = Math.min(5000 * Math.pow(1.5, attempt), 30000); // Max 30 seconds
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        const result = await this.generateHealthInsights(prompt, userProfile);
+        console.log(`✅ Emergency mode SUCCESS on attempt ${attempt + 1}!`);
+        return result;
+        
+      } catch (error) {
+        console.warn(`⚠️ Emergency attempt ${attempt + 1} failed: ${error.message}`);
+        
+        if (attempt === 9) {
+          console.error('❌ Emergency mode failed after 10 attempts');
+          throw error;
+        }
+      }
+    }
+  }
+  
+  // Store insights for the robot icon (central storage)
+  storeInsightsForRobotIcon(moduleType, insights, userProfile) {
+    try {
+      const userId = userProfile?.id || userProfile?.email || 'anonymous';
+      const storageKey = `aiInsights_${moduleType}_${userId}`;
+      
+      console.log(`🔍 STORING ${moduleType} INSIGHTS:`, {
+        type: typeof insights,
+        isArray: Array.isArray(insights),
+        keys: insights ? Object.keys(insights) : 'No keys',
+        aiAnalysis: insights?.aiAnalysis,
+        aiAnalysisContent: insights?.aiAnalysis?.content?.length,
+        personalizedTips: insights?.personalizedTips?.length,
+        gentleReminders: insights?.gentleReminders?.length
+      });
+      
+      // Store the insights with timestamp
+      const insightData = {
+        ...insights,
+        timestamp: new Date().toISOString(),
+        moduleType: moduleType
+      };
+      
+      localStorage.setItem(storageKey, JSON.stringify(insightData));
+      console.log(`✅ Stored ${moduleType} insights for robot icon`);
+      console.log(`🔍 Stored insights structure:`, Object.keys(insights));
+      console.log(`🔍 Stored aiAnalysis:`, insights.aiAnalysis);
+      console.log(`🔍 Stored aiAnalysis.content length:`, insights.aiAnalysis?.content?.length);
+      
+      // Also store in central insights storage
+      this.storeCentralInsights(moduleType, insights, userProfile);
+    } catch (error) {
+      console.error(`❌ Error storing ${moduleType} insights:`, error);
+    }
+  }
+  
+  // Central storage for all module insights
+  storeCentralInsights(moduleType, insights, userProfile) {
+    try {
+      const userId = userProfile?.id || userProfile?.email || 'anonymous';
+      const centralKey = `centralAIInsights_${userId}`;
+      
+      // Get existing central insights
+      const existingInsights = JSON.parse(localStorage.getItem(centralKey) || '{}');
+      
+      // Add new insights
+      existingInsights[moduleType] = {
+        ...insights,
+        timestamp: new Date().toISOString(),
+        moduleType: moduleType
+      };
+      
+          // Store updated central insights
+          localStorage.setItem(centralKey, JSON.stringify(existingInsights));
+          console.log(`✅ Updated central insights with ${moduleType} data`);
+          console.log(`🔍 Central insights now contain:`, Object.keys(existingInsights));
+          console.log(`🔍 ${moduleType} central insights:`, existingInsights[moduleType]);
+    } catch (error) {
+      console.error(`❌ Error storing central insights:`, error);
+    }
+  }
+  
+  // Get all stored insights for robot icon
+  getAllStoredInsights(userProfile) {
+    try {
+      const userId = userProfile?.id || userProfile?.email || 'anonymous';
+      const centralKey = `centralAIInsights_${userId}`;
+      const centralInsights = JSON.parse(localStorage.getItem(centralKey) || '{}');
+      
+      console.log('🔍 Retrieved central insights:', Object.keys(centralInsights));
+      return centralInsights;
+    } catch (error) {
+      console.error(`❌ Error retrieving central insights:`, error);
+      return {};
+    }
   }
 
   // DEMO-READY: Clear cache only (keep quota tracking)
@@ -84,7 +209,9 @@ class AIServiceManager {
 
   // DEMO-READY: Generate cache key for request deduplication
   generateCacheKey(methodName, prompt) {
-    const promptHash = prompt.substring(0, 100).replace(/\s+/g, ''); // First 100 chars, no spaces
+    // Safety check: ensure prompt is a string
+    const promptString = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+    const promptHash = promptString.substring(0, 100).replace(/\s+/g, ''); // First 100 chars, no spaces
     return `${methodName}_${promptHash}`;
   }
 
@@ -118,10 +245,23 @@ class AIServiceManager {
     console.log(`🔍 Service configured: ${this.service.isConfigured()}`);
     console.log(`🔍 Can make request: ${this.canMakeRequest()}`);
     
-    // Check rate limiting
+    // Enhanced rate limiting with intelligent delays
     if (!this.canMakeRequest()) {
-      console.warn('🚫 Rate limit exceeded, trying fallback');
-      return await this.tryFallback(methodName, prompt, 'Rate limit exceeded');
+      console.warn('🚫 Rate limit exceeded, waiting before retry...');
+      const waitTime = 5000; // 5 second wait
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+      if (!this.canMakeRequest()) {
+        throw new Error('Rate limit exceeded. Please wait before making another request.');
+      }
+    }
+    
+    // Additional throttling for 503 prevention
+    const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+    if (timeSinceLastRequest < 3000) { // 3 second minimum between requests
+      const waitTime = 3000 - timeSinceLastRequest;
+      console.log(`⏳ Throttling: waiting ${waitTime}ms to prevent overload...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
     // Mark request as pending
@@ -130,41 +270,62 @@ class AIServiceManager {
     
     try {
       console.log(`🚀 Calling Gemini 1.5 Flash...`);
-      // Use Gemini with optimized timeout
-      const result = await Promise.race([
-        this.service[methodName](prompt),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), this.requestTimeout)
-        )
-      ]);
       
-      console.log(`✅ Gemini 1.5 Flash success`);
-      console.log(`🔍 Result length: ${result?.length} chars`);
+      // Intelligent retry with exponential backoff for 503 errors
+      let result;
+      let lastError;
       
-      // Cache the successful response
-      this.responseCache.set(cacheKey, result);
-      
-      return result;
-    } catch (error) {
-      console.warn(`⚠️ Gemini failed: ${error.message}`);
-      
-      // Only fallback on total failure (500 errors, network issues)
-      if (error.message.includes('QUOTA_EXCEEDED') || 
-          error.message.includes('429') || 
-          error.message.includes('500') ||
-          error.message.includes('503') ||
-          error.message.includes('network') ||
-          error.message.includes('timeout')) {
-        
-        console.warn('🔄 Total failure detected, trying Ollama + LLaVA fallback');
-        const fallbackResult = await this.tryFallback(methodName, prompt, error.message);
-        
-        // Cache fallback response too
-        this.responseCache.set(cacheKey, fallbackResult);
-        return fallbackResult;
+      for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10 seconds
+            console.log(`🔄 Retry attempt ${attempt}/${this.maxRetries} after ${backoffDelay}ms delay`);
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          }
+          
+          result = await Promise.race([
+            this.service[methodName](prompt),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Request timeout')), this.requestTimeout)
+            )
+          ]);
+          
+          console.log(`✅ Gemini 1.5 Flash success on attempt ${attempt + 1}`);
+          console.log(`🔍 Result length: ${result?.length} chars`);
+          break; // Success, exit retry loop
+          
+        } catch (error) {
+          lastError = error;
+          console.warn(`⚠️ Gemini attempt ${attempt + 1} failed: ${error.message}`);
+          
+        // Retry on 503 errors (overloaded or unavailable) - MORE AGGRESSIVE
+        if (error.message.includes('503') && attempt < this.maxRetries) {
+          console.log(`🔄 Will retry due to 503 error (attempt ${attempt + 1}/${this.maxRetries})...`);
+          // Wait longer for 503 errors
+          await new Promise(resolve => setTimeout(resolve, Math.min(2000 * Math.pow(2, attempt), 10000)));
+          continue;
+        } else if (error.message.includes('overloaded') && attempt < this.maxRetries) {
+          console.log(`🔄 Will retry due to overloaded error (attempt ${attempt + 1}/${this.maxRetries})...`);
+          // Wait even longer for overloaded errors
+          await new Promise(resolve => setTimeout(resolve, Math.min(3000 * Math.pow(2, attempt), 15000)));
+          continue;
+        } else {
+          // Don't retry for other errors
+          break;
+        }
+        }
       }
       
-      // For other errors, throw immediately
+      if (result) {
+        // Cache the successful response
+        this.responseCache.set(cacheKey, result);
+        return result;
+      } else {
+        throw lastError || new Error('All retry attempts failed');
+      }
+      
+    } catch (error) {
+      console.error(`❌ Gemini failed after all retries: ${error.message}`);
       throw error;
     } finally {
       // Remove from pending requests

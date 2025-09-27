@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import SexualHealthAIService from '../ai/sexualHealthAIService.js';
 import './SexualHealth.css';
 
 const SexualHealth = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new SexualHealthAIService());
 
   // Helper function to calculate age
   const calculateAge = (dateOfBirth) => {
@@ -38,7 +38,7 @@ const SexualHealth = () => {
   const [isConversationMode, setIsConversationMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [conversationData, setConversationData] = useState({});
-  const [selectedPregnancyInsights, setSelectedPregnancyInsights] = useState(null);
+  const [selectedSexualHealthInsights, setSelectedSexualHealthInsights] = useState(null);
   
   // 3-Entry Analysis Feature (like Cycle and Fertility Tracking)
   const [threeEntryAnalysis, setThreeEntryAnalysis] = useState(null);
@@ -265,17 +265,30 @@ const SexualHealth = () => {
         conditions: { reproductive: [] }
       };
 
-      const aiInsights = await aiService.generateSexualHealthInsights(sexualHealthEntry, userProfile);
+      // Use the Sexual Health AI service's complete method (like other modules)
+      const aiInsights = await aiService.generateSexualHealthInsights([sexualHealthEntry], userProfile);
+      
+      console.log('✅ Processed AI Sexual Health Insights:', aiInsights);
       
       if (aiInsights) {
-        // Set structured insights for display
-        setInsights(aiInsights.aiInsights || aiInsights);
+        console.log('🔍 DEBUG - AI Insights received:', aiInsights);
+        console.log('🔍 DEBUG - AI Insights keys:', Object.keys(aiInsights));
+        console.log('🔍 DEBUG - sexualHealthAssessment exists:', !!aiInsights.sexualHealthAssessment);
+        console.log('🔍 DEBUG - safetyProtectionAnalysis exists:', !!aiInsights.safetyProtectionAnalysis);
+        console.log('🔍 DEBUG - medicalRecommendations exists:', !!aiInsights.medicalRecommendations);
+        
+        // Set structured insights for display - use the extracted sections directly
+        setInsights(aiInsights);
         setSexualHealthPatterns(aiInsights.patterns);
-        setHealthAlerts(aiInsights.alerts || []);
+        setHealthAlerts(aiInsights.medicalAlerts || []);
         setPersonalizedRecommendations(aiInsights.recommendations);
         setRiskAssessment(aiInsights.riskAssessment);
 
         // Store insights for robot icon
+        if (aiService.storeInsightsForRobotIcon) {
+          aiService.storeInsightsForRobotIcon('sexualHealth', aiInsights, userProfile);
+        }
+        
         const sexualHealthWithInsights = {
           ...sexualHealthEntry,
           aiInsights: aiInsights,
@@ -490,7 +503,7 @@ const SexualHealth = () => {
       const storedInsights = localStorage.getItem(storageKey);
       if (storedInsights) {
         const insights = JSON.parse(storedInsights);
-        setSelectedPregnancyInsights({
+        setSelectedSexualHealthInsights({
           ...insights,
           timestamp: entry.timestamp,
           entry: entry
@@ -550,12 +563,21 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
         conditions: { reproductive: [] }
       };
 
-      const aiInsights = await aiService.generateSexualHealthInsights(sexualHealthForm, userProfile);
+      // Use the Sexual Health AI service's complete method (like other modules)
+      const aiInsights = await aiService.generateSexualHealthInsights([sexualHealthForm], userProfile);
+      
+      console.log('✅ Processed AI Sexual Health Insights:', aiInsights);
       
       // Set all the comprehensive AI sexual health insights (SAME STRUCTURE AS CYCLE TRACKING)
       if (aiInsights) {
+        console.log('🔍 DEBUG - Form AI Insights received:', aiInsights);
+        console.log('🔍 DEBUG - Form AI Insights keys:', Object.keys(aiInsights));
+        console.log('🔍 DEBUG - Form sexualHealthAssessment exists:', !!aiInsights.sexualHealthAssessment);
+        console.log('🔍 DEBUG - Form safetyProtectionAnalysis exists:', !!aiInsights.safetyProtectionAnalysis);
+        console.log('🔍 DEBUG - Form medicalRecommendations exists:', !!aiInsights.medicalRecommendations);
+        
         // AI Insights - detailed medical analysis with structured format
-        setInsights(aiInsights.aiInsights || ['AI sexual health analysis completed successfully!']);
+        setInsights(aiInsights);
         
         // Store AI insights with the sexual health data
         const sexualHealthWithInsights = {
@@ -565,6 +587,11 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
         };
         
         // Update the sexual health data with AI insights
+        // Store insights for robot icon
+        if (aiService.storeInsightsForRobotIcon) {
+          aiService.storeInsightsForRobotIcon('sexualHealth', aiInsights, userProfile);
+        }
+        
         const updatedSexualHealthData = [...sexualHealthData, sexualHealthWithInsights];
         setSexualHealthData(updatedSexualHealthData);
         localStorage.setItem(`afabSexualHealthData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedSexualHealthData));
@@ -887,66 +914,68 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
           <div className="insights-section">
             <h2>🤖 Dr. AI Sexual Health Analysis</h2>
             
-            {/* Greeting */}
-            {insights.greeting && (
+            
+            {/* Sexual Health Assessment */}
+            {insights.sexualHealthAssessment && (
               <div className="insight-item">
-                <h4>👋 Greeting</h4>
-                <p>{insights.greeting}</p>
+                <h4>🔍 Sexual Health Assessment</h4>
+                <div 
+                  className="ai-analysis-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: (typeof insights.sexualHealthAssessment === 'string' ? insights.sexualHealthAssessment : String(insights.sexualHealthAssessment))
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br>')
+                  }}
+                />
               </div>
             )}
 
-            {/* Clinical Summary */}
-            {insights.clinicalSummary && (
+            {/* Safety & Protection Analysis */}
+            {insights.safetyProtectionAnalysis && (
               <div className="insight-item">
-                <h4>🩺 Clinical Summary</h4>
-                <p>{insights.clinicalSummary}</p>
+                <h4>🛡️ Safety & Protection Analysis</h4>
+                <div 
+                  className="ai-analysis-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: (typeof insights.safetyProtectionAnalysis === 'string' ? insights.safetyProtectionAnalysis : String(insights.safetyProtectionAnalysis))
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br>')
+                  }}
+                />
               </div>
             )}
 
-            {/* Systemic & Lifestyle Factors */}
-            {insights.systemicFactors && (
+            {/* Medical Recommendations */}
+            {insights.medicalRecommendations && (
               <div className="insight-item">
-                <h4>🏥 Systemic & Lifestyle Factors</h4>
-                <p>{insights.systemicFactors}</p>
-              </div>
-            )}
-
-            {/* Clinical Impression */}
-            {insights.clinicalImpression && (
-              <div className="insight-item">
-                <h4>🔬 Clinical Impression</h4>
-                <p>{insights.clinicalImpression}</p>
-              </div>
-            )}
-
-            {/* Actionable Plan */}
-            {insights.actionPlan && (
-              <div className="insight-item">
-                <h4>📋 Actionable Plan</h4>
-                <p>{insights.actionPlan}</p>
-              </div>
-            )}
-
-            {/* Summary Box */}
-            {insights.summaryBox && (
-              <div className="insight-item">
-                <h4>📊 Summary Box</h4>
-                <p>{insights.summaryBox}</p>
+                <h4>💊 Medical Recommendations</h4>
+                <div 
+                  className="ai-analysis-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: (typeof insights.medicalRecommendations === 'string' ? insights.medicalRecommendations : String(insights.medicalRecommendations))
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br>')
+                  }}
+                />
               </div>
             )}
 
             {/* Personalized Tips */}
             {insights.personalizedTips && (
               <div className="insight-item">
-                <h4>💡 Personalized Tips</h4>
-                <ul>
-                  {Array.isArray(insights.personalizedTips) ? 
-                    insights.personalizedTips.map((tip, index) => (
-                      <li key={index}>{tip}</li>
-                    )) : 
-                    <li>{insights.personalizedTips}</li>
-                  }
-                </ul>
+                <h4>✨ Personalized Tips</h4>
+                <div 
+                  className="ai-analysis-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: (typeof insights.personalizedTips === 'string' ? insights.personalizedTips : String(insights.personalizedTips))
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br>')
+                  }}
+                />
               </div>
             )}
 
@@ -954,14 +983,15 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
             {insights.gentleReminders && (
               <div className="insight-item">
                 <h4>🌸 Gentle Reminders</h4>
-                <ul>
-                  {Array.isArray(insights.gentleReminders) ? 
-                    insights.gentleReminders.map((reminder, index) => (
-                      <li key={index}>{reminder}</li>
-                    )) : 
-                    <li>{insights.gentleReminders}</li>
-                  }
-                </ul>
+                <div 
+                  className="ai-analysis-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: (typeof insights.gentleReminders === 'string' ? insights.gentleReminders : String(insights.gentleReminders))
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\n/g, '<br>')
+                  }}
+                />
               </div>
             )}
           </div>
@@ -1229,14 +1259,14 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
       </div>
 
       {/* AI Insights Modal */}
-      {selectedPregnancyInsights && (
-        <div className="insights-modal-overlay" onClick={() => setSelectedPregnancyInsights(null)}>
+      {selectedSexualHealthInsights && (
+        <div className="insights-modal-overlay" onClick={() => setSelectedSexualHealthInsights(null)}>
           <div className="insights-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>🤖 AI Insights - {new Date(selectedPregnancyInsights.timestamp).toLocaleDateString()}</h2>
+              <h2>🤖 AI Insights - {new Date(selectedSexualHealthInsights.timestamp).toLocaleDateString()}</h2>
               <button 
                 className="close-btn"
-                onClick={() => setSelectedPregnancyInsights(null)}
+                onClick={() => setSelectedSexualHealthInsights(null)}
               >
                 ✕
               </button>
@@ -1247,88 +1277,88 @@ Be medical, accurate, and supportive. Include specific screening schedules and r
                 <h3>🤖 Dr. AI Sexual Health Analysis</h3>
                 
                 {/* Greeting */}
-                {selectedPregnancyInsights.greeting && (
+                {selectedSexualHealthInsights.greeting && (
                   <div className="insight-item">
                     <h4>👋 Greeting</h4>
-                    <p>{selectedPregnancyInsights.greeting}</p>
+                    <p>{selectedSexualHealthInsights.greeting}</p>
                   </div>
                 )}
 
                 {/* Clinical Summary */}
-                {selectedPregnancyInsights.clinicalSummary && (
+                {selectedSexualHealthInsights.clinicalSummary && (
                   <div className="insight-item">
                     <h4>🩺 Clinical Summary</h4>
-                    <p>{selectedPregnancyInsights.clinicalSummary}</p>
+                    <p>{selectedSexualHealthInsights.clinicalSummary}</p>
                   </div>
                 )}
 
                 {/* Systemic & Lifestyle Factors */}
-                {selectedPregnancyInsights.systemicFactors && (
+                {selectedSexualHealthInsights.systemicFactors && (
                   <div className="insight-item">
                     <h4>🏥 Systemic & Lifestyle Factors</h4>
-                    <p>{selectedPregnancyInsights.systemicFactors}</p>
+                    <p>{selectedSexualHealthInsights.systemicFactors}</p>
                   </div>
                 )}
 
                 {/* Clinical Impression */}
-                {selectedPregnancyInsights.clinicalImpression && (
+                {selectedSexualHealthInsights.clinicalImpression && (
                   <div className="insight-item">
                     <h4>🔬 Clinical Impression</h4>
-                    <p>{selectedPregnancyInsights.clinicalImpression}</p>
+                    <p>{selectedSexualHealthInsights.clinicalImpression}</p>
                   </div>
                 )}
 
                 {/* Actionable Plan */}
-                {selectedPregnancyInsights.actionPlan && (
+                {selectedSexualHealthInsights.actionPlan && (
                   <div className="insight-item">
                     <h4>📋 Actionable Plan</h4>
-                    <p>{selectedPregnancyInsights.actionPlan}</p>
+                    <p>{selectedSexualHealthInsights.actionPlan}</p>
                   </div>
                 )}
 
                 {/* Summary Box */}
-                {selectedPregnancyInsights.summaryBox && (
+                {selectedSexualHealthInsights.summaryBox && (
                   <div className="insight-item">
                     <h4>📊 Summary Box</h4>
-                    <p>{selectedPregnancyInsights.summaryBox}</p>
+                    <p>{selectedSexualHealthInsights.summaryBox}</p>
                   </div>
                 )}
 
                 {/* Personalized Tips */}
-                {selectedPregnancyInsights.personalizedTips && (
+                {selectedSexualHealthInsights.personalizedTips && (
                   <div className="insight-item">
                     <h4>💡 Personalized Tips</h4>
                     <ul>
-                      {Array.isArray(selectedPregnancyInsights.personalizedTips) ? 
-                        selectedPregnancyInsights.personalizedTips.map((tip, index) => (
+                      {Array.isArray(selectedSexualHealthInsights.personalizedTips) ? 
+                        selectedSexualHealthInsights.personalizedTips.map((tip, index) => (
                           <li key={index}>{tip}</li>
                         )) : 
-                        <li>{selectedPregnancyInsights.personalizedTips}</li>
+                        <li>{selectedSexualHealthInsights.personalizedTips}</li>
                       }
                     </ul>
                   </div>
                 )}
 
                 {/* Gentle Reminders */}
-                {selectedPregnancyInsights.gentleReminders && (
+                {selectedSexualHealthInsights.gentleReminders && (
                   <div className="insight-item">
                     <h4>🌸 Gentle Reminders</h4>
                     <ul>
-                      {Array.isArray(selectedPregnancyInsights.gentleReminders) ? 
-                        selectedPregnancyInsights.gentleReminders.map((reminder, index) => (
+                      {Array.isArray(selectedSexualHealthInsights.gentleReminders) ? 
+                        selectedSexualHealthInsights.gentleReminders.map((reminder, index) => (
                           <li key={index}>{reminder}</li>
                         )) : 
-                        <li>{selectedPregnancyInsights.gentleReminders}</li>
+                        <li>{selectedSexualHealthInsights.gentleReminders}</li>
                       }
                     </ul>
                   </div>
                 )}
 
                 {/* Sexual Health Patterns */}
-                {selectedPregnancyInsights.sexualHealthPatterns && (
+                {selectedSexualHealthInsights.sexualHealthPatterns && (
                   <div className="insight-item">
                     <h4>📈 Sexual Health Patterns</h4>
-                    <p>{selectedPregnancyInsights.sexualHealthPatterns}</p>
+                    <p>{selectedSexualHealthInsights.sexualHealthPatterns}</p>
                   </div>
                 )}
               </div>

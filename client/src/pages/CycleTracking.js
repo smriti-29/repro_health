@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import CycleAIService from '../ai/cycleAIService.js';
 import './CycleTracking.css';
 
 const CycleTracking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new CycleAIService());
   
   // Enhanced AI-powered cycle tracking form state
   const [cycleForm, setCycleForm] = useState({
@@ -692,108 +692,115 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
         
         console.log('🤖 Calling AI service (Gemini Primary)...');
         
-        // Call the AI service - Gemini first, Ollama only if Gemini fails
-        const aiInsights = await aiService.generateCycleInsights(updatedData, userProfile);
+        // DEMO MODE: Reset AI service for smooth demo experience
+        if (aiService.forceResetForDemo) {
+          aiService.forceResetForDemo();
+        }
         
-        console.log('✅ REAL AI Insights received:', aiInsights);
+        // Use emergency retry for demo - keep trying Gemini harder
+        const rawAIResponse = await aiService.generateHealthInsightsWithEmergencyRetry(
+          aiService.buildCyclePrompt(updatedData, userProfile), 
+          userProfile
+        );
+        
+        console.log('✅ REAL AI Raw Response received:', rawAIResponse);
+        
+        // Process the raw response into structured insights
+        const aiInsights = await aiService.processCycleInsights(rawAIResponse, updatedData, userProfile);
+        
+        console.log('✅ Processed AI Insights:', aiInsights);
         
         // Set all the comprehensive AI insights
         if (aiInsights) {
-          // AI Insights - detailed medical analysis (new 6-section format)
-          if (aiInsights.aiInsights && aiInsights.aiInsights.greeting) {
-            setInsights(aiInsights.aiInsights); // Store the structured 6-section format
-          } else if (aiInsights.aiInsights && aiInsights.aiInsights.section1) {
-            // Convert old 2-section format to new format
-            setInsights({
-              greeting: 'Hello! I\'ve reviewed your cycle data and prepared a comprehensive health assessment.',
-              clinicalSummary: aiInsights.aiInsights.section1 || 'Clinical analysis in progress.',
-              lifestyleFactors: 'Lifestyle factors are being evaluated for their impact on your cycle health.',
-              clinicalImpression: aiInsights.aiInsights.section2 || 'Clinical impression is being developed.',
-              actionablePlan: 'Personalized recommendations are being prepared for your health management.',
-              urgencyFlag: 'Urgency assessment is being evaluated.',
-              summaryBox: 'Summary of findings and recommendations will be provided.',
-              dataVisualization: null
-            });
-          } else if (aiInsights.aiInsights && Array.isArray(aiInsights.aiInsights)) {
-            setInsights([...aiInsights.aiInsights]); // Fallback for old format
-          } else if (typeof aiInsights === 'string') {
-            setInsights([aiInsights]);
-          } else {
-            setInsights(['AI analysis completed successfully!']);
+          // Store the complete AI analysis object
+          setInsights(aiInsights);
+          
+          // Store insights for robot icon (central storage)
+          if (aiService.storeInsightsForRobotIcon) {
+            aiService.storeInsightsForRobotIcon('cycle', aiInsights, userProfile);
           }
+        }
 
-          // Store AI insights with the cycle data
-          const cycleWithInsights = {
-            ...updatedData[updatedData.length - 1],
-            aiInsights: aiInsights,
-            insightsTimestamp: new Date().toISOString()
-          };
-          
-          // Update the cycle data with AI insights
-          const updatedCycleData = [...updatedData];
-          updatedCycleData[updatedCycleData.length - 1] = cycleWithInsights;
-          setCycleData(updatedCycleData);
-          localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedCycleData));
-          
-          // Personalized Recommendations - actionable medical advice
-          console.log('🔍 Personalized Tips Data:', aiInsights.personalizedTips);
-          console.log('🔍 Personalized Tips Content:', JSON.stringify(aiInsights.personalizedTips));
-          if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
-            console.log('✅ Setting personalized tips:', aiInsights.personalizedTips);
-            setPersonalizedRecommendations([...aiInsights.personalizedTips]); // Force re-render
-          } else if (aiInsights.recommendations && Array.isArray(aiInsights.recommendations)) {
-            console.log('✅ Setting recommendations:', aiInsights.recommendations);
-            setPersonalizedRecommendations([...aiInsights.recommendations]); // Force re-render
-          } else {
-            console.log('❌ No valid tips found, using fallback');
-            setPersonalizedRecommendations(['AI recommendations generated!']);
-          }
-          
-          // Cycle Patterns - comprehensive pattern analysis
-          if (aiInsights.quickCheck) {
-            setCyclePatterns(aiInsights.quickCheck);
-          } else if (typeof aiInsights === 'string') {
-            // Handle direct text response from AI
+        // Store AI insights with the cycle data
+        const cycleWithInsights = {
+          ...updatedData[updatedData.length - 1],
+          aiInsights: aiInsights,
+          insightsTimestamp: new Date().toISOString()
+        };
+        
+        // Update the cycle data with AI insights
+        const updatedCycleData = [...updatedData];
+        updatedCycleData[updatedCycleData.length - 1] = cycleWithInsights;
+        setCycleData(updatedCycleData);
+        localStorage.setItem(`afabCycleData_${user?.id || user?.email || 'anonymous'}`, JSON.stringify(updatedCycleData));
+        
+        // Personalized Recommendations - actionable medical advice
+        console.log('🔍 Personalized Tips Data:', aiInsights.personalizedTips);
+        console.log('🔍 Personalized Tips Content:', JSON.stringify(aiInsights.personalizedTips));
+        if (aiInsights.personalizedTips && Array.isArray(aiInsights.personalizedTips)) {
+          console.log('✅ Setting personalized tips:', aiInsights.personalizedTips);
+          setPersonalizedRecommendations([...aiInsights.personalizedTips]); // Force re-render
+        } else if (aiInsights.recommendations && Array.isArray(aiInsights.recommendations)) {
+          console.log('✅ Setting recommendations:', aiInsights.recommendations);
+          setPersonalizedRecommendations([...aiInsights.recommendations]); // Force re-render
+        } else {
+          console.log('❌ No valid tips found, using fallback');
+          setPersonalizedRecommendations(['AI recommendations generated!']);
+        }
+        
+        // Cycle Patterns - comprehensive pattern analysis
+        if (aiInsights.quickCheck) {
+          setCyclePatterns(aiInsights.quickCheck);
+        } else if (typeof aiInsights === 'string') {
+          // Handle direct text response from AI
           setCyclePatterns({
-              cycleAnalysis: aiInsights,
-              flowAssessment: 'Analysis completed',
-              symptomEvaluation: 'Symptoms reviewed',
+            cycleAnalysis: aiInsights,
+            flowAssessment: 'Analysis completed',
+            symptomEvaluation: 'Symptoms reviewed',
             actionItem: 'Continue tracking for comprehensive insights',
             confidence: 'Moderate'
           });
         } else {
-            setCyclePatterns('AI pattern analysis completed!');
+          setCyclePatterns('AI pattern analysis completed!');
           }
           
           // Risk Assessment - medical-grade risk evaluation
           console.log('🔍 Risk Assessment Data:', aiInsights.riskAssessment);
           console.log('🔍 Risk Assessment Content:', JSON.stringify(aiInsights.riskAssessment));
-          if (aiInsights.riskAssessment && typeof aiInsights.riskAssessment === 'object') {
-            const riskText = `Cycle Irregularity: ${aiInsights.riskAssessment.cycleIrregularity} • Anemia Risk: ${aiInsights.riskAssessment.anemiaRisk} • Overall Risk: ${aiInsights.riskAssessment.overallRisk}`;
-            console.log('✅ Setting risk assessment:', riskText);
-            setRiskAssessment(riskText);
-        } else {
+          if (aiInsights.riskAssessment) {
+            if (Array.isArray(aiInsights.riskAssessment)) {
+              const riskText = aiInsights.riskAssessment.join(' • ');
+              console.log('✅ Setting risk assessment:', riskText);
+              setRiskAssessment(riskText);
+            } else if (typeof aiInsights.riskAssessment === 'object') {
+              const riskText = JSON.stringify(aiInsights.riskAssessment);
+              console.log('✅ Setting risk assessment:', riskText);
+              setRiskAssessment(riskText);
+            } else {
+              console.log('✅ Setting risk assessment:', aiInsights.riskAssessment);
+              setRiskAssessment(aiInsights.riskAssessment);
+            }
+          } else {
             console.log('❌ No valid risk assessment found, using fallback');
             setRiskAssessment('AI risk assessment completed!');
           }
-          
-          // Gentle Reminders - supportive daily tips
-          console.log('🔍 Gentle Reminders Data:', aiInsights.gentleReminders);
-          console.log('🔍 Gentle Reminders Content:', JSON.stringify(aiInsights.gentleReminders));
-          if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
-            console.log('✅ Setting gentle reminders:', aiInsights.gentleReminders);
-            setGentleReminders([...aiInsights.gentleReminders]); // Force re-render
-          } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
-            console.log('✅ Setting medical alerts as reminders:', aiInsights.medicalAlerts);
-            setGentleReminders([...aiInsights.medicalAlerts]); // Force re-render
+        
+        // Gentle Reminders - supportive daily tips
+        console.log('🔍 Gentle Reminders Data:', aiInsights.gentleReminders);
+        console.log('🔍 Gentle Reminders Content:', JSON.stringify(aiInsights.gentleReminders));
+        if (aiInsights.gentleReminders && Array.isArray(aiInsights.gentleReminders)) {
+          console.log('✅ Setting gentle reminders:', aiInsights.gentleReminders);
+          setGentleReminders([...aiInsights.gentleReminders]); // Force re-render
+        } else if (aiInsights.medicalAlerts && Array.isArray(aiInsights.medicalAlerts)) {
+          console.log('✅ Setting medical alerts as reminders:', aiInsights.medicalAlerts);
+          setGentleReminders([...aiInsights.medicalAlerts]); // Force re-render
         } else {
           console.log('❌ No valid reminders found, using fallback');
           setGentleReminders(['Continue tracking your cycle for better insights', 'Stay hydrated and maintain a balanced diet', 'Listen to your body and rest when needed']);
         }
         
         // Health Alerts - clinical alerts and warnings
-          setHealthAlerts(aiInsights.medicalAlerts || ['AI health monitoring active!']);
-        }
+        setHealthAlerts(aiInsights.medicalAlerts || ['AI health monitoring active!']);
         
         console.log('🎉 REAL AI insights displayed successfully!');
         
@@ -1318,7 +1325,7 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
         )}
 
 
-        {/* AI Insights - Enhanced Clinical Analysis Format */}
+        {/* AI Insights - Single Comprehensive Analysis */}
         {insights && (
           <div className="insights-section">
             <div className="insights-header">
@@ -1326,118 +1333,38 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
               <p className="insights-subtitle">Comprehensive reproductive health assessment</p>
             </div>
             <div className="insights-content">
-              {/* Check if it's the new enhanced 6-section format */}
-              {insights.greeting ? (
-                <>
-                  {/* Greeting & Context */}
-                  {insights.greeting && (
-                    <div className="insight-card greeting-card">
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.greeting.replace(/### 👋 Greeting/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
+              {/* Single comprehensive AI analysis block */}
+              {insights.aiAnalysis && (
+                <div className="comprehensive-analysis-card">
+                  <div className="analysis-header">
+                    <div className="analysis-icon">🤖</div>
+                    <div className="analysis-title">
+                      <h3>{insights.aiAnalysis.title}</h3>
+                      <p className="analysis-subtitle">{insights.aiAnalysis.subtitle}</p>
+                    </div>
                   </div>
-                    </div>
-                  )}
+                  <div className="analysis-content">
+                    <div className="analysis-text" dangerouslySetInnerHTML={{
+                      __html: insights.aiAnalysis.content
+                        .replace(/## /g, '<h3>')
+                        .replace(/### /g, '<h4>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/\n/g, '<br>')
+                        .replace(/<h3>(.*?)<\/h3>/g, '<h3>$1</h3>')
+                        .replace(/<h4>(.*?)<\/h4>/g, '<h4>$1</h4>')
+                    }} />
+                  </div>
+                </div>
+              )}
 
-                  {/* Clinical Summary */}
-                  {insights.clinicalSummary && (
-                    <div className="insight-card clinical-summary">
-                      <div className="insight-header">
-                        <div className="insight-icon">🩺</div>
-                        <h4>Clinical Summary</h4>
-                      </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.clinicalSummary.replace(/### 🩺 Clinical Summary/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Lifestyle Factors */}
-                  {insights.lifestyleFactors && (
-                    <div className="insight-card lifestyle-factors">
-                      <div className="insight-header">
-                        <div className="insight-icon">🧬</div>
-                        <h4>Lifestyle & Health Factors</h4>
-                        </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.lifestyleFactors.replace(/### 🧬 Lifestyle & Systemic Factors/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Clinical Impression */}
-                  {insights.clinicalImpression && (
-                    <div className="insight-card clinical-impression">
-                      <div className="insight-header">
-                        <div className="insight-icon">🔬</div>
-                        <h4>Clinical Impression</h4>
-                      </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.clinicalImpression.replace(/### 🔬 Clinical Impression \(Tiered\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actionable Plan */}
-                  {insights.actionablePlan && (
-                    <div className="insight-card actionable-plan">
-                      <div className="insight-header">
-                        <div className="insight-icon">📋</div>
-                        <h4>Actionable Plan</h4>
-                      </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.actionablePlan.replace(/### 📋 Action Plan/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Urgency Flag */}
-                  {insights.urgencyFlag && (
-                    <div className="insight-card urgency-flag">
-                      <div className="insight-header">
-                        <div className="insight-icon">⚠️</div>
-                        <h4>Urgency Assessment</h4>
-                      </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.urgencyFlag.replace(/### ⚠️ Urgency Flag/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Summary Box */}
-                  {insights.summaryBox && (
-                    <div className="insight-card summary-box">
-                      <div className="insight-header">
-                        <div className="insight-icon">📦</div>
-                        <h4>Summary</h4>
-                      </div>
-                      <div className="insight-body">
-                        <div className="section-content" dangerouslySetInnerHTML={{
-                          __html: insights.summaryBox.replace(/### 📦 Summary Box \(Quick-Read\)/g, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/\n/g, '<br>')
-                        }} />
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* Health Score Pie Chart */}
-                  {cycleData.length > 0 && (
-                    <div className="insight-card health-score-card">
-                      <div className="insight-header">
-                        <div className="insight-icon">🎯</div>
-                        <h4>Health Score Overview</h4>
-                      </div>
+              {/* Health Score Pie Chart */}
+              {cycleData.length > 0 && (
+                <div className="insight-card health-score-card">
+                  <div className="insight-header">
+                    <div className="insight-icon">🎯</div>
+                    <h4>Health Score Overview</h4>
+                  </div>
                       <div className="insight-body">
                         <div className="pie-chart-container">
                           <div className="chart-title">Health Factors Distribution</div>
@@ -1491,33 +1418,33 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
                                 );
                               })()}
                             </svg>
-                  </div>
-                          <div className="pie-legend">
-                            <div className="legend-item">
-                              <div className="legend-color" style={{backgroundColor: '#e74c3c'}}></div>
-                              <span>Pain: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleData.length)}/10</span>
-                </div>
-                            <div className="legend-item">
-                              <div className="legend-color" style={{backgroundColor: '#f39c12'}}></div>
-                              <span>Stress: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.stressLevel || 5), 0) / cycleData.length)}/10</span>
-                  </div>
-                            <div className="legend-item">
-                              <div className="legend-color" style={{backgroundColor: '#27ae60'}}></div>
-                              <span>Sleep: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.sleepQuality || 5), 0) / cycleData.length)}/10</span>
-                  </div>
-                            <div className="legend-item">
-                              <div className="legend-color" style={{backgroundColor: '#667eea'}}></div>
-                              <span>Cycle: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleData.length)} days</span>
-                </div>
+                            <div className="chart-legend">
+                              <div className="legend-item">
+                                <div className="legend-color" style={{backgroundColor: '#e74c3c'}}></div>
+                                <span>Pain: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.pain || 0), 0) / cycleData.length)}/10</span>
+                              </div>
+                              <div className="legend-item">
+                                <div className="legend-color" style={{backgroundColor: '#f39c12'}}></div>
+                                <span>Stress: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.stressLevel || 5), 0) / cycleData.length)}/10</span>
+                              </div>
+                              <div className="legend-item">
+                                <div className="legend-color" style={{backgroundColor: '#27ae60'}}></div>
+                                <span>Sleep: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.sleepQuality || 5), 0) / cycleData.length)}/10</span>
+                              </div>
+                              <div className="legend-item">
+                                <div className="legend-color" style={{backgroundColor: '#667eea'}}></div>
+                                <span>Cycle: {Math.round(cycleData.reduce((sum, cycle) => sum + (cycle.cycleLength || 28), 0) / cycleData.length)} days</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
                   )}
-                </>
-              ) : (
-                /* Fallback for old format */
-                Array.isArray(insights) ? insights.map((insight, index) => (
+                </div>
+              )}
+
+              {/* Fallback for old format */}
+              {!insights.aiAnalysis && Array.isArray(insights) && insights.map((insight, index) => (
                   <div key={index} className="insight-card">
                     <div className="insight-header">
                       <div className="insight-icon">💡</div>
@@ -1527,22 +1454,23 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
                       <p className="insight-text">{insight}</p>
                     </div>
                   </div>
-                )) : (
-                  <div className="insight-card">
-                    <div className="insight-header">
-                      <div className="insight-icon">💡</div>
+                ))}
+
+              {/* Fallback for string insights */}
+              {!insights.aiAnalysis && !Array.isArray(insights) && (
+                <div className="insight-card">
+                  <div className="insight-header">
+                    <div className="insight-icon">💡</div>
                     <h4>AI Analysis</h4>
                   </div>
-                    <div className="insight-body">
-                      <p className="insight-text">{insights}</p>
+                  <div className="insight-body">
+                    <p className="insight-text">{insights}</p>
                   </div>
                 </div>
-                )
               )}
             </div>
           </div>
         )}
-
 
         {/* Cycle Health Overview */}
         {riskAssessment && (
@@ -1551,12 +1479,11 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
             <div className="health-content">
               <div className="health-summary">
                 <div className="health-icon">🌱</div>
-                <p className="health-text">{riskAssessment}</p>
+                <p className="health-text">{typeof riskAssessment === 'string' ? riskAssessment : JSON.stringify(riskAssessment)}</p>
               </div>
             </div>
           </div>
         )}
-
 
         {/* Personalized Tips */}
         {personalizedRecommendations && (
@@ -2001,18 +1928,19 @@ Disclaimer: This analysis is based on your logged data and serves as an informat
                       <div className="modal-section">
                         <h3>🌺 Your Cycle Health</h3>
                         <div className="cycle-health-content">
-                          <div className="health-item">
-                            <span className="health-label">Cycle Irregularity:</span>
-                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.cycleIrregularity}</span>
+                          {Array.isArray(selectedCycleInsights.aiInsights.riskAssessment) ? (
+                            selectedCycleInsights.aiInsights.riskAssessment.map((risk, index) => (
+                              <div key={index} className="health-item">
+                                <span className="health-label">Risk Factor:</span>
+                                <span className="health-value">{risk}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="health-item">
+                              <span className="health-label">Risk Assessment:</span>
+                              <span className="health-value">{Array.isArray(selectedCycleInsights.aiInsights.riskAssessment) ? selectedCycleInsights.aiInsights.riskAssessment.join(' • ') : (typeof selectedCycleInsights.aiInsights.riskAssessment === 'string' ? selectedCycleInsights.aiInsights.riskAssessment : 'Risk assessment data')}</span>
                             </div>
-                          <div className="health-item">
-                            <span className="health-label">Anemia Risk:</span>
-                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.anemiaRisk}</span>
-                        </div>
-                          <div className="health-item">
-                            <span className="health-label">Overall Risk:</span>
-                            <span className="health-value">{selectedCycleInsights.aiInsights.riskAssessment.overallRisk}</span>
-                      </div>
+                          )}
                         </div>
                       </div>
                     )}

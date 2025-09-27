@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import AIServiceManager from '../ai/aiServiceManager.js';
 import './AdvancedTracking.css';
 
 const AdvancedTracking = () => {
@@ -50,7 +50,7 @@ const AdvancedTracking = () => {
   });
 
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new AIServiceManager());
 
   // Load tracking data from localStorage
   useEffect(() => {
@@ -363,7 +363,7 @@ const AdvancedTracking = () => {
           <div className="ai-insights">
             <div className="insight-card">
               <h4>📋 Risk Assessment</h4>
-              <p>{aiInsights.riskAssessment}</p>
+              <p>{Array.isArray(aiInsights.riskAssessment) ? aiInsights.riskAssessment.join(' • ') : JSON.stringify(aiInsights.riskAssessment)}</p>
             </div>
             <div className="insight-card">
               <h4>📅 Screening Recommendations</h4>

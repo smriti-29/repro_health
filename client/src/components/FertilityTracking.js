@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import FertilityAIService from '../ai/fertilityAIService.js';
 import './FertilityTracking.css';
 
 const FertilityTracking = () => {
@@ -47,7 +47,7 @@ const FertilityTracking = () => {
   const [showInsights, setShowInsights] = useState(false);
   
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new FertilityAIService());
   
   // Initialize fertility data from user profile
   useEffect(() => {

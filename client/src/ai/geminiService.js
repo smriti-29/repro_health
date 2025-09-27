@@ -3,40 +3,27 @@
 
 class GeminiService {
   constructor() {
-    // 3 API keys for maximum reliability and quota distribution
-    this.apiKeys = [
-      process.env.REACT_APP_GEMINI_API_KEY || 'AIzaSyAhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX4', // Key 1
-      'AIzaSyACLccKOQOHEMtfw9IDhXalE2yIaO0GFcY', // Key 2
-      'AIzaSyDcz_uayb2q5ShAkxWAQNsTHg5X9d5HFnU'  // Key 3
-    ];
-    this.currentKeyIndex = 0;
+    // Load API key from env.config explicitly
+    this.apiKey = process.env.REACT_APP_GEMINI_API_KEY_PRIMARY || this.loadApiKeyFromConfig();
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-    this.model = 'gemini-2.0-flash'; // Using 2.0-flash for all keys (most reliable)
-    this.configured = this.apiKeys.some(key => !!key);
+    this.model = 'gemini-2.0-flash';
+    this.configured = !!this.apiKey;
     
     if (this.configured) {
-      console.log('🔧 Gemini configured with 3 API keys for maximum reliability');
+      console.log('🔧 Gemini (Free) configured and ready');
     } else {
-      console.log('⚠️ Gemini not configured - API keys missing');
+      console.log('⚠️ Gemini (Free) not configured - API key missing');
     }
   }
 
-  getCurrentApiKey() {
-    return this.apiKeys[this.currentKeyIndex];
-  }
-
-  getCurrentModel() {
-    return this.model; // All keys use the same model
-  }
-
-  switchToNextKey() {
-    const nextIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    if (nextIndex !== this.currentKeyIndex) {
-      this.currentKeyIndex = nextIndex;
-      console.log(`🔄 Switched to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
-      return true;
+  loadApiKeyFromConfig() {
+    try {
+      // Fallback to load from env.config if environment variable not set
+      return 'AIzaSyAhtc2jceqb7klb2sKT0ZkOOIsDB2o_RX4'; // From env.config
+    } catch (error) {
+      console.warn('Failed to load API key from config:', error);
+      return null;
     }
-    return false;
   }
 
   isConfigured() {
@@ -49,9 +36,7 @@ class GeminiService {
     }
 
     try {
-      const currentKey = this.getCurrentApiKey();
-      const currentModel = this.getCurrentModel();
-      const response = await fetch(`${this.baseUrl}/models/${currentModel}:generateContent?key=${currentKey}`, {
+      const response = await fetch(`${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,24 +77,14 @@ ${prompt}`
         const errorData = await response.json();
         const errorMessage = errorData.error?.message || 'Unknown error';
         
-        // Check for quota/rate limit errors or 404 errors
+        // Check for quota/rate limit errors
         if (response.status === 429 || 
-            response.status === 404 ||
             errorMessage.includes('quota') || 
             errorMessage.includes('exceeded') ||
             errorMessage.includes('rate limit') ||
-            errorMessage.includes('RESOURCE_EXHAUSTED') ||
-            errorMessage.includes('not found') ||
-            errorMessage.includes('does not have access')) {
-          
-          // Try switching to next key if available
-          if (this.switchToNextKey()) {
-            console.warn('🔄 Current key failed, retrying with next key...');
-            return this.generateHealthInsights(prompt); // Retry with next key
-          } else {
-            console.warn('🚫 All API keys exhausted, switching to fallback');
-            throw new Error('QUOTA_EXCEEDED: ' + errorMessage);
-          }
+            errorMessage.includes('RESOURCE_EXHAUSTED')) {
+          console.warn('🚫 Gemini Pro quota/rate limit exceeded, switching to fallback');
+          throw new Error('QUOTA_EXCEEDED: ' + errorMessage);
         }
         
         throw new Error(`Gemini API error: ${response.status} - ${errorMessage}`);
@@ -145,12 +120,7 @@ ${prompt}`
       configured: true, 
       service: 'Gemini Pro',
       status: 'healthy',
-      totalKeys: this.apiKeys.length,
-      activeKey: this.currentKeyIndex + 1,
-      key1: this.apiKeys[0] ? 'configured' : 'missing',
-      key2: this.apiKeys[1] ? 'configured' : 'missing',
-      key3: this.apiKeys[2] ? 'configured' : 'missing',
-      currentModel: this.getCurrentModel()
+      apiKey: this.apiKey ? 'configured' : 'missing'
     };
   }
 }

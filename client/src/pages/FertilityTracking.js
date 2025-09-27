@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import FertilityAIService from '../ai/fertilityAIService.js';
 import './FertilityTracking.css';
 
 const FertilityTracking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new FertilityAIService());
   
   // MEDICAL-GRADE Fertility tracking form state
   const [fertilityForm, setFertilityForm] = useState({
@@ -1289,14 +1289,23 @@ Analysis Date: ${new Date().toLocaleDateString()}
         console.log('🔍 Fertility data length:', updatedData.length);
         console.log('🔍 Latest fertility entry:', updatedData[updatedData.length - 1]);
         
-        const aiInsights = await Promise.race([
-          aiService.generateFertilityInsights(updatedData, userProfile),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI request timeout after 25 seconds')), 25000)
-          )
-        ]);
+        // DEMO MODE: Reset AI service for smooth demo experience
+        if (aiService.forceResetForDemo) {
+          aiService.forceResetForDemo();
+        }
         
-        console.log('✅ REAL AI Fertility Insights received:', aiInsights);
+        // Use emergency retry for demo - keep trying Gemini harder
+        const rawAIResponse = await aiService.generateHealthInsightsWithEmergencyRetry(
+          aiService.buildFertilityPrompt(updatedData, userProfile), 
+          userProfile
+        );
+        
+        console.log('✅ REAL AI Raw Response received:', rawAIResponse);
+        
+        // Process the raw response into structured insights
+        const aiInsights = await aiService.processFertilityInsights(rawAIResponse, updatedData, userProfile);
+        
+        console.log('✅ Processed AI Fertility Insights:', aiInsights);
         console.log('🔍 AI Insights type:', typeof aiInsights);
         console.log('🔍 AI Insights keys:', aiInsights ? Object.keys(aiInsights) : 'No keys');
         console.log('🔍 AI Insights content:', JSON.stringify(aiInsights, null, 2));
@@ -1306,7 +1315,12 @@ Analysis Date: ${new Date().toLocaleDateString()}
         // Set all the comprehensive AI fertility insights (same structure as cycle tracking)
         if (aiInsights) {
           // Set the main fertility insights state for display
-          setFertilityInsights(aiInsights);
+          setFertilityInsights(aiInsights); // Store the complete AI insights object
+          
+          // Store insights for robot icon (central storage)
+          if (aiService.storeInsightsForRobotIcon) {
+            aiService.storeInsightsForRobotIcon('fertility', aiInsights, userProfile);
+          }
           
           // AI Insights - detailed medical analysis
           // AI insights are now saved directly to the fertility entry
@@ -2082,26 +2096,33 @@ Analysis Date: ${new Date().toLocaleDateString()}
         {fertilityInsights && (
           <div className="insights-section">
             <div className="insights-header">
-              <h2>🤖 Dr. AI Fertility Analysis</h2>
+              <h2>{fertilityInsights.aiAnalysis?.title || "🤖 Dr. AI Fertility Analysis"}</h2>
+              <p className="insights-subtitle">{fertilityInsights.aiAnalysis?.subtitle || "Comprehensive fertility health assessment"}</p>
             </div>
             <div className="insights-content">
-              {/* Fallback display if AI insights structure is different */}
-              {!fertilityInsights?.aiInsights && fertilityInsights && (
-                <div className="insight-card">
-                  <h3>🤖 AI Analysis</h3>
-                  <div className="insight-text">
-                    <pre>{JSON.stringify(fertilityInsights, null, 2)}</pre>
-                  </div>
+              {/* Display AI-generated insights */}
+              {fertilityInsights?.aiAnalysis?.content && (
+                <div className="insight-card main-analysis">
+                  <h3>📊 Comprehensive Fertility Analysis</h3>
+                  <div 
+                    className="insight-text"
+                    dangerouslySetInnerHTML={{
+                      __html: fertilityInsights.aiAnalysis.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/\n/g, '<br>')
+                    }}
+                  />
                 </div>
               )}
-              {/* Display AI-generated insights */}
-              {fertilityInsights?.aiInsights?.greeting && (
+              
+              {fertilityInsights?.greeting && (
                   <div className="insight-card">
                   <h3>👋 Greeting</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.greeting
+                      __html: fertilityInsights.greeting
                         .replace(/### 👋 Greeting/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2110,13 +2131,13 @@ Analysis Date: ${new Date().toLocaleDateString()}
                   </div>
                 )}
               
-              {fertilityInsights?.aiInsights?.clinicalSummary && (
+              {fertilityInsights?.clinicalSummary && (
                 <div className="insight-card">
                   <h3>🩺 Clinical Summary</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.clinicalSummary
+                      __html: fertilityInsights.clinicalSummary
                         .replace(/### 🩺 Clinical Summary/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2125,13 +2146,13 @@ Analysis Date: ${new Date().toLocaleDateString()}
                 </div>
               )}
               
-              {fertilityInsights?.aiInsights?.lifestyleFactors && (
+              {fertilityInsights?.lifestyleFactors && (
                 <div className="insight-card">
                   <h3>🧬 Lifestyle & Systemic Factors</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.lifestyleFactors
+                      __html: fertilityInsights.lifestyleFactors
                         .replace(/### 🧬 Lifestyle & Systemic Factors/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2139,14 +2160,29 @@ Analysis Date: ${new Date().toLocaleDateString()}
                   />
                 </div>
               )}
+
+              {fertilityInsights?.fertilityWindow && (
+                <div className="insight-card">
+                  <h3>🎯 Fertility Window & Intercourse Timing</h3>
+                  <div 
+                    className="insight-text"
+                    dangerouslySetInnerHTML={{
+                      __html: fertilityInsights.fertilityWindow
+                        .replace(/### 🎯 Fertility Window & Intercourse Timing/g, '')
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                    }}
+                  />
+                </div>
+              )}
               
-              {fertilityInsights?.aiInsights?.clinicalImpression && (
+              {fertilityInsights?.clinicalImpression && (
                 <div className="insight-card">
                   <h3>🔬 Clinical Impression</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.clinicalImpression
+                      __html: fertilityInsights.clinicalImpression
                         .replace(/### 🔬 Clinical Impression/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2155,13 +2191,13 @@ Analysis Date: ${new Date().toLocaleDateString()}
                 </div>
               )}
               
-              {fertilityInsights?.aiInsights?.actionPlan && (
+              {fertilityInsights?.actionPlan && (
                 <div className="insight-card">
                   <h3>📋 Action Plan</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.actionPlan
+                      __html: fertilityInsights.actionPlan
                         .replace(/### 📋 Action Plan/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2170,13 +2206,13 @@ Analysis Date: ${new Date().toLocaleDateString()}
                 </div>
               )}
               
-              {fertilityInsights?.aiInsights?.urgencyFlag && (
+              {fertilityInsights?.urgencyFlag && (
                 <div className="insight-card">
                   <h3>⚠️ Urgency Flag</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.urgencyFlag
+                      __html: fertilityInsights.urgencyFlag
                         .replace(/### ⚠️ Urgency Flag/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2185,13 +2221,13 @@ Analysis Date: ${new Date().toLocaleDateString()}
                 </div>
               )}
               
-              {fertilityInsights?.aiInsights?.summaryBox && (
+              {fertilityInsights?.summaryBox && (
                 <div className="insight-card">
                   <h3>📦 Summary Box</h3>
                   <div 
                     className="insight-text"
                     dangerouslySetInnerHTML={{
-                      __html: fertilityInsights.aiInsights.summaryBox
+                      __html: fertilityInsights.summaryBox
                         .replace(/### 📦 Summary Box/g, '')
                         .replace(/\*\*(.*?)\*\*/g, '$1')
                         .replace(/\*(.*?)\*/g, '$1')
@@ -2204,20 +2240,15 @@ Analysis Date: ${new Date().toLocaleDateString()}
               {fertilityInsights?.aiInsights?.personalizedTips && (
                 <div className="insight-card">
                   <h3>💡 Personalized Tips for You</h3>
-                  <div className="insight-text">
-                    {Array.isArray(fertilityInsights.aiInsights.personalizedTips) ? 
-                      fertilityInsights.aiInsights.personalizedTips.map((tip, index) => (
-                        <div key={index} className="tip-item">
-                          <span className="tip-icon">✨</span>
-                          <span className="tip-text">{tip}</span>
-                        </div>
-                      )) : (
-                        <div className="tip-item">
-                          <span className="tip-icon">✨</span>
-                          <span className="tip-text">{fertilityInsights.aiInsights.personalizedTips}</span>
-                        </div>
-                      )}
-                  </div>
+                  <div 
+                    className="insight-text"
+                    dangerouslySetInnerHTML={{
+                      __html: fertilityInsights.aiInsights.personalizedTips
+                        .replace(/### 💡 Personalized Tips for You/g, '')
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                    }}
+                  />
                 </div>
               )}
               
@@ -2225,20 +2256,15 @@ Analysis Date: ${new Date().toLocaleDateString()}
               {fertilityInsights?.aiInsights?.gentleReminders && (
                 <div className="insight-card">
                   <h3>🌸 Gentle Reminders</h3>
-                  <div className="insight-text">
-                    {Array.isArray(fertilityInsights.aiInsights.gentleReminders) ? 
-                      fertilityInsights.aiInsights.gentleReminders.map((reminder, index) => (
-                        <div key={index} className="reminder-item">
-                          <span className="reminder-icon">🌸</span>
-                          <span className="reminder-text">{reminder}</span>
-                        </div>
-                      )) : (
-                        <div className="reminder-item">
-                          <span className="reminder-icon">🌸</span>
-                          <span className="reminder-text">{fertilityInsights.aiInsights.gentleReminders}</span>
-                        </div>
-                      )}
-                  </div>
+                  <div 
+                    className="insight-text"
+                    dangerouslySetInnerHTML={{
+                      __html: fertilityInsights.aiInsights.gentleReminders
+                        .replace(/### 🌸 Gentle Reminders/g, '')
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -2246,16 +2272,18 @@ Analysis Date: ${new Date().toLocaleDateString()}
         )}
 
         {/* Fertility Health Assessment - Display from Latest Entry */}
-        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].riskAssessment && (
+        {fertilityData.length > 0 && fertilityData[fertilityData.length - 1].aiInsights?.riskAssessment && (
           <div className="health-assessment-section">
             <h2>🌺 Your Fertility Health</h2>
             <div className="health-content">
               <div className="health-card">
                 <div className="health-icon">🩺</div>
                 <div className="health-text">
-                  {typeof fertilityData[fertilityData.length - 1].riskAssessment === 'object' 
-                    ? `Cycle Irregularity: ${fertilityData[fertilityData.length - 1].riskAssessment.cycleIrregularity}, Anemia Risk: ${fertilityData[fertilityData.length - 1].riskAssessment.anemiaRisk}, Overall Risk: ${fertilityData[fertilityData.length - 1].riskAssessment.overallRisk}`
-                    : fertilityData[fertilityData.length - 1].riskAssessment
+                  {Array.isArray(fertilityData[fertilityData.length - 1].aiInsights.riskAssessment) 
+                    ? fertilityData[fertilityData.length - 1].aiInsights.riskAssessment.join(' • ')
+                    : (typeof fertilityData[fertilityData.length - 1].aiInsights.riskAssessment === 'string' 
+                       ? fertilityData[fertilityData.length - 1].aiInsights.riskAssessment 
+                       : 'Risk assessment data')}
                   }
                 </div>
               </div>
@@ -2277,7 +2305,7 @@ Analysis Date: ${new Date().toLocaleDateString()}
                 )) : (
                   <div className="recommendation-item">
                     <span className="rec-icon">✨</span>
-                    <span className="rec-text">{fertilityData[fertilityData.length - 1].aiInsights.personalizedTips}</span>
+                    <span className="rec-text">{Array.isArray(fertilityData[fertilityData.length - 1].aiInsights.personalizedTips) ? fertilityData[fertilityData.length - 1].aiInsights.personalizedTips.join(' • ') : JSON.stringify(fertilityData[fertilityData.length - 1].aiInsights.personalizedTips)}</span>
                   </div>
                 )}
             </div>
@@ -2675,8 +2703,34 @@ Analysis Date: ${new Date().toLocaleDateString()}
                                 .replace(/\*(.*?)\*/g, '$1')
                             }}
                           />
-                      </div>
-                    )}
+                        </div>
+                      )}
+
+                      {(() => {
+                        console.log('🔍 DEBUG: selectedFertilityInsights structure:', selectedFertilityInsights);
+                        console.log('🔍 DEBUG: aiInsights structure:', selectedFertilityInsights?.aiInsights);
+                        console.log('🔍 DEBUG: aiInsights.aiInsights structure:', selectedFertilityInsights?.aiInsights?.aiInsights);
+                        console.log('🔍 DEBUG: fertilityWindow in aiInsights:', selectedFertilityInsights?.aiInsights?.fertilityWindow);
+                        console.log('🔍 DEBUG: fertilityWindow in aiInsights.aiInsights:', selectedFertilityInsights?.aiInsights?.aiInsights?.fertilityWindow);
+                        
+                        const fertilityWindow = selectedFertilityInsights?.aiInsights?.aiInsights?.fertilityWindow || selectedFertilityInsights?.aiInsights?.fertilityWindow;
+                        console.log('🔍 DEBUG: Final fertilityWindow:', fertilityWindow);
+                        
+                        return fertilityWindow;
+                      })() && (
+                        <div className="insight-section">
+                          <h4>🎯 Fertility Window & Intercourse Timing</h4>
+                          <div 
+                            className="insight-text"
+                            dangerouslySetInnerHTML={{
+                              __html: (selectedFertilityInsights.aiInsights?.aiInsights?.fertilityWindow || selectedFertilityInsights.aiInsights?.fertilityWindow)
+                                .replace(/### 🎯 Fertility Window & Intercourse Timing/g, '')
+                                .replace(/\*\*(.*?)\*\*/g, '$1')
+                                .replace(/\*(.*?)\*/g, '$1')
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {selectedFertilityInsights.aiInsights.aiInsights.clinicalImpression && (
                         <div className="insight-section">
@@ -2780,7 +2834,7 @@ Analysis Date: ${new Date().toLocaleDateString()}
                         )) : (
                           <div className="tip-item">
                             <span className="tip-icon">✨</span>
-                            <span className="tip-text">{selectedFertilityInsights.aiInsights.personalizedTips}</span>
+                            <span className="tip-text">{Array.isArray(selectedFertilityInsights.aiInsights.personalizedTips) ? selectedFertilityInsights.aiInsights.personalizedTips.join(' • ') : JSON.stringify(selectedFertilityInsights.aiInsights.personalizedTips)}</span>
                           </div>
                         )}
                     </div>

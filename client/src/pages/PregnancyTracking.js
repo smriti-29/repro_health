@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import PregnancyAIService from '../ai/pregnancyAIService.js';
 import './PregnancyTracking.css';
 
 const PregnancyTracking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new PregnancyAIService());
   
   // MEDICAL-GRADE Pregnancy tracking form state
   const [pregnancyForm, setPregnancyForm] = useState({
@@ -68,7 +68,25 @@ const PregnancyTracking = () => {
   const [pregnancyProgress, setPregnancyProgress] = useState(null);
   
   // AI-Powered Pregnancy Intelligence (SAME STRUCTURE AS CYCLE TRACKING)
-  const [insights, setInsights] = useState(null);
+  const [insights, setInsights] = useState({
+    aiAnalysis: {
+      title: "🤖 Dr. AI Pregnancy Analysis",
+      subtitle: "Comprehensive prenatal health assessment",
+      content: "🤖 AI analysis is being generated... Please complete a pregnancy check-in to generate your personalized pregnancy insights. This will include trimester-specific guidance, symptom analysis, and personalized recommendations based on your pregnancy data."
+    },
+    personalizedTips: [
+      "Complete a pregnancy check-in to get personalized insights",
+      "Track your symptoms and changes regularly",
+      "Maintain a healthy lifestyle during pregnancy",
+      "Stay in touch with your healthcare provider"
+    ],
+    gentleReminders: [
+      "Remember to take prenatal vitamins",
+      "Schedule regular check-ups",
+      "Monitor your symptoms",
+      "Stay hydrated and eat well"
+    ]
+  });
   const [pregnancyPatterns, setPregnancyPatterns] = useState(null);
   const [healthAlerts, setHealthAlerts] = useState([]);
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState(null);
@@ -150,24 +168,52 @@ const PregnancyTracking = () => {
   // View insights for a specific entry
   const viewInsightsForEntry = (entry, index) => {
     const userId = user?.id || user?.email || 'anonymous';
-    const storageKey = `aiInsights_pregnancy_${userId}`;
+    const centralKey = `centralAIInsights_${userId}`;
+    
+    console.log('🔍 ROBOT ICON CLICKED - Entry:', entry);
+    console.log('🔍 ROBOT ICON CLICKED - User ID:', userId);
+    console.log('🔍 ROBOT ICON CLICKED - Central Key:', centralKey);
     
     try {
-      const storedInsights = localStorage.getItem(storageKey);
-      if (storedInsights) {
-        const insights = JSON.parse(storedInsights);
+      // Get insights from central storage (where they are actually stored)
+      const centralInsights = localStorage.getItem(centralKey);
+      console.log('🔍 ROBOT ICON - Central insights raw:', centralInsights);
+      
+      if (centralInsights) {
+        const allInsights = JSON.parse(centralInsights);
+        console.log('🔍 ROBOT ICON - All insights parsed:', allInsights);
+        console.log('🔍 ROBOT ICON - All insights keys:', Object.keys(allInsights));
         
-        // Set the insights for the modal display
-        setSelectedPregnancyInsights({
-          ...insights,
-          timestamp: entry.timestamp,
-          entry: entry
-        });
+        const pregnancyInsights = allInsights.pregnancy;
+        console.log('🔍 ROBOT ICON - Pregnancy insights:', pregnancyInsights);
+        
+        if (pregnancyInsights) {
+          console.log('🔍 ROBOT ICON - Found pregnancy insights in central storage:', pregnancyInsights);
+          console.log('🔍 ROBOT ICON - AI Analysis:', pregnancyInsights.aiAnalysis);
+          console.log('🔍 ROBOT ICON - AI Analysis content length:', pregnancyInsights.aiAnalysis?.content?.length);
+          console.log('🔍 ROBOT ICON - AI Analysis content preview:', pregnancyInsights.aiAnalysis?.content?.substring(0, 200) + '...');
+          
+          // Set the insights for the modal display with COMPLETE AI analysis
+          const modalData = {
+            ...pregnancyInsights,
+            timestamp: entry.timestamp,
+            entry: entry
+          };
+          
+          console.log('🔍 ROBOT ICON - Setting modal data:', modalData);
+          console.log('🔍 ROBOT ICON - About to set selectedPregnancyInsights');
+          setSelectedPregnancyInsights(modalData);
+          console.log('🔍 ROBOT ICON - selectedPregnancyInsights should now be set');
+        } else {
+          console.log('❌ ROBOT ICON - No pregnancy insights found in central storage');
+          alert('No AI insights found for this entry. Please complete a new pregnancy check-in to generate insights.');
+        }
       } else {
-        alert('No AI insights found for this entry. Please complete a new pregnancy check-in to generate insights.');
+        console.log('❌ ROBOT ICON - No central insights found in localStorage');
+        alert('No AI insights found. Please complete a pregnancy check-in to generate insights.');
       }
     } catch (error) {
-      console.error('Error retrieving insights:', error);
+      console.error('❌ ROBOT ICON - Error retrieving insights:', error);
       alert('Error retrieving AI insights. Please try again.');
     }
   };
@@ -537,6 +583,8 @@ const PregnancyTracking = () => {
       // Generate AI insights
       const userProfile = {
         ...user,
+        id: user?.id, // Ensure ID is preserved
+        email: user?.email, // Ensure email is preserved
         age: calculateAge(user?.dateOfBirth),
         conditions: { reproductive: [] },
         familyHistory: { womensConditions: [] },
@@ -546,19 +594,39 @@ const PregnancyTracking = () => {
 
       console.log('🤖 Calling AI service for pregnancy analysis...');
       
-      const aiInsights = await Promise.race([
-        aiService.generatePregnancyInsights(updatedData, userProfile),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('AI request timeout after 60 seconds')), 60000)
-        )
-      ]);
+      // DEMO MODE: Reset AI service for smooth demo experience
+      if (aiService.forceResetForDemo) {
+        aiService.forceResetForDemo();
+      }
+      
+      // Use emergency retry for demo - keep trying Gemini harder
+      const rawAIResponse = await aiService.generateHealthInsightsWithEmergencyRetry(
+        aiService.buildPregnancyPrompt(updatedData, userProfile), 
+        userProfile
+      );
 
-      console.log('✅ AI Pregnancy Insights received:', aiInsights);
+      console.log('✅ REAL AI Raw Response received:', rawAIResponse);
+      
+      // Process the raw response into structured insights
+      const aiInsights = await aiService.processPregnancyInsights(rawAIResponse, updatedData, userProfile);
+
+      console.log('✅ Processed AI Pregnancy Insights:', aiInsights);
 
       // Set AI insights
       if (aiInsights) {
         // Set the main AI insights object
-        setInsights(aiInsights.aiInsights || aiInsights);
+        setInsights(aiInsights);
+        console.log('🔍 INSIGHTS SET - aiInsights:', aiInsights);
+        console.log('🔍 INSIGHTS SET - aiAnalysis:', aiInsights.aiAnalysis);
+        console.log('🔍 INSIGHTS SET - content length:', aiInsights.aiAnalysis?.content?.length);
+        
+        // Store insights for robot icon (central storage)
+        if (aiService.storeInsightsForRobotIcon) {
+          console.log('🔍 STORING PREGNANCY INSIGHTS - userProfile:', userProfile);
+          console.log('🔍 STORING PREGNANCY INSIGHTS - user ID:', userProfile?.id);
+          console.log('🔍 STORING PREGNANCY INSIGHTS - user email:', userProfile?.email);
+          aiService.storeInsightsForRobotIcon('pregnancy', aiInsights, userProfile);
+        }
         
         // Set personalized tips
         if (aiInsights.personalizedTips) {
@@ -849,6 +917,8 @@ const PregnancyTracking = () => {
       // Generate MEDICAL-GRADE AI pregnancy insights
       const userProfile = {
         ...user,
+        id: user?.id, // Ensure ID is preserved
+        email: user?.email, // Ensure email is preserved
         age: calculateAge(user?.dateOfBirth),
         conditions: { reproductive: [] },
         familyHistory: { womensConditions: [] },
@@ -869,8 +939,8 @@ const PregnancyTracking = () => {
       
       // Set all the comprehensive AI pregnancy insights (SAME STRUCTURE AS CYCLE TRACKING)
       if (aiInsights) {
-        // AI Insights - detailed medical analysis
-        setInsights(aiInsights.aiInsights || aiInsights.pregnancyInsights || ['AI pregnancy analysis completed successfully!']);
+        // AI Insights - detailed medical analysis (EXACT WORKING VERSION)
+        setInsights(aiInsights);
         
         // Personalized Recommendations - actionable medical advice
         const recommendations = aiInsights.pregnancyAssessment?.recommendations || aiInsights.recommendations;
@@ -884,9 +954,18 @@ const PregnancyTracking = () => {
         setPregnancyPatterns(patternText);
         
         // Risk Assessment - medical-grade risk evaluation
-        const riskText = pregnancyAssessment?.riskLevel || aiInsights.riskAssessment ?
-          `Pregnancy Risk: ${pregnancyAssessment?.riskLevel || aiInsights.riskAssessment?.overallRisk} • Monitoring: Active` :
-          'AI pregnancy risk assessment completed!';
+        let riskText = 'AI pregnancy risk assessment completed!';
+        if (pregnancyAssessment?.riskLevel) {
+          riskText = `Pregnancy Risk: ${pregnancyAssessment.riskLevel} • Monitoring: Active`;
+        } else if (aiInsights.riskAssessment) {
+          if (Array.isArray(aiInsights.riskAssessment)) {
+            riskText = `Pregnancy Risk: ${aiInsights.riskAssessment.join(' • ')} • Monitoring: Active`;
+          } else if (typeof aiInsights.riskAssessment === 'object') {
+            riskText = `Pregnancy Risk: ${JSON.stringify(aiInsights.riskAssessment)} • Monitoring: Active`;
+          } else {
+            riskText = `Pregnancy Risk: ${aiInsights.riskAssessment} • Monitoring: Active`;
+          }
+        }
         setRiskAssessment(riskText);
         
         // Health Alerts - clinical alerts and warnings
@@ -1040,31 +1119,38 @@ const PregnancyTracking = () => {
       </div>
 
       <div className="pregnancy-content">
-        {/* Pregnancy Overview - Only show when data exists */}
-        {pregnancyData.length > 0 && pregnancyProgress && (
-          <div className="pregnancy-overview">
-            <div className="overview-card">
-              <h3>📅 Due Date</h3>
-              <p className="date-display">
-                {pregnancyData[pregnancyData.length - 1]?.dueDate ? formatDate(new Date(pregnancyData[pregnancyData.length - 1].dueDate)) : 'Not set'}
-              </p>
-            </div>
-            
-            <div className="overview-card">
-              <h3>📊 Pregnancy Progress</h3>
-              <p className="progress-display">
-                {pregnancyProgress.weeksPregnant} weeks, {pregnancyProgress.daysPregnant % 7} days
-              </p>
-            </div>
-            
-            <div className="overview-card">
-              <h3>🎯 Trimester</h3>
-              <p className="trimester-display">
-                Trimester {pregnancyProgress.trimester}
-              </p>
-            </div>
+        {/* Pregnancy Overview - ALWAYS SHOW */}
+        <div className="pregnancy-overview">
+          <div className="overview-card">
+            <h3>📅 Due Date</h3>
+            <p className="date-display">
+              {pregnancyData.length > 0 && pregnancyData[pregnancyData.length - 1]?.dueDate ? 
+                formatDate(new Date(pregnancyData[pregnancyData.length - 1].dueDate)) : 
+                'Complete a pregnancy check-in to set your due date'
+              }
+            </p>
           </div>
-        )}
+          
+          <div className="overview-card">
+            <h3>📊 Pregnancy Progress</h3>
+            <p className="progress-display">
+              {pregnancyProgress ? 
+                `${pregnancyProgress.weeksPregnant} weeks, ${pregnancyProgress.daysPregnant % 7} days` :
+                'Complete a pregnancy check-in to track your progress'
+              }
+            </p>
+          </div>
+          
+          <div className="overview-card">
+            <h3>🎯 Trimester</h3>
+            <p className="trimester-display">
+              {pregnancyProgress ? 
+                `Trimester ${pregnancyProgress.trimester}` :
+                'Complete a pregnancy check-in to determine your trimester'
+              }
+            </p>
+          </div>
+        </div>
 
         {/* Clear Data Button for Testing */}
         {pregnancyData.length > 0 && (
@@ -1074,11 +1160,30 @@ const PregnancyTracking = () => {
                 localStorage.removeItem(`afabPregnancyData_${user?.id || user?.email || 'anonymous'}`);
                 setPregnancyData([]);
                 setPregnancyProgress(null);
-                setInsights(null);
-                setPregnancyPatterns(null);
+                setInsights({
+                  aiAnalysis: {
+                    title: "🤖 Dr. AI Pregnancy Analysis",
+                    subtitle: "Comprehensive prenatal health assessment",
+                    content: "🤖 AI analysis is being generated... Please complete a pregnancy check-in to generate your personalized pregnancy insights. This will include trimester-specific guidance, symptom analysis, and personalized recommendations based on your pregnancy data."
+                  },
+                  personalizedTips: [
+                    "Complete a pregnancy check-in to get personalized insights",
+                    "Track your symptoms and changes regularly",
+                    "Maintain a healthy lifestyle during pregnancy",
+                    "Stay in touch with your healthcare provider"
+                  ],
+                  gentleReminders: [
+                    "Remember to take prenatal vitamins",
+                    "Schedule regular check-ups",
+                    "Monitor your symptoms",
+                    "Stay hydrated and eat well"
+                  ]
+                });
                 setPersonalizedRecommendations(null);
+                setPregnancyPatterns(null);
                 setHealthAlerts([]);
                 setRiskAssessment(null);
+                alert('Pregnancy data cleared!');
               }}
               style={{
                 background: 'rgba(255, 107, 157, 0.2)',
@@ -1207,113 +1312,46 @@ const PregnancyTracking = () => {
           )}
         </div>
 
-        {/* AI Insights - Same Structure as Cycle & Fertility */}
-        {insights && (
-          <div className="ai-insights-section">
-            <h2>🤖 Dr. AI Pregnancy Analysis</h2>
+        {/* AI Insights - ALWAYS RENDER - NO CONDITIONALS */}
+        <div className="ai-insights-section">
+          <h2>{insights?.aiAnalysis?.title || "🤖 Dr. AI Pregnancy Analysis"}</h2>
+          <p className="insights-subtitle">{insights?.aiAnalysis?.subtitle || "Comprehensive prenatal health assessment"}</p>
+          
+          {/* Main AI Analysis Content - ALWAYS show content */}
+          <div className="insight-box main-analysis-box">
+            <h3>📊 Comprehensive Pregnancy Analysis</h3>
+            <div 
+              className="insight-content"
+              dangerouslySetInnerHTML={{ 
+                __html: (() => {
+                  const content = insights?.aiAnalysis?.content || insights?.content || "";
+                  console.log('🔍 DISPLAY DEBUG - insights object:', insights);
+                  console.log('🔍 DISPLAY DEBUG - aiAnalysis:', insights?.aiAnalysis);
+                  console.log('🔍 DISPLAY DEBUG - content:', content?.substring(0, 100) + '...');
+                  console.log('🔍 DISPLAY DEBUG - content length:', content?.length);
+                  if (!content || content.trim() === "") {
+                    return "🤖 Complete a pregnancy check-in to generate your personalized AI insights. This will include trimester-specific guidance, symptom analysis, and personalized recommendations based on your pregnancy data.";
+                  }
+                  return content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br>');
+                })()
+              }}
+            />
+          </div>
             
-            {/* Greeting & Context */}
-            {insights.greeting && (
-              <div className="insight-box greeting-box">
-                <h3>👋 Greeting</h3>
-                <div 
-                  className="insight-content"
-                  dangerouslySetInnerHTML={{ 
-                    __html: insights.greeting.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Clinical Summary */}
-            {insights.clinicalSummary && (
-              <div className="insight-box clinical-summary-box">
-                <h3>🩺 Clinical Summary</h3>
-                <div 
-                  className="insight-content"
-                  dangerouslySetInnerHTML={{ 
-                    __html: insights.clinicalSummary.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Systemic & Lifestyle Factors */}
-            {insights.systemicFactors && (
-              <div className="insight-box systemic-factors-box">
-                <h3>🏥 Systemic & Lifestyle Factors</h3>
-                <div 
-                  className="insight-content"
-                  dangerouslySetInnerHTML={{ 
-                    __html: insights.systemicFactors.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Clinical Impression */}
-            {insights.clinicalImpression && (
-              <div className="insight-box clinical-impression-box">
-                <h3>🔬 Clinical Impression</h3>
-                <div 
-                  className="insight-content"
-                  dangerouslySetInnerHTML={{ 
-                    __html: insights.clinicalImpression.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1') 
-                  }}
-                />
-              </div>
-            )}
 
           </div>
-        )}
 
-        {/* Pregnancy Patterns */}
-        {pregnancyPatterns && (
-          <div className="pregnancy-patterns-section">
-            <h2>📈 Pregnancy Patterns</h2>
-            <div className="patterns-content">
-              <div className="pattern-item">
-                <div className="pattern-icon">📊</div>
-                <p className="pattern-text">{pregnancyPatterns}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Personalized Tips */}
-        {personalizedRecommendations && (
-          <div className="personalized-tips-section">
-            <h2>💡 Personalized Tips for You</h2>
-            <div className="tips-content">
-              <div className="tip-item">
-                <div className="tip-icon">✨</div>
-                <p className="tip-text">{personalizedRecommendations}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Gentle Reminders */}
-        {healthAlerts.length > 0 && (
-          <div className="gentle-reminders-section">
-            <h2>🌸 Gentle Reminders</h2>
-            <div className="reminders-content">
-              {healthAlerts.map((alert, index) => (
-                <div key={index} className="reminder-item">
-                  <div className="reminder-icon">🌸</div>
-                  <p className="reminder-text">{alert}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pregnancy History */}
-        {pregnancyData.length > 0 && (
-          <div className="pregnancy-history">
-            <h2>📈 Pregnancy History</h2>
-            <div className="history-list">
-              {pregnancyData.slice(-5).reverse().map((entry, index) => (
+        {/* Pregnancy History - ALWAYS SHOW */}
+        <div className="pregnancy-history">
+          <h2>📈 Pregnancy History</h2>
+          <div className="history-list">
+            {pregnancyData.length > 0 ? (
+              pregnancyData.slice(-5).reverse().map((entry, index) => (
                 <div key={index} className="history-item">
                   <div className="history-content">
                     <div className="history-date">
@@ -1352,10 +1390,18 @@ const PregnancyTracking = () => {
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            ) : (
+              <div className="history-item">
+                <div className="history-content">
+                  <div className="history-details">
+                    <span>No pregnancy history yet. Complete a pregnancy check-in to start tracking your journey!</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Educational Resources */}
         <div className="educational-resources">
@@ -1440,42 +1486,45 @@ const PregnancyTracking = () => {
               </button>
             </div>
             
+            {/* SIMPLE TEST - ALWAYS SHOW THIS */}
+            <div style={{padding: '20px', background: 'red', color: 'white'}}>
+              <h3>🔍 MODAL IS OPEN - TEST MESSAGE</h3>
+              <p>selectedPregnancyInsights exists: {selectedPregnancyInsights ? 'YES' : 'NO'}</p>
+              <p>aiAnalysis exists: {selectedPregnancyInsights?.aiAnalysis ? 'YES' : 'NO'}</p>
+              <p>content exists: {selectedPregnancyInsights?.aiAnalysis?.content ? 'YES' : 'NO'}</p>
+              <p>content length: {selectedPregnancyInsights?.aiAnalysis?.content?.length || 0}</p>
+            </div>
+            
             <div className="modal-content">
               <div className="insights-section">
                 <h3>🤖 Dr. AI Pregnancy Analysis</h3>
                 
-                {/* Greeting */}
-                {selectedPregnancyInsights.greeting && (
+                {/* DEBUG INFO */}
+                {console.log('🔍 MODAL - selectedPregnancyInsights:', selectedPregnancyInsights)}
+                {console.log('🔍 MODAL - aiAnalysis:', selectedPregnancyInsights?.aiAnalysis)}
+                {console.log('🔍 MODAL - aiAnalysis content:', selectedPregnancyInsights?.aiAnalysis?.content)}
+                {console.log('🔍 MODAL - aiAnalysis content length:', selectedPregnancyInsights?.aiAnalysis?.content?.length)}
+                
+                {/* COMPLETE AI ANALYSIS - WORD FOR WORD */}
+                {selectedPregnancyInsights.aiAnalysis?.content ? (
                   <div className="insight-item">
-                    <h4>👋 Greeting</h4>
-                    <p>{selectedPregnancyInsights.greeting}</p>
+                    <h4>📋 Complete AI Analysis</h4>
+                    <div 
+                      className="ai-analysis-content"
+                      dangerouslySetInnerHTML={{ 
+                        __html: selectedPregnancyInsights.aiAnalysis.content
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                          .replace(/\n/g, '<br>')
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="insight-item">
+                    <h4>❌ No AI Analysis Content Found</h4>
+                    <p>Debug info: {JSON.stringify(selectedPregnancyInsights, null, 2)}</p>
                   </div>
                 )}
-
-                {/* Clinical Summary */}
-                {selectedPregnancyInsights.clinicalSummary && (
-                  <div className="insight-item">
-                    <h4>🩺 Clinical Summary</h4>
-                    <p>{selectedPregnancyInsights.clinicalSummary}</p>
-                  </div>
-                )}
-
-                {/* Systemic & Lifestyle Factors */}
-                {selectedPregnancyInsights.systemicFactors && (
-                  <div className="insight-item">
-                    <h4>🏥 Systemic & Lifestyle Factors</h4>
-                    <p>{selectedPregnancyInsights.systemicFactors}</p>
-                  </div>
-                )}
-
-                {/* Clinical Impression */}
-                {selectedPregnancyInsights.clinicalImpression && (
-                  <div className="insight-item">
-                    <h4>🔬 Clinical Impression</h4>
-                    <p>{selectedPregnancyInsights.clinicalImpression}</p>
-                  </div>
-                )}
-
 
                 {/* Personalized Tips */}
                 {selectedPregnancyInsights.personalizedTips && (
@@ -1504,14 +1553,6 @@ const PregnancyTracking = () => {
                         <li>{selectedPregnancyInsights.gentleReminders}</li>
                       }
                     </ul>
-                  </div>
-                )}
-
-                {/* Pregnancy Patterns */}
-                {selectedPregnancyInsights.pregnancyPatterns && (
-                  <div className="insight-item">
-                    <h4>📈 Pregnancy Patterns</h4>
-                    <p>{selectedPregnancyInsights.pregnancyPatterns}</p>
                   </div>
                 )}
               </div>

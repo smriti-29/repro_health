@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import MenopauseAIService from '../ai/menopauseAIService.js';
 import './MenopauseSupport.css';
 
 const MenopauseSupport = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new MenopauseAIService());
 
   // Helper function to calculate age
   const calculateAge = (dateOfBirth) => {
@@ -168,7 +168,7 @@ Be medical, accurate, and supportive. Include specific guidance for the current 
         lifestyle: { exerciseFrequency: 'Moderate' }
       };
 
-      const aiInsights = await aiService.generateMenopauseInsights(menopauseForm, userProfile);
+      const aiInsights = await aiService.generateMenopauseInsights([menopauseEntry], userProfile);
       
       // Set all the comprehensive AI menopause insights (SAME STRUCTURE AS CYCLE TRACKING)
       if (aiInsights) {

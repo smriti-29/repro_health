@@ -179,7 +179,7 @@ Format as clinical alerts with severity levels (CRITICAL/HIGH/MEDIUM).`;
         <div className="risk-assessment">
           <h2>📊 Clinical Risk Assessment</h2>
           <div className="risk-content">
-            {riskAssessment}
+            {typeof riskAssessment === 'string' ? riskAssessment : JSON.stringify(riskAssessment)}
           </div>
         </div>
       )}

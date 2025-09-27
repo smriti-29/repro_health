@@ -13,6 +13,26 @@
 .score-header {
   text-align: center;
   margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(180deg);
 }
 
 .score-header h3 {
@@ -383,4 +403,161 @@
   .score-max {
     font-size: 0.8rem;
   }
+}
+
+/* Complete AI Insights Styles */
+.complete-ai-insights {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(103, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(103, 126, 234, 0.2);
+}
+
+.complete-ai-insights h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.ai-insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-insight-item {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid rgba(103, 126, 234, 0.1);
+}
+
+.insight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.insight-header h5 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.insight-module {
+  background: #667eea;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.insight-content {
+  margin-bottom: 12px;
+}
+
+.insight-content p {
+  margin: 0;
+  color: #555;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.insight-timestamp {
+  text-align: right;
+}
+
+.insight-timestamp small {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* All Personalized Tips Styles */
+.all-personalized-tips {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.all-personalized-tips h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 193, 7, 0.1);
+}
+
+.tip-icon {
+  font-size: 1.2rem;
+}
+
+.tip-text {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* All Gentle Reminders Styles */
+.all-gentle-reminders {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(233, 30, 99, 0.2);
+}
+
+.all-gentle-reminders h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reminder-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(233, 30, 99, 0.1);
+}
+
+.reminder-icon {
+  font-size: 1.2rem;
+}
+
+.reminder-text {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }

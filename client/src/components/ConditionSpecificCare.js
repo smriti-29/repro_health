@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import AIServiceManager from '../ai/aiServiceManager.js';
 import { AFAB_CLINICAL_RULES } from '../ai/clinicalRules.js';
 import './ConditionSpecificCare.css';
 
@@ -60,7 +60,7 @@ const ConditionSpecificCare = () => {
   const [showInsights, setShowInsights] = useState(false);
   
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new AIServiceManager());
   
   // Available conditions
   const availableConditions = [

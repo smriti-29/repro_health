@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AFABAIService from '../ai/afabAIService.js';
+import AIServiceManager from '../ai/aiServiceManager.js';
 import './ConditionSpecific.css';
 
 const ConditionSpecific = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new AIServiceManager());
   
   // Condition tracking form state
   const [conditionForm, setConditionForm] = useState({
@@ -563,7 +563,7 @@ const ConditionSpecific = () => {
             <div className="health-content">
               <div className="health-summary">
                 <div className="health-icon">🌱</div>
-                <p className="health-text">{riskAssessment}</p>
+                <p className="health-text">{typeof riskAssessment === 'string' ? riskAssessment : JSON.stringify(riskAssessment)}</p>
               </div>
             </div>
           </div>

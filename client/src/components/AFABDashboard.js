@@ -5,7 +5,7 @@ import React, { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import AIServiceManager from '../ai/aiServiceManager.js';
 import { 
   AFABLifeStages, 
   detectAFABLifeStage, 
@@ -31,7 +31,7 @@ const AFABDashboard = () => {
   const [error, setError] = useState(null);
   
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new AIServiceManager());
   
   // Generate initial AI insights based on life stage
   const generateInitialInsights = useCallback(async (profile, lifeStage) => {

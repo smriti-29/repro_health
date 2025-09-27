@@ -8,9 +8,20 @@
   z-index: 1;
 }
 
-/* Fix any white background overlays */
+/* Fix any white background overlays - but preserve insight card backgrounds */
 .fertility-tracking-page * {
   background-color: transparent !important;
+}
+
+/* Override the global rule for insight cards specifically */
+.fertility-tracking-page .insight-card,
+.fertility-tracking-page .insights-section,
+.fertility-tracking-page .insights-content,
+.fertility-tracking-page .insight-text,
+.fertility-tracking-page .analysis-content,
+.fertility-tracking-page .analysis-text {
+  background: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .fertility-tracking-page .insight-card,
@@ -689,12 +700,22 @@
 }
 
 .insights-content {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
   border-radius: 12px;
   padding: 1.5rem;
   line-height: 1.6;
   white-space: pre-wrap;
   font-size: 1rem;
+}
+
+/* Fix for AI-generated content with dangerouslySetInnerHTML */
+.insights-content *,
+.insight-content *,
+.analysis-content *,
+.analysis-text * {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Fertility History */

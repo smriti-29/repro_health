@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import MenopauseAIService from '../ai/menopauseAIService.js';
 import './MenopauseSupport.css';
 
 const MenopauseSupport = () => {
@@ -55,7 +55,7 @@ const MenopauseSupport = () => {
   const [showInsights, setShowInsights] = useState(false);
   
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new MenopauseAIService());
   
   // Initialize menopause data from user profile
   useEffect(() => {

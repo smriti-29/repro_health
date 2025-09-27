@@ -276,14 +276,26 @@
   cursor: not-allowed;
 }
 
-/* Insights Section */
+/* Insights Section - Fix white background issue */
 .insights-section {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.3) !important;
+  background-color: rgba(0, 0, 0, 0.3) !important;
   border-radius: 20px;
   padding: 2.5rem;
   margin-bottom: 3rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: 4px solid #ff6b9d;
+}
+
+/* Insight Cards - Ensure proper background */
+.insight-box,
+.insight-card,
+.insights-content,
+.insight-content,
+.analysis-content,
+.analysis-text {
+  background: rgba(0, 0, 0, 0.3) !important;
+  background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 .insights-section h2 {
@@ -293,12 +305,22 @@
 }
 
 .insights-content {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.3) !important;
+  background-color: rgba(0, 0, 0, 0.3) !important;
   border-radius: 12px;
   padding: 1.5rem;
   line-height: 1.6;
   white-space: pre-wrap;
   font-size: 1rem;
+}
+
+/* Fix for AI-generated content with dangerouslySetInnerHTML */
+.insights-content *,
+.insight-content *,
+.analysis-content *,
+.analysis-text * {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Pregnancy History */
@@ -449,6 +471,26 @@
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-analysis-content {
+  color: #ffffff;
+  line-height: 1.6;
+  font-size: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #ff6b9d;
+}
+
+.ai-analysis-content strong {
+  color: #4ecdc4;
+  font-weight: 600;
+}
+
+.ai-analysis-content em {
+  color: #ff6b9d;
+  font-style: italic;
 }
 
 .insight-item h4 {
@@ -889,8 +931,8 @@
 }
 
 /* AI Insights Styles */
-.pregnancy-tracking-page .ai-insights-section {
-  background: rgba(255, 255, 255, 0.05) !important;
+.ai-insights-section {
+  background: rgba(0, 0, 0, 0.3) !important;
   border-radius: 20px;
   padding: 2.5rem;
   margin-bottom: 3rem;
@@ -904,8 +946,8 @@
   text-align: center;
 }
 
-.pregnancy-tracking-page .insight-box {
-  background: rgba(255, 255, 255, 0.05) !important;
+.insight-box {
+  background: rgba(0, 0, 0, 0.3) !important;
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -919,27 +961,19 @@
   margin-bottom: 1rem;
 }
 
-.pregnancy-tracking-page .insight-content {
-  color: rgba(255, 255, 255, 0.9) !important;
+.insight-content {
+  color: #ffffff !important;
   line-height: 1.6;
   font-size: 1rem;
-}
-
-/* Force dark theme for all AI insights content */
-.pregnancy-tracking-page .ai-insights-section * {
-  background: transparent !important;
-  color: white !important;
-}
-
-.pregnancy-tracking-page .ai-insights-section .insight-content {
-  background: transparent !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  padding: 1rem;
+  border-radius: 8px;
 }
 
 .pregnancy-patterns-section,
 .personalized-tips-section,
 .gentle-reminders-section {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 20px;
   padding: 2.5rem;
   margin-bottom: 3rem;

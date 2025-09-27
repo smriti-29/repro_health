@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useHealthData } from '../context/HealthDataContext';
-import AFABAIService from '../ai/afabAIService.js';
+import AIServiceManager from '../ai/aiServiceManager.js';
 import './AdvancedConditions.css';
 
 const AdvancedConditions = () => {
@@ -28,7 +28,7 @@ const AdvancedConditions = () => {
   });
 
   // AI Service
-  const [aiService] = useState(() => new AFABAIService());
+  const [aiService] = useState(() => new AIServiceManager());
 
   // Load condition data from localStorage
   useEffect(() => {
